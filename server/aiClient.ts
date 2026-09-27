@@ -66,10 +66,14 @@ export function sanitizeSolutionText(value: unknown): unknown {
   return value
 }
 
-export async function solveMathsImage(image: Buffer, mimetype: string, config: VisionConfig): Promise<StructuredSolution> {
+export async function solveMathsImage(image: Buffer, mimetype: string, config: VisionConfig, studentClass?: number): Promise<StructuredSolution> {
   if (!config.apiKey) {
     throw new Error('AI_PROVIDER_NOT_CONFIGURED')
   }
+
+  const taskText = studentClass
+    ? `Analyze this Class ${studentClass} maths question image and return the required JSON. The student studies in Class ${studentClass}, so match your explanation level to that class.`
+    : 'Analyze this school maths question image (Class 1 to 10) and return the required JSON.'
 
   const response = await fetch(config.apiUrl, {
     method: 'POST',
@@ -80,7 +84,7 @@ export async function solveMathsImage(image: Buffer, mimetype: string, config: V
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: mathsTutorSystemPrompt },
-        { role: 'user', content: [{ type: 'text', text: 'Analyze this Class 10 maths question image and return the required JSON.' }, { type: 'image_url', image_url: { url: `data:${mimetype};base64,${image.toString('base64')}` } }] },
+        { role: 'user', content: [{ type: 'text', text: taskText }, { type: 'image_url', image_url: { url: `data:${mimetype};base64,${image.toString('base64')}` } }] },
       ],
     }),
   })

@@ -43,6 +43,27 @@
   font-size: 10px;
 }
 
+/* Class selector */
+.class-pick {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0 2px;
+  color: #2c3643;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.class-pick select {
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(33, 42, 54, 0.16);
+  background: #fff;
+  color: #1a2433;
+  font: inherit;
+}
+
 /* Crop stage */
 .crop-stage {
   display: grid;

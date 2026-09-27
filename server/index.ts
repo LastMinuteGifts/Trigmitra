@@ -74,11 +74,14 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
   }
 
   try {
+    const studentClass = z.coerce.number().int().min(1).max(10).optional().parse(
+      (request.body as { studentClass?: unknown } | undefined)?.studentClass ?? undefined,
+    )
     const solution = await solveMathsImage(request.file.buffer, request.file.mimetype, {
       apiKey: env.AI_API_KEY,
       apiUrl: env.AI_API_URL,
       model: env.AI_MODEL,
-    })
+    }, studentClass)
     response.json({ status: 'complete', solution })
   } catch (error) {
     // AI fail ho jaye to bhi demo fallback do (agar DEMO_MODE on hai).
