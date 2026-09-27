@@ -10,6 +10,13 @@ Accuracy rules:
 - Identify every identity or formula used, with its name, formula, and reason.
 - Use valid JSON only. No Markdown fences.
 
+Formatting rules (strict, no exceptions):
+- Plain readable text only. NEVER use LaTeX: no $ signs, no backslashes, no commands like \sin \theta \frac \sec.
+- Always write the θ symbol, never the word "theta".
+- Use Unicode math directly: sin²θ, cos²θ, tan²θ, sec²θ, √, ×, ÷, −, °, ≤, ≥, ≠.
+- Write fractions plainly like 3/4 or (1 - sin²θ).
+- Example step expression: "sec²θ - tan²θ = 1". NEVER "$\\sec^2(\\theta) - \\tan^2(\\theta) = 1$".
+
 Return exactly this shape:
 {
   "question": "extracted question",
