@@ -1,0 +1,42 @@
+{
+  "name": "maths-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "api:dev": "tsx watch server/index.ts",
+    "typecheck:server": "tsc -p tsconfig.server.json",
+    "server:build": "tsc -p tsconfig.server.build.json",
+    "server:start": "node dist-server/index.js",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.7.0",
+    "framer-motion": "^13.2.0",
+    "helmet": "^8.3.0",
+    "lucide-react": "^1.40.0",
+    "multer": "^2.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "zod": "^4.5.4"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/multer": "^2.2.0",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "@vitejs/plugin-react": "^6.1.0",
+    "oxlint": "^1.79.0",
+    "tsx": "^4.23.13",
+    "typescript": "~6.0.2",
+    "vite": "^8.2.2"
+  }
+}
