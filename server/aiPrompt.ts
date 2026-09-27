@@ -8,6 +8,7 @@ Accuracy rules:
 - Do not use calculus, complex numbers, or advanced identities when a Class 10 method exists.
 - Include every meaningful transformation as a separate step.
 - Prefer 5 to 8 small granular steps over 2 to 3 big jumps. Every single algebraic move — rearrange, substitute, expand, simplify, take square root — gets its own step with its own stepNumber. Never merge two different transformations into one step.
+- Keep every explanation to 1-2 short lines (under 25 words). Short output matters.
 - Identify every identity or formula used, with its name, formula, and reason.
 - Use valid JSON only. No Markdown fences.
 
