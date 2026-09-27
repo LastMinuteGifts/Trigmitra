@@ -17,7 +17,8 @@ const env = z.object({
   DEMO_MODE: z.string().default('true'),
 }).parse(process.env)
 
-const allowedOrigins = env.CLIENT_ORIGIN.split(',').map((s) => s.trim()).filter(Boolean)
+const normalizeOrigin = (value: string) => value.trim().replace(/\/+$/, '').toLowerCase()
+const allowedOrigins = env.CLIENT_ORIGIN.split(',').map(normalizeOrigin).filter(Boolean)
 
 const app = express()
 const upload = multer({
@@ -32,7 +33,7 @@ app.use(helmet())
 app.use(cors({
   origin: (origin, callback) => {
     // Same-origin / curl / mobile app (no Origin header) ko allow karo.
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.includes(normalizeOrigin(origin))) {
       callback(null, true)
       return
     }
@@ -107,6 +108,11 @@ const errorHandler: ErrorRequestHandler = (error, _request, response, _next) => 
 
   if (error instanceof multer.MulterError || error.message === 'Unexpected field') {
     response.status(415).json({ code: 'UNSUPPORTED_IMAGE', message: 'Use a JPG, PNG, or WEBP image.' })
+    return
+  }
+
+  if (error instanceof Error && error.message.startsWith('CORS blocked')) {
+    response.status(403).json({ code: 'CORS_BLOCKED', message: 'This website is not allowed to use the API.' })
     return
   }
 
