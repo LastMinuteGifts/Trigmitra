@@ -835,6 +835,7 @@ footer p {
   max-width: 1120px;
   margin: 0 auto 90px;
   padding: 72px 32px 0;
+  scroll-margin-top: 84px;
 }
 
 .solution-heading {
