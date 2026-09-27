@@ -11,11 +11,14 @@ import { buildDemoSolution } from './localSolver.js'
 const env = z.object({
   PORT: z.coerce.number().default(4000),
   CLIENT_ORIGIN: z.string().default('http://127.0.0.1:5173,http://localhost:5173'),
-  AI_API_KEY: z.string().optional(),
+  AI_API_KEY: z.string().trim().optional().transform((v) => (v ? v : undefined)),
   AI_API_URL: z.string().url().default('https://api.openai.com/v1/chat/completions'),
   AI_MODEL: z.string().default('gpt-4o-mini'),
+  AI_MODELS: z.string().optional(),
   DEMO_MODE: z.string().default('true'),
 }).parse(process.env)
+
+const aiModels = (env.AI_MODELS ?? env.AI_MODEL).split(',').map((s) => s.trim()).filter(Boolean)
 
 const normalizeOrigin = (value: string) => value.trim().replace(/\/+$/, '').toLowerCase()
 const allowedOrigins = env.CLIENT_ORIGIN.split(',').map(normalizeOrigin).filter(Boolean)
@@ -68,6 +71,7 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
     response.json({
       status: 'demo',
       message: 'Demo mode: AI key configure nahi hai, isliye sample solution dikhaya ja raha hai.',
+      errorCode: 'AI_PROVIDER_NOT_CONFIGURED',
       solution: buildDemoSolution(),
     })
     return
@@ -81,6 +85,7 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
       apiKey: env.AI_API_KEY,
       apiUrl: env.AI_API_URL,
       model: env.AI_MODEL,
+      models: aiModels,
     }, studentClass)
     response.json({ status: 'complete', solution })
   } catch (error) {
@@ -90,6 +95,7 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
       response.json({
         status: 'demo',
         message: 'AI se connect nahi ho paya, isliye sample solution dikhaya ja raha hai.',
+        errorCode: error instanceof Error ? error.message : 'UNKNOWN',
         solution: buildDemoSolution(),
       })
       return

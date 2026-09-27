@@ -5,6 +5,7 @@ interface VisionConfig {
   apiKey?: string
   apiUrl: string
   model: string
+  models: string[]
 }
 
 interface ChatCompletionResponse {
@@ -66,20 +67,23 @@ export function sanitizeSolutionText(value: unknown): unknown {
   return value
 }
 
-export async function solveMathsImage(image: Buffer, mimetype: string, config: VisionConfig, studentClass?: number): Promise<StructuredSolution> {
-  if (!config.apiKey) {
-    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
+
+/** 404 = model retired (doosra model try karo). 429/5xx = transient (retry karo). */
+function providerStatus(error: unknown): number | null {
+  if (error instanceof Error) {
+    const match = error.message.match(/^AI_PROVIDER_(\d+)$/)
+    if (match) return Number(match[1])
   }
+  return null
+}
 
-  const taskText = studentClass
-    ? `Analyze this Class ${studentClass} maths question image and return the required JSON. The student studies in Class ${studentClass}, so match your explanation level to that class.`
-    : 'Analyze this school maths question image (Class 1 to 10) and return the required JSON.'
-
+async function requestOnce(image: Buffer, mimetype: string, config: VisionConfig, model: string, taskText: string): Promise<StructuredSolution> {
   const response = await fetch(config.apiUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: config.model,
+      model,
       temperature: 0.1,
       response_format: { type: 'json_object' },
       messages: [
@@ -95,4 +99,37 @@ export async function solveMathsImage(image: Buffer, mimetype: string, config: V
   if (!content) throw new Error('AI_EMPTY_RESPONSE')
 
   return structuredSolutionSchema.parse(sanitizeSolutionText(extractJson(content)))
+}
+
+export async function solveMathsImage(image: Buffer, mimetype: string, config: VisionConfig, studentClass?: number): Promise<StructuredSolution> {
+  if (!config.apiKey) {
+    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
+  }
+
+  const taskText = studentClass
+    ? `Analyze this Class ${studentClass} maths question image and return the required JSON. The student studies in Class ${studentClass}, so match your explanation level to that class.`
+    : 'Analyze this school maths question image (Class 1 to 10) and return the required JSON.'
+
+  const models = config.models.length > 0 ? config.models : [config.model]
+  let lastError: unknown = new Error('AI_NO_MODEL_TRIED')
+
+  for (const model of models) {
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        return await requestOnce(image, mimetype, config, model, taskText)
+      } catch (error) {
+        lastError = error
+        const status = providerStatus(error)
+        // Galat key / bad request → retry bekar, turant haar mano.
+        if (status === 400 || status === 401 || status === 403) throw error
+        // Retired model → agla model try karo.
+        if (status === 404) break
+        // Transient (429/5xx/parse/network): thoda rukkar dobara.
+        if (attempt < 2) await sleep(4000)
+      }
+    }
+    await sleep(2000)
+  }
+
+  throw lastError
 }
