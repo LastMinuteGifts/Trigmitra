@@ -8,26 +8,112 @@ import './App.css'
 import './mobile.css'
 import './lens.css'
 
-const primaryIdentities = [
-  { formula: 'sin²θ + cos²θ = 1', label: 'Fundamental identity · Trig', tone: 'coral' },
-  { formula: '(a + b)² = a² + 2ab + b²', label: 'Algebra identity', tone: 'blue' },
-  { formula: 'Area of circle = πr²', label: 'Mensuration', tone: 'yellow' },
-  { formula: 'BODMAS: ( ) → ÷ × → + −', label: 'Order of operations', tone: 'coral' },
+const tones = ['coral', 'blue', 'yellow'] as const
+
+interface FormulaEntry {
+  formula: string
+  label: string
+}
+
+interface FormulaCategory {
+  name: string
+  formulas: FormulaEntry[]
+}
+
+const formulaCategories: FormulaCategory[] = [
+  {
+    name: 'Trigonometry',
+    formulas: [
+      { formula: 'sin²θ + cos²θ = 1', label: 'Fundamental identity' },
+      { formula: '1 + tan²θ = sec²θ', label: 'Pythagorean identity' },
+      { formula: '1 + cot²θ = cosec²θ', label: 'Pythagorean form' },
+      { formula: 'tanθ = sinθ / cosθ', label: 'Quotient identity' },
+      { formula: 'cotθ = cosθ / sinθ', label: 'Reciprocal quotient' },
+      { formula: 'secθ = 1 / cosθ', label: 'Reciprocal identity' },
+      { formula: 'cosecθ = 1 / sinθ', label: 'Reciprocal identity' },
+      { formula: 'sin(90°−θ) = cosθ', label: 'Cofunction identity' },
+      { formula: 'cos(90°−θ) = sinθ', label: 'Cofunction identity' },
+      { formula: 'sin 2θ = 2 sinθ cosθ', label: 'Double angle' },
+      { formula: 'cos 2θ = cos²θ − sin²θ', label: 'Double angle' },
+      { formula: 'sin 30° = 1/2, sin 45° = 1/√2, sin 60° = √3/2', label: 'Standard values' },
+    ],
+  },
+  {
+    name: 'Algebra',
+    formulas: [
+      { formula: '(a + b)² = a² + 2ab + b²', label: 'Square identity' },
+      { formula: '(a − b)² = a² − 2ab + b²', label: 'Square identity' },
+      { formula: 'a² − b² = (a + b)(a − b)', label: 'Difference of squares' },
+      { formula: '(a + b)³ = a³ + 3a²b + 3ab² + b³', label: 'Cube identity' },
+      { formula: 'a³ + b³ = (a + b)(a² − ab + b²)', label: 'Sum of cubes' },
+      { formula: 'a³ − b³ = (a − b)(a² + ab + b²)', label: 'Difference of cubes' },
+      { formula: 'x = (−b ± √(b²−4ac)) / 2a', label: 'Quadratic formula' },
+      { formula: 'D = b² − 4ac', label: 'Discriminant' },
+      { formula: 'aᵐ × aⁿ = aᵐ⁺ⁿ', label: 'Law of exponents' },
+      { formula: '(aᵐ)ⁿ = aᵐⁿ', label: 'Power of power' },
+    ],
+  },
+  {
+    name: 'Mensuration',
+    formulas: [
+      { formula: 'Area of circle = πr²', label: 'Circle area' },
+      { formula: 'Circumference = 2πr', label: 'Circle perimeter' },
+      { formula: 'Area of triangle = ½ × base × height', label: 'Triangle area' },
+      { formula: 'Area of rectangle = l × b', label: 'Rectangle area' },
+      { formula: 'Perimeter = 2 × (l + b)', label: 'Rectangle perimeter' },
+      { formula: 'Area of square = side²', label: 'Square area' },
+      { formula: 'Area of trapezium = ½ × (a + b) × h', label: 'Trapezium area' },
+      { formula: 'Curved surface of cylinder = 2πrh', label: 'Cylinder CSA' },
+      { formula: 'Volume of cylinder = πr²h', label: 'Cylinder volume' },
+      { formula: 'Volume of cone = ⅓πr²h', label: 'Cone volume' },
+      { formula: 'Volume of sphere = 4/3 πr³', label: 'Sphere volume' },
+      { formula: 'Surface of sphere = 4πr²', label: 'Sphere surface' },
+      { formula: 'Volume of cuboid = l × b × h', label: 'Cuboid volume' },
+    ],
+  },
+  {
+    name: 'Arithmetic',
+    formulas: [
+      { formula: 'BODMAS: ( ) → ÷ × → + −', label: 'Order of operations' },
+      { formula: 'SI = P × R × T / 100', label: 'Simple interest' },
+      { formula: 'Amount = P(1 + R/100)ⁿ', label: 'Compound interest' },
+      { formula: 'Profit = SP − CP', label: 'Profit and loss' },
+      { formula: 'Profit% = Profit × 100 / CP', label: 'Profit percent' },
+      { formula: 'HCF × LCM = product of numbers', label: 'HCF–LCM relation' },
+      { formula: 'Speed = Distance / Time', label: 'Speed formula' },
+      { formula: 'Average = sum ÷ count', label: 'Average' },
+    ],
+  },
+  {
+    name: 'Geometry',
+    formulas: [
+      { formula: 'a² + b² = c²', label: 'Pythagoras theorem' },
+      { formula: 'Sum of triangle angles = 180°', label: 'Angle sum' },
+      { formula: 'Sum of quadrilateral angles = 360°', label: 'Angle sum' },
+      { formula: 'Exterior angle = sum of opposite interiors', label: 'Exterior angle' },
+      { formula: 'Distance = √((x₂−x₁)² + (y₂−y₁)²)', label: 'Distance formula' },
+      { formula: 'Midpoint = ((x₁+x₂)/2, (y₁+y₂)/2)', label: 'Midpoint formula' },
+      { formula: 'Slope m = (y₂−y₁) / (x₂−x₁)', label: 'Slope' },
+      { formula: 'Angle in a semicircle = 90°', label: 'Circle theorem' },
+    ],
+  },
+  {
+    name: 'Statistics',
+    formulas: [
+      { formula: 'Mean = Σx / n', label: 'Mean' },
+      { formula: 'Median = middle value of ordered data', label: 'Median' },
+      { formula: 'Mode = most frequent value', label: 'Mode' },
+      { formula: 'Range = Max − Min', label: 'Range' },
+      { formula: 'Probability = favourable / total outcomes', label: 'Probability' },
+    ],
+  },
 ]
 
-const allIdentities = [
-  { formula: 'sin²θ + cos²θ = 1', label: 'Fundamental identity · Trig', tone: 'coral' },
-  { formula: '(a + b)² = a² + 2ab + b²', label: 'Algebra identity', tone: 'blue' },
-  { formula: 'Area of circle = πr²', label: 'Mensuration', tone: 'yellow' },
-  { formula: 'BODMAS: ( ) → ÷ × → + −', label: 'Order of operations', tone: 'coral' },
-  { formula: 'a² − b² = (a + b)(a − b)', label: 'Algebra identity', tone: 'blue' },
-  { formula: '(a − b)² = a² − 2ab + b²', label: 'Algebra identity', tone: 'yellow' },
-  { formula: '1 + tan²θ = sec²θ', label: 'Pythagorean identity', tone: 'coral' },
-  { formula: 'a² + b² = c²', label: 'Pythagoras theorem', tone: 'blue' },
-  { formula: 'SI = P × R × T / 100', label: 'Simple interest', tone: 'yellow' },
-  { formula: 'Perimeter = 2 × (l + b)', label: 'Mensuration', tone: 'coral' },
-  { formula: 'tanθ = sinθ / cosθ', label: 'Quotient identity', tone: 'blue' },
-  { formula: 'Average = sum ÷ count', label: 'Statistics', tone: 'yellow' },
+const featuredFormulas = [
+  { ...formulaCategories[0].formulas[0], tone: tones[0] },
+  { ...formulaCategories[1].formulas[0], tone: tones[1] },
+  { ...formulaCategories[2].formulas[0], tone: tones[2] },
+  { ...formulaCategories[3].formulas[0], tone: tones[0] },
 ]
 
 const steps = [
@@ -57,6 +143,7 @@ function App() {
   const [solution, setSolution] = useState<StructuredSolution | null>(null)
   const [isDemoSolution, setIsDemoSolution] = useState(false)
   const [showAllIdentities, setShowAllIdentities] = useState(false)
+  const [activeCategory, setActiveCategory] = useState('All')
   const cameraInput = useRef<HTMLInputElement>(null)
   const [cropImage, setCropImage] = useState<{ url: string; name: string } | null>(null)
   const [studentClass, setStudentClass] = useState('')
@@ -219,12 +306,12 @@ function App() {
       <div className="header-actions"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</button><button className="history-button"><History size={16} /> Track progress</button></div>
     </header>
     <main id="top">
-      <section className="hero-section"><div className="hero-copy"><motion.div className="eyebrow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><span className="eyebrow-dot" /> CLASS 10 · TRIGONOMETRY</motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Photo upload karo.<br /><em>Maths samjho.</em><br />Confident bano.</motion.h1><motion.p className="hero-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>Difficult question ka sirf answer nahi — <strong>har step ka why</strong> samjho, simple Hinglish mein.</motion.p><motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFileSelected} /><input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onFileSelected} /><button className="primary-button" onClick={openUploader}><Upload size={18} /> {selectedFile ? 'Photo selected' : 'Solve my question'} <ArrowRight size={17} /></button><a className="text-button" href="#identities"><BookOpen size={17} /> Explore identities</a></motion.div><div className="trust-line"><span className="avatar-stack"><i>R</i><i>S</i><i>K</i></span><span>Made for curious Class 1�10 minds</span><span className="trust-star">✦</span></div></div>
+      <section className="hero-section"><div className="hero-copy"><motion.div className="eyebrow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><span className="eyebrow-dot" /> CLASS 10 · TRIGONOMETRY</motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Photo upload karo.<br /><em>Maths samjho.</em><br />Confident bano.</motion.h1><motion.p className="hero-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>Difficult question ka sirf answer nahi — <strong>har step ka why</strong> samjho, simple Hinglish mein.</motion.p><motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFileSelected} /><input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onFileSelected} /><button className="primary-button" onClick={openUploader}><Upload size={18} /> {selectedFile ? 'Photo selected' : 'Solve my question'} <ArrowRight size={17} /></button><a className="text-button" href="#identities"><BookOpen size={17} /> Explore identities</a></motion.div><div className="trust-line"><span className="avatar-stack"><i>R</i><i>S</i><i>K</i></span><span>Made for curious Class 1–10 minds</span><span className="trust-star">✦</span></div></div>
         <motion.div className="hero-visual" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: .12 }}><div className="visual-grid" /><div className="doodle doodle-left">sin² θ<br /><span>+ cos² θ</span></div><div className="doodle doodle-right">∠</div><div className="question-paper"><div className="paper-top"><span className="paper-tag">QUESTION 04</span><span className="paper-dots">•••</span></div><p className="paper-question">If <b>tan A = 3/4</b>,<br />find the value of<br /><b>sin A + cos A.</b></p><div className="triangle"><span className="tri-height">3</span><span className="tri-base">4</span><span className="tri-hyp">5</span></div><div className="paper-rule" /><div className="paper-answer"><span>hint</span><b>Right triangle ratios</b></div></div><div className="ai-badge"><span className="ai-spark">✦</span><span><b>AI tutor</b><small>ready to explain</small></span><Check size={17} /></div><div className="floating-note"><Lightbulb size={15} /><span>Why this step?</span></div></motion.div>
       </section>
       <section className="marquee-strip" aria-label="Mathsmitra features"><span>LEARN THE WHY</span><i>✦</i><span>NOT JUST THE ANSWER</span><i>✦</i><span>EXAM READY, ALWAYS</span><i>✦</i><span>LEARN THE WHY</span></section>
       <section className="section-block how-section" id="how-it-works"><div className="section-heading"><div><span className="section-kicker">THE MATHSMITRA METHOD</span><h2>From stuck to<br /><em>sorted.</em></h2></div><p>Three simple steps between you<br />and that “ohhh, samajh gaya!” moment.</p></div><div className="steps-grid">{steps.map((step, index) => { const Icon = step.icon; return <motion.article className="step-card" key={step.number} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * .08 }}><div className="step-top"><span className="step-number">{step.number}</span><div className="step-icon"><Icon size={20} /></div></div><h3>{step.title}</h3><p>{step.copy}</p><ChevronRight className="step-arrow" size={18} /></motion.article> })}</div></section>
-      <section className="section-block identities-section" id="identities"><div className="section-heading"><div><span className="section-kicker">QUICK REFERENCE</span><h2>Formulas worth<br /><em>knowing.</em></h2></div><button className="outline-button" type="button" onClick={() => setShowAllIdentities((value) => !value)}>{showAllIdentities ? 'Hide formulas' : 'View all formulas'} <ArrowRight size={16} /></button></div>{!showAllIdentities ? <div className="identity-grid">{primaryIdentities.map((identity) => <article className={`identity-card ${identity.tone}`} key={identity.formula}><div className="identity-icon"><FileText size={18} /></div><span>{identity.label}</span><h3>{identity.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${identity.label}`}><CircleHelp size={16} /></button></article>)}</div> : <div className="all-identities-panel"><div className="all-identities-header"><span className="section-kicker">ALL FORMULAS</span><h3>Complete Class 1�10 toolkit</h3></div><div className="identity-grid full-grid">{allIdentities.map((identity) => <article className={`identity-card ${identity.tone}`} key={`${identity.label}-${identity.formula}`}><div className="identity-icon"><FileText size={18} /></div><span>{identity.label}</span><h3>{identity.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${identity.label}`}><CircleHelp size={16} /></button></article>)}</div></div>}</section>
+      <section className="section-block identities-section" id="identities"><div className="section-heading"><div><span className="section-kicker">QUICK REFERENCE</span><h2>Formulas worth<br /><em>knowing.</em></h2></div><button className="outline-button" type="button" onClick={() => setShowAllIdentities((value) => !value)}>{showAllIdentities ? 'Hide formulas' : 'View all formulas'} <ArrowRight size={16} /></button></div><div className="cat-chips" role="tablist" aria-label="Formula categories">{['All', ...formulaCategories.map((c) => c.name)].map((name) => <button key={name} role="tab" aria-selected={activeCategory === name} className={activeCategory === name ? 'cat-chip active' : 'cat-chip'} onClick={() => setActiveCategory(name)}>{name}</button>)}</div>{activeCategory === 'All' && !showAllIdentities ? <div className="identity-grid">{featuredFormulas.map((identity) => <article className={`identity-card ${identity.tone}`} key={identity.formula}><div className="identity-icon"><FileText size={18} /></div><span>{identity.label}</span><h3>{identity.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${identity.label}`}><CircleHelp size={16} /></button></article>)}</div> : <div className="all-identities-panel">{(activeCategory === 'All' ? formulaCategories : formulaCategories.filter((c) => c.name === activeCategory)).map((cat, gi) => <div key={cat.name}><div className="all-identities-header"><span className="section-kicker">{cat.name.toUpperCase()}</span><h3>{cat.name} formulas</h3></div><div className="identity-grid full-grid">{cat.formulas.map((entry, fi) => { const tone = tones[(gi + fi) % tones.length]; return <article className={`identity-card ${tone}`} key={`${cat.name}-${entry.formula}`}><div className="identity-icon"><FileText size={18} /></div><span>{entry.label}</span><h3>{entry.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${entry.label}`}><CircleHelp size={16} /></button></article> })}</div></div>)}</div>}</section>
       <section className="practice-band" id="practice"><div><span className="section-kicker">READY WHEN YOU ARE</span><h2>One question can<br /><em>change everything.</em></h2></div><div className="practice-cta"><p>Bring your toughest maths problem, Class 1 to 10. We’ll bring the patience.</p><button className="dark-button" onClick={openUploader}>Start solving <ArrowRight size={17} /></button></div></section>
     </main>
     {solution && <section ref={solutionRef} className="solution-panel" aria-labelledby="solution-title"><div className="solution-heading"><div><span className="section-kicker">YOUR MATHSMITRA SOLUTION</span><h2 id="solution-title">Question samjho.<br /><em>Phir solve karo.</em></h2></div><button className="close-solution" onClick={() => { setSolution(null); setIsDemoSolution(false) }}><X size={18} /> Close</button></div>{isDemoSolution && <div style={{ background: '#fff7e6', border: '1px solid #f0c36d', borderRadius: 12, padding: '10px 14px', marginBottom: 16 }}>⚠️ <b>Demo mode:</b> AI key configure nahi hai, isliye sample solution dikh raha hai. Real photo reading ke liye server me <code>AI_API_KEY</code> set karo.</div>}<div className="solution-meta"><div><span>TOPIC</span><b>{solution.topic}</b></div><div><span>TYPE</span><b>{solution.questionType}</b></div><div><span>DIFFICULTY</span><b>{solution.difficulty}</b></div></div><div className="detected-question"><span className="section-kicker">QUESTION DETECTED</span><p>{solution.question}</p><small>Need: {solution.required}</small></div><div className="solution-steps">{solution.steps.map((step) => <article className="solution-step" key={step.stepNumber}><div className="step-badge">{String(step.stepNumber).padStart(2, '0')}</div><div><span className="section-kicker">STEP {step.stepNumber}</span><h3>{step.expression}</h3><p>{step.explanation}</p>{step.identityUsed && <div className="used-identity"><strong>{step.identityUsed.name}</strong><span>{step.identityUsed.formula}</span><small>{step.identityUsed.reason}</small></div>}</div></article>)}</div><div className="final-answer"><span className="section-kicker">FINAL ANSWER</span><h3>{solution.finalAnswer}</h3><p>Exam tip: {solution.examTip ?? 'Steps ko clearly line-by-line likho.'}</p></div></section>}

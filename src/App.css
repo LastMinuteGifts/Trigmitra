@@ -1272,3 +1272,36 @@ footer p {
   .solution-step h3 { font-size: 20px; }
   .detected-question p { font-size: 20px; }
 }
+
+/* Formula category chips */
+.cat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+
+.cat-chip {
+  padding: 9px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(33, 42, 54, 0.14);
+  background: rgba(255, 255, 255, 0.6);
+  color: #2c3643;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.cat-chip:hover {
+  border-color: rgba(240, 91, 69, 0.55);
+  color: #f05b45;
+}
+
+.cat-chip.active {
+  border-color: transparent;
+  background: #1f2d3f;
+  color: #fff;
+}
+
+.all-identities-panel > div + div {
+  margin-top: 34px;
+}
