@@ -1213,6 +1213,33 @@ footer p {
   50% { transform: scale(1.08); }
 }
 
+/* Tablets (iPad portrait/landscape): 2-column grids + hamburger nav */
+@media (max-width: 1024px) {
+  .main-nav {
+    display: none;
+    position: absolute;
+    z-index: 10;
+    top: 68px;
+    left: 0;
+    right: 0;
+    margin: 0;
+    padding: 8px 28px 18px;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(248, 244, 238, 0.96);
+    border-bottom: 1px solid rgba(30, 40, 55, 0.08);
+  }
+  .main-nav.is-open { display: flex; }
+  .main-nav a { padding: 12px 0; border-bottom: 1px solid rgba(30, 40, 55, 0.08); }
+  .mobile-menu { display: grid; }
+  .steps-grid,
+  .identity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-section { padding-left: 28px; padding-right: 28px; }
+  .section-block { padding-left: 28px; padding-right: 28px; }
+  .solution-panel { padding-left: 28px; padding-right: 28px; }
+  .cat-chips { gap: 8px; }
+}
+
 @media (max-width: 980px) {
   .hero-section { grid-template-columns: 1fr; padding-top: 64px; }
   .hero-copy { max-width: none; }
