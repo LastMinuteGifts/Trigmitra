@@ -1300,6 +1300,34 @@ footer p {
   .detected-question p { font-size: 20px; }
 }
 
+/* SVG diagram card */
+.diagram-card {
+  margin-top: 26px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  border: 1px solid rgba(32, 41, 56, 0.08);
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.diagram-svg {
+  display: grid;
+  place-items: center;
+  margin-top: 12px;
+}
+
+.diagram-svg svg {
+  width: min(420px, 100%);
+  height: auto;
+}
+
+.diagram-card small {
+  display: block;
+  margin-top: 10px;
+  color: #7b8794;
+  font-size: 11px;
+  text-align: center;
+}
+
 /* Formula category chips */
 .cat-chips {
   display: flex;

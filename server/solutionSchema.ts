@@ -14,6 +14,11 @@ const stepSchema = z.object({
   identityUsed: identitySchema.nullish().transform((value) => value ?? undefined),
 })
 
+const diagramSchema = z.object({
+  svg: z.string().min(10).max(8000),
+  caption: z.string().max(200).nullish().transform((value) => value ?? undefined),
+})
+
 export const structuredSolutionSchema = z.object({
   question: z.string(),
   topic: z.string(),
@@ -24,6 +29,8 @@ export const structuredSolutionSchema = z.object({
   steps: z.array(stepSchema),
   identitiesUsed: z.array(identitySchema),
   finalAnswer: z.string(),
+  // Figure zaroori ho tabhi AI bhejega, warna field missing rahega.
+  diagram: diagramSchema.nullish().transform((value) => value ?? undefined),
   examTip: z.string().nullish().transform((value) => value ?? undefined),
   practiceQuestion: z.string().nullish().transform((value) => value ?? undefined),
 })

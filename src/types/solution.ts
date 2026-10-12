@@ -13,6 +13,11 @@ export interface SolutionStep {
   identityUsed?: IdentityReference
 }
 
+export interface DiagramReference {
+  svg: string
+  caption?: string
+}
+
 export interface StructuredSolution {
   question: string
   topic: string
@@ -23,6 +28,7 @@ export interface StructuredSolution {
   steps: SolutionStep[]
   identitiesUsed: IdentityReference[]
   finalAnswer: string
+  diagram?: DiagramReference
   examTip?: string
   practiceQuestion?: string
 }
