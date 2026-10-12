@@ -2,13 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/logo-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f05b45" />
     <style>
       #boot-screen{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#f8f4ee;transition:opacity .55s ease}
       #boot-screen.done{opacity:0;pointer-events:none}
-      .boot-mark{width:64px;height:64px;border-radius:20px;background:linear-gradient(135deg,#f05b45,#e8845a);color:#fff;font-size:34px;display:grid;place-items:center;animation:boot-pulse 1.2s ease-in-out infinite}
+      .boot-mark{width:72px;height:72px;border-radius:22px;overflow:hidden;background:#fff;box-shadow:0 18px 36px rgba(240,91,69,.3);animation:boot-pulse 1.2s ease-in-out infinite}
+      .boot-mark img{width:100%;height:100%;object-fit:cover;display:block}
       .boot-name{font-weight:800;letter-spacing:.28em;font-size:15px;color:#1a2433;font-family:system-ui,sans-serif}
       .boot-sub{font-size:11px;color:#8a94a0;letter-spacing:.12em;font-family:system-ui,sans-serif}
       .boot-bar{width:170px;height:4px;border-radius:99px;background:rgba(26,36,51,.1);overflow:hidden}
@@ -28,7 +29,7 @@
       <span class="boot-sym" style="left:22%;bottom:26%;animation-delay:.8s">√</span>
       <span class="boot-sym" style="right:22%;bottom:30%;animation-delay:1.2s">×</span>
       <span class="boot-sym" style="left:50%;top:14%;animation-delay:1.6s">÷</span>
-      <div class="boot-mark">∿</div>
+      <div class="boot-mark"><img src="/logo.png" alt="AnkNawab logo" /></div>
       <div class="boot-name">ANKNAWAB</div>
       <div class="boot-sub">sawalon ka nawab</div>
       <div class="boot-bar"><i></i></div>
