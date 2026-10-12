@@ -633,7 +633,6 @@ h1 em,
   gap: 22px;
 }
 
-.step-card,
 .outline-button {
   display: inline-flex;
   align-items: center;
@@ -675,7 +674,15 @@ h1 em,
 }
 
 .step-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   min-height: 235px;
+  padding: 26px 24px 24px;
+  border: 1px solid rgba(32, 41, 56, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 16px 28px rgba(27, 36, 49, 0.04);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
