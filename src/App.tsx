@@ -541,7 +541,6 @@ function App() {
     <footer>
       <div className="brand"><span className="brand-mark"><span>∿</span></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></div>
       <div className="footer-meta">
-        <p>Built to make the “why” click.</p>
         <span className="developer-credit">by ASAD • student of Millat Academy</span>
       </div>
       <span>© 2026 AnkNawab</span>
