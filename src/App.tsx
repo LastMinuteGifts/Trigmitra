@@ -366,6 +366,16 @@ function App() {
   const [originalUpload, setOriginalUpload] = useState<File | null>(null)
   const [studentClass, setStudentClass] = useState('')
   const solutionRef = useRef<HTMLElement | null>(null)
+  // Boot preloader: app paint hone ke baad smooth fade-out.
+  useEffect(() => {
+    const el = document.getElementById('boot-screen')
+    if (!el) return
+    const t = window.setTimeout(() => {
+      el.classList.add('done')
+      window.setTimeout(() => el.remove(), 650)
+    }, 1150)
+    return () => window.clearTimeout(t)
+  }, [])
   // Answer milte hi answer section me auto-scroll karo.
   useEffect(() => {
     if (solution) {
