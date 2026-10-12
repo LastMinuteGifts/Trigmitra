@@ -23,6 +23,7 @@ export function buildDemoSolution(): StructuredSolution {
         explanation: 'tan ka matlab hota hai opposite side / adjacent side. Isliye hum 3 aur 4 ko right triangle ki do sides maan lete hain.',
         identityUsed: undefined,
         diagram: undefined,
+        diagramSpec: undefined,
       },
       {
         stepNumber: 2,
@@ -34,6 +35,7 @@ export function buildDemoSolution(): StructuredSolution {
           reason: 'Right triangle ki teesri side nikalne ke liye.',
         },
         diagram: undefined,
+        diagramSpec: undefined,
       },
       {
         stepNumber: 3,
@@ -45,6 +47,7 @@ export function buildDemoSolution(): StructuredSolution {
           reason: 'sin A ki value nikalne ke liye.',
         },
         diagram: undefined,
+        diagramSpec: undefined,
       },
       {
         stepNumber: 4,
@@ -56,6 +59,7 @@ export function buildDemoSolution(): StructuredSolution {
           reason: 'cos A ki value nikalne ke liye.',
         },
         diagram: undefined,
+        diagramSpec: undefined,
       },
       {
         stepNumber: 5,
@@ -63,6 +67,7 @@ export function buildDemoSolution(): StructuredSolution {
         explanation: 'Dono values ko jod do. Denominator same hai, isliye seedha numerator jud jayega.',
         identityUsed: undefined,
         diagram: undefined,
+        diagramSpec: undefined,
       },
     ],
     identitiesUsed: [
@@ -85,6 +90,11 @@ export function buildDemoSolution(): StructuredSolution {
     finalAnswer: '7/5',
     diagram: {
       svg: '<svg viewBox="0 0 220 168" xmlns="http://www.w3.org/2000/svg"><polygon points="30,140 30,40 190,140" fill="none" stroke="#1f2d3f" stroke-width="2.5"/><rect x="30" y="122" width="18" height="18" fill="none" stroke="#1f2d3f" stroke-width="2"/><text x="14" y="95" font-size="13" text-anchor="middle">3</text><text x="110" y="160" font-size="13" text-anchor="middle">4</text><text x="122" y="86" font-size="13" text-anchor="middle">5</text><text x="20" y="158" font-size="13">A</text><text x="20" y="32" font-size="13">B</text><text x="196" y="158" font-size="13">C</text></svg>',
+      caption: '3-4-5 right triangle (A par right angle)',
+    },
+    diagramSpec: {
+      shape: 'rightTriangle',
+      values: ['3', '4', '5'],
       caption: '3-4-5 right triangle (A par right angle)',
     },
     examTip: 'Triangle bana kar sides 3, 4, 5 likho, phir sin aur cos ke formula line-by-line likho.',

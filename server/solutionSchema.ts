@@ -6,6 +6,13 @@ const identitySchema = z.object({
   reason: z.string(),
 })
 
+const diagramSpecSchema = z.object({
+  shape: z.enum(['rightTriangle', 'triangle', 'circle', 'rectangle', 'angle']),
+  // rightTriangle: [leg1, leg2, hyp] | triangle: [AB, BC, CA] | circle: [radius] | rectangle: [length, width] | angle: [degrees]
+  values: z.array(z.string().max(20)).min(1).max(4),
+  caption: z.string().max(200).nullish().transform((value) => value ?? undefined),
+})
+
 const diagramSchema = z.object({
   svg: z.string().min(10).max(8000),
   caption: z.string().max(200).nullish().transform((value) => value ?? undefined),
@@ -19,6 +26,8 @@ const stepSchema = z.object({
   identityUsed: identitySchema.nullish().transform((value) => value ?? undefined),
   // Jis step me figure zaroori ho, wahan diagram. Koi limit nahi.
   diagram: diagramSchema.nullish().transform((value) => value ?? undefined),
+  // Perfect figure ke liye shape+values (engine khud banayega). Raw svg se behtar.
+  diagramSpec: diagramSpecSchema.nullish().transform((value) => value ?? undefined),
 })
 
 export const structuredSolutionSchema = z.object({
@@ -35,6 +44,7 @@ export const structuredSolutionSchema = z.object({
   finalAnswer: z.string(),
   // Figure zaroori ho tabhi AI bhejega, warna field missing rahega.
   diagram: diagramSchema.nullish().transform((value) => value ?? undefined),
+  diagramSpec: diagramSpecSchema.nullish().transform((value) => value ?? undefined),
   examTip: z.string().nullish().transform((value) => value ?? undefined),
   practiceQuestion: z.string().nullish().transform((value) => value ?? undefined),
 })

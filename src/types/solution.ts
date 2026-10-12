@@ -12,10 +12,19 @@ export interface SolutionStep {
   explanation: string
   identityUsed?: IdentityReference
   diagram?: DiagramReference
+  diagramSpec?: DiagramSpec
 }
 
 export interface DiagramReference {
   svg: string
+  caption?: string
+}
+
+export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle'
+
+export interface DiagramSpec {
+  shape: DiagramShape
+  values: string[]
   caption?: string
 }
 
@@ -31,6 +40,7 @@ export interface StructuredSolution {
   identitiesUsed: IdentityReference[]
   finalAnswer: string
   diagram?: DiagramReference
+  diagramSpec?: DiagramSpec
   examTip?: string
   practiceQuestion?: string
 }

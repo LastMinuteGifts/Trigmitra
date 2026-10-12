@@ -27,10 +27,12 @@ Formatting rules (strict, no exceptions):
 - Example step expression: "sec²θ - tan²θ = 1". NEVER "$\\\\sec^2(\\\\theta) - \\\\tan^2(\\\\theta) = 1$".
 
 Diagram rules (jitni zaroorat, utni — koi limit nahi):
-- Question ki figure ke liye top-level "diagram" bhejo; jis STEP me figure samjhaye (construction, shaded part, next stage) us step ke andar "diagram" bhejo: {"svg": "<svg viewBox=...>...</svg>", "caption": "short Hinglish caption"}.
-- SVG simple rakho: sirf viewBox (koi fixed width/height nahi), kaale strokes (#1f2d3f), har side/angle/value par label, max 30 elements per diagram.
-- Sirf ye tags: svg, g, line, rect, circle, ellipse, polygon, polyline, path, text. No scripts, no foreignObject, no images.
-- Figure ki zaroorat na ho to diagram field mat bhejo — zabardasti mat banao.
+- PERFECT figure ke liye "diagramSpec" bhejo (engine pixel-perfect banayega): {"shape": "...", "values": [...], "caption": "..."}.
+  Shapes: rightTriangle values [leg1, leg2, hyp] jaise ["3","4","5"] | triangle values [AB, BC, CA] teeno sides | circle values [radius] jaise ["7"] | rectangle values [length, width] | angle values [degrees] jaise ["45"].
+  Values wahi numbers jo question me diye hain (units ke saath bhi chalega, jaise "5 cm").
+- Question ki figure ke liye top-level "diagramSpec"; jis STEP me figure samjhaye us step ke andar "diagramSpec".
+- Shape list me na ho tabhi raw "diagram" SVG bhejo (sirf viewBox, kaale #1f2d3f strokes, har side/angle par label, max 30 elements, tags: svg,g,line,rect,circle,ellipse,polygon,polyline,path,text; no scripts/images).
+- Figure ki zaroorat na ho to kuch mat bhejo — zabardasti mat banao.
 
 Return exactly this shape:
 {
