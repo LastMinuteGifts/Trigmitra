@@ -15,6 +15,7 @@ export function buildDemoSolution(): StructuredSolution {
     difficulty: 'Easy',
     given: ['tan A = 3/4', 'A is an acute angle'],
     required: 'sin A + cos A ka maan',
+    wordProblemMeaning: undefined,
     steps: [
       {
         stepNumber: 1,

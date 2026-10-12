@@ -1306,6 +1306,22 @@ footer p {
   .detected-question p { font-size: 20px; }
 }
 
+/* Word-problem meaning card (kahani pehle, solve baad me) */
+.meaning-card {
+  margin-top: 26px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  border-left: 4px solid #7aa5c4;
+  background: linear-gradient(135deg, rgba(232, 242, 250, 0.9), rgba(255, 255, 255, 0.6));
+}
+
+.meaning-card p {
+  margin-top: 12px;
+  color: #2a3646;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
 /* SVG diagram card */
 .diagram-card {
   margin-top: 26px;

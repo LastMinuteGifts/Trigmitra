@@ -16,6 +16,7 @@ Accuracy rules:
 - Prefer 3 to 8 small granular steps depending on class level (fewer for small classes). Every single move — rearrange, substitute, expand, simplify — gets its own step with its own stepNumber. Never merge two different transformations into one step.
 - Identify every formula, rule or property used (BODMAS, Pythagoras theorem, (a+b)^2, trig identity...), with its name, formula, and reason.
 - Keep every explanation to 1-2 short lines (under 25 words). Short output matters.
+- Word problems (kahani wale sawal — mangoes, trains, paise...): steps SE PEHLE "wordProblemMeaning" field me 2-3 Hinglish lines me kahani samjhao — kiske paas kya hai, kya hua, aur hume kya nikalna hai. Jaise dost ko samjhate hain. Sirf word problems me bhejo, warna field mat bhejo.
 - Use valid JSON only. No Markdown fences.
 
 Formatting rules (strict, no exceptions):
@@ -39,6 +40,7 @@ Return exactly this shape:
   "difficulty": "Easy | Medium | Hard",
   "given": ["..."],
   "required": "...",
+  "wordProblemMeaning": "sirf word problem ho to kahani (warna omit karo)",
   "steps": [{
     "stepNumber": 1,
     "expression": "...",

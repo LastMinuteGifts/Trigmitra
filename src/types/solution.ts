@@ -26,6 +26,7 @@ export interface StructuredSolution {
   difficulty: Difficulty
   given: string[]
   required: string
+  wordProblemMeaning?: string
   steps: SolutionStep[]
   identitiesUsed: IdentityReference[]
   finalAnswer: string

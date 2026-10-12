@@ -28,6 +28,8 @@ export const structuredSolutionSchema = z.object({
   difficulty: z.enum(['Easy', 'Medium', 'Hard']),
   given: z.array(z.string()),
   required: z.string(),
+  // Sirf word problems me: pehle kahani Hinglish me samjhao. Warna missing.
+  wordProblemMeaning: z.string().max(600).nullish().transform((value) => value ?? undefined),
   steps: z.array(stepSchema),
   identitiesUsed: z.array(identitySchema),
   finalAnswer: z.string(),
