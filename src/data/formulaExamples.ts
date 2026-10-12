@@ -1,0 +1,118 @@
+export interface FormulaExample {
+  q: string
+  steps: string[]
+}
+
+const examples: Record<string, FormulaExample> = {
+  // ---------- TRIGONOMETRY ----------
+  'sin²θ + cos²θ = 1': { q: 'Agar sinθ = 3/5 ho, to cosθ nikalo.', steps: ['cos²θ = 1 − sin²θ = 1 − 9/25 = 16/25', 'cosθ = √(16/25) = 4/5'] },
+  '1 + tan²θ = sec²θ': { q: 'Agar tanθ = 1 ho, to secθ nikalo.', steps: ['sec²θ = 1 + tan²θ = 1 + 1 = 2', 'secθ = √2'] },
+  '1 + cot²θ = cosec²θ': { q: 'Agar cotθ = 2 ho, to cosecθ nikalo.', steps: ['cosec²θ = 1 + cot²θ = 1 + 4 = 5', 'cosecθ = √5'] },
+  'tanθ = sinθ / cosθ': { q: 'sinθ = 1/2 aur cosθ = √3/2 ho, to tanθ nikalo.', steps: ['tanθ = sinθ / cosθ = (1/2) ÷ (√3/2)', 'tanθ = 1/√3'] },
+  'cotθ = cosθ / sinθ': { q: 'sinθ = 3/5 aur cosθ = 4/5 ho, to cotθ nikalo.', steps: ['cotθ = cosθ / sinθ = (4/5) ÷ (3/5)', 'cotθ = 4/3'] },
+  'secθ = 1 / cosθ': { q: 'cosθ = 1/2 ho, to secθ nikalo.', steps: ['secθ = 1 / cosθ = 1 ÷ (1/2)', 'secθ = 2'] },
+  'cosecθ = 1 / sinθ': { q: 'sinθ = 1/4 ho, to cosecθ nikalo.', steps: ['cosecθ = 1 / sinθ = 1 ÷ (1/4)', 'cosecθ = 4'] },
+  'sin(90°−θ) = cosθ': { q: 'sin 60° ka maan cos me likho.', steps: ['sin 60° = sin(90° − 30°) = cos 30°', 'Isliye sin 60° = √3/2'] },
+  'cos(90°−θ) = sinθ': { q: 'cos 60° ka maan sin me likho.', steps: ['cos 60° = cos(90° − 30°) = sin 30°', 'Isliye cos 60° = 1/2'] },
+  'sin 2θ = 2 sinθ cosθ': { q: 'θ = 30° ho, to sin 60° nikalo.', steps: ['sin 60° = 2 × sin 30° × cos 30°', '= 2 × (1/2) × (√3/2) = √3/2'] },
+  'cos 2θ = cos²θ − sin²θ': { q: 'θ = 60° ho, to cos 120° nikalo.', steps: ['cos 120° = cos²60° − sin²60°', '= 1/4 − 3/4 = −1/2'] },
+  'sin 30° = 1/2, sin 45° = 1/√2, sin 60° = √3/2': { q: 'sin 30° + cos 60° ka maan nikalo.', steps: ['sin 30° = 1/2 aur cos 60° = 1/2', 'Jod do: 1/2 + 1/2 = 1'] },
+  'sec²θ − tan²θ = 1': { q: 'secθ = 2 ho, to tanθ nikalo.', steps: ['tan²θ = sec²θ − 1 = 4 − 1 = 3', 'tanθ = √3'] },
+  'cosec²θ − cot²θ = 1': { q: 'cosecθ = √2 ho, to cotθ nikalo.', steps: ['cot²θ = cosec²θ − 1 = 2 − 1 = 1', 'cotθ = 1'] },
+  'sin²θ = 1 − cos²θ': { q: 'cosθ = 0.6 ho, to sinθ nikalo.', steps: ['sin²θ = 1 − 0.36 = 0.64', 'sinθ = 0.8'] },
+  'cos 0° = 1, cos 45° = 1/√2, cos 90° = 0': { q: 'cos 0° + cos 90° ka maan nikalo.', steps: ['cos 0° = 1 aur cos 90° = 0', 'Jod do: 1 + 0 = 1'] },
+  'Area of triangle = ½ × a × b × sin C': { q: 'a = 4, b = 6, C = 30° ho, to area nikalo.', steps: ['Area = ½ × 4 × 6 × sin 30°', '= 12 × 1/2 = 6'] },
+  // ---------- ALGEBRA ----------
+  '(a + b)² = a² + 2ab + b²': { q: '(x + 3)² ko expand karo.', steps: ['a = x, b = 3 rakho', '= x² + 2(x)(3) + 9 = x² + 6x + 9'] },
+  '(a − b)² = a² − 2ab + b²': { q: '(2x − 1)² ko expand karo.', steps: ['a = 2x, b = 1 rakho', '= 4x² − 4x + 1'] },
+  'a² − b² = (a + b)(a − b)': { q: 'Bina calculator 51² − 49² nikalo.', steps: ['= (51 + 49)(51 − 49)', '= 100 × 2 = 200'] },
+  '(a + b)³ = a³ + 3a²b + 3ab² + b³': { q: '(x + 1)³ ko expand karo.', steps: ['a = x, b = 1 rakho', '= x³ + 3x² + 3x + 1'] },
+  'a³ + b³ = (a + b)(a² − ab + b²)': { q: 'x³ + 8 ka factor karo.', steps: ['8 = 2³, to a = x, b = 2', '= (x + 2)(x² − 2x + 4)'] },
+  'a³ − b³ = (a − b)(a² + ab + b²)': { q: 'x³ − 27 ka factor karo.', steps: ['27 = 3³, to a = x, b = 3', '= (x − 3)(x² + 3x + 9)'] },
+  'x = (−b ± √(b²−4ac)) / 2a': { q: 'x² − 5x + 6 = 0 hal karo.', steps: ['a = 1, b = −5, c = 6 rakho', 'x = (5 ± √(25 − 24))/2 = (5 ± 1)/2', 'x = 2 ya x = 3'] },
+  'D = b² − 4ac': { q: 'x² + 4x + 4 = 0 me roots kaisi hongi?', steps: ['D = 16 − 16 = 0', 'D = 0 matlab dono roots equal'] },
+  'aᵐ × aⁿ = aᵐ⁺ⁿ': { q: '2³ × 2² nikalo.', steps: ['Base same hai, powers jod do: 3 + 2 = 5', '= 2⁵ = 32'] },
+  '(aᵐ)ⁿ = aᵐⁿ': { q: '(3²)³ nikalo.', steps: ['Powers guna karo: 2 × 3 = 6', '= 3⁶ = 729'] },
+  '(x + a)(x + b) = x² + (a+b)x + ab': { q: '(x + 4)(x + 7) expand karo.', steps: ['a = 4, b = 7: x² + (4+7)x + 28', '= x² + 11x + 28'] },
+  '(a − b)³ = a³ − 3a²b + 3ab² − b³': { q: '(x − 2)³ expand karo.', steps: ['a = x, b = 2 rakho', '= x³ − 6x² + 12x − 8'] },
+  'aᵐ ÷ aⁿ = aᵐ⁻ⁿ': { q: '5⁷ ÷ 5⁴ nikalo.', steps: ['Powers ghatao: 7 − 4 = 3', '= 5³ = 125'] },
+  'a⁰ = 1, a⁻ⁿ = 1/aⁿ': { q: '7⁰ aur 2⁻³ nikalo.', steps: ['Kisi bhi number ki power 0 = 1', '2⁻³ = 1/2³ = 1/8'] },
+  '(ab)ⁿ = aⁿbⁿ': { q: '(2 × 3)² nikalo.', steps: ['= 2² × 3²', '= 4 × 9 = 36'] },
+  '√a × √b = √(ab)': { q: '√4 × √9 nikalo.', steps: ['= √(4 × 9) = √36', '= 6'] },
+  // ---------- MENSURATION ----------
+  'Area of circle = πr²': { q: 'r = 7 cm wale circle ka area (π = 22/7).', steps: ['Area = 22/7 × 7 × 7', '= 22 × 7 = 154 cm²'] },
+  'Circumference = 2πr': { q: 'r = 7 cm wale circle ki circumference.', steps: ['= 2 × 22/7 × 7', '= 44 cm'] },
+  'Area of triangle = ½ × base × height': { q: 'Base 8 cm, height 5 cm — area?', steps: ['Area = ½ × 8 × 5', '= 20 cm²'] },
+  'Area of rectangle = l × b': { q: 'l = 9 m, b = 4 m — area?', steps: ['Area = 9 × 4', '= 36 m²'] },
+  'Perimeter = 2 × (l + b)': { q: 'l = 9 m, b = 4 m — perimeter?', steps: ['= 2 × (9 + 4)', '= 2 × 13 = 26 m'] },
+  'Area of square = side²': { q: 'Side 6 cm wale square ka area?', steps: ['Area = 6²', '= 36 cm²'] },
+  'Area of trapezium = ½ × (a + b) × h': { q: 'Parallel sides 5, 9 aur h = 4 — area?', steps: ['= ½ × (5 + 9) × 4', '= ½ × 14 × 4 = 28'] },
+  'Curved surface of cylinder = 2πrh': { q: 'r = 7, h = 10 — CSA?', steps: ['= 2 × 22/7 × 7 × 10', '= 440'] },
+  'Volume of cylinder = πr²h': { q: 'r = 7, h = 10 — volume?', steps: ['= 22/7 × 49 × 10', '= 1540'] },
+  'Volume of cone = ⅓πr²h': { q: 'r = 3, h = 7 — volume? (π = 22/7)', steps: ['= ⅓ × 22/7 × 9 × 7', '= 22 × 3 = 66'] },
+  'Volume of sphere = 4/3 πr³': { q: 'r = 3 — volume? (π = 22/7)', steps: ['= 4/3 × 22/7 × 27', '= 792/7 ≈ 113.14'] },
+  'Surface of sphere = 4πr²': { q: 'r = 7 — surface area?', steps: ['= 4 × 22/7 × 49', '= 616'] },
+  'Volume of cuboid = l × b × h': { q: '4 × 3 × 2 cuboid ka volume?', steps: ['= 4 × 3 × 2', '= 24'] },
+  'Area of parallelogram = base × height': { q: 'Base 10, height 6 — area?', steps: ['= 10 × 6', '= 60'] },
+  'Area of rhombus = ½ × d₁ × d₂': { q: 'Diagonals 8 aur 6 — area?', steps: ['= ½ × 8 × 6', '= 24'] },
+  'Cube: surface = 6a², volume = a³': { q: 'a = 5 cube ka surface aur volume?', steps: ['Surface = 6 × 25 = 150', 'Volume = 125'] },
+  'Cuboid surface = 2(lb + bh + hl)': { q: 'l = 4, b = 3, h = 2 — surface?', steps: ['= 2(12 + 6 + 8)', '= 2 × 26 = 52'] },
+  'Curved surface of cone = πrl': { q: 'r = 7, l = 25 — CSA?', steps: ['= 22/7 × 7 × 25', '= 550'] },
+  'Hemisphere: CSA = 2πr², volume = ⅔πr³': { q: 'r = 7 — CSA aur volume? (π = 22/7)', steps: ['CSA = 2 × 22/7 × 49 = 308', 'Volume = ⅔ × 22/7 × 343 ≈ 718.67'] },
+  "s = (a+b+c)/2, Area = √(s(s−a)(s−b)(s−c))": { q: 'Sides 3, 4, 5 — Heron se area?', steps: ['s = (3+4+5)/2 = 6', 'Area = √(6×3×2×1) = √36 = 6'] },
+  // ---------- ARITHMETIC ----------
+  'BODMAS: ( ) → ÷ × → + −': { q: '2 + 3 × 4 − 6 ÷ 2 hal karo.', steps: ['Pehle × ÷: 2 + 12 − 3', 'Phir + −: 14 − 3 = 11'] },
+  'SI = P × R × T / 100': { q: 'P = 5000, R = 4%, T = 3 saal — SI?', steps: ['SI = 5000 × 4 × 3 / 100', '= 600'] },
+  'Amount = P(1 + R/100)ⁿ': { q: 'P = 1000, R = 10%, n = 2 — amount?', steps: ['= 1000 × (1.1)²', '= 1000 × 1.21 = 1210'] },
+  'Profit = SP − CP': { q: 'CP = 80, SP = 100 — profit?', steps: ['Profit = 100 − 80', '= 20'] },
+  'Profit% = Profit × 100 / CP': { q: 'Profit 20, CP 80 — profit%?', steps: ['= 20 × 100 / 80', '= 25%'] },
+  'HCF × LCM = product of numbers': { q: 'HCF = 4, LCM = 60, ek number 12 — doosra?', steps: ['Doosra = 4 × 60 / 12', '= 20'] },
+  'Speed = Distance / Time': { q: '120 km in 2 hours — speed?', steps: ['= 120 / 2', '= 60 km/h'] },
+  'Average = sum ÷ count': { q: '4, 6, 8, 10, 12 ka average?', steps: ['Sum = 40, count = 5', '= 40 / 5 = 8'] },
+  'Loss = CP − SP, Loss% = Loss × 100 / CP': { q: 'CP = 200, SP = 170 — loss%?', steps: ['Loss = 30', '= 30 × 100 / 200 = 15%'] },
+  'Discount = MP − SP': { q: 'MP = 500, SP = 425 — discount?', steps: ['= 500 − 425', '= 75'] },
+  'a:b :: c:d means ad = bc': { q: '2:3 :: 8:x me x nikalo.', steps: ['2x = 3 × 8 = 24', 'x = 12'] },
+  'Perimeter of triangle = a + b + c': { q: 'Sides 5, 6, 7 — perimeter?', steps: ['= 5 + 6 + 7', '= 18'] },
+  'x% = x/100, fraction to %: ×100': { q: '80 ka 25% kitna?', steps: ['= 25 × 80 / 100', '= 20'] },
+  '1 km = 1000 m, 1 m = 100 cm': { q: '3 km ko metre me badlo.', steps: ['1 km = 1000 m', '3 × 1000 = 3000 m'] },
+  '1 kg = 1000 g, 1 L = 1000 mL': { q: '2.5 kg ko gram me badlo.', steps: ['1 kg = 1000 g', '2.5 × 1000 = 2500 g'] },
+  'a/b + c/d = (ad + bc) / bd': { q: '1/2 + 1/3 jodo.', steps: ['= (3 + 2) / 6', '= 5/6'] },
+  'Reciprocal of a/b = b/a': { q: '3/7 ka reciprocal?', steps: ['Numerator-denominator palto', '= 7/3'] },
+  // ---------- GEOMETRY ----------
+  'a² + b² = c²': { q: 'Legs 3 aur 4 — hypotenuse?', steps: ['c² = 9 + 16 = 25', 'c = 5'] },
+  'Sum of triangle angles = 180°': { q: 'Do angles 60° aur 70° — teesra?', steps: ['Teesra = 180 − 60 − 70', '= 50°'] },
+  'Sum of quadrilateral angles = 360°': { q: 'Teen angles 90°, 90°, 90° — chautha?', steps: ['= 360 − 270', '= 90°'] },
+  'Exterior angle = sum of opposite interiors': { q: 'Interior opposites 50° aur 60° — exterior?', steps: ['Exterior = 50 + 60', '= 110°'] },
+  'Distance = √((x₂−x₁)² + (y₂−y₁)²)': { q: '(0,0) aur (3,4) ke beech doori?', steps: ['= √(9 + 16)', '= √25 = 5'] },
+  'Midpoint = ((x₁+x₂)/2, (y₁+y₂)/2)': { q: '(2,4) aur (6,10) ka midpoint?', steps: ['= ((2+6)/2, (4+10)/2)', '= (4, 7)'] },
+  'Slope m = (y₂−y₁) / (x₂−x₁)': { q: '(1,2) aur (4,8) se slope?', steps: ['m = (8−2)/(4−1)', '= 6/3 = 2'] },
+  'Angle in a semicircle = 90°': { q: 'Diameter par bana angle kitna?', steps: ['Diameter semicircle banata hai', 'Angle = 90°'] },
+  'Linear pair angles sum = 180°': { q: 'Ek angle 120° — saath wala?', steps: ['= 180 − 120', '= 60°'] },
+  'Vertically opposite angles are equal': { q: 'Ek angle 75° — opposite?', steps: ['Vertically opposite barabar hote hain', '= 75°'] },
+  'Sum of any 2 sides > third side': { q: 'Kya 4, 5, 9 se triangle banega?', steps: ['4 + 5 = 9, jo > 9 nahi hai', 'Nahi banega'] },
+  'Line ∥ one side divides other two proportionally': { q: 'AD = 2, DB = 3, AE = 4 — EC?', steps: ['2/3 = 4/EC', 'EC = 12/2 = 6'] },
+  'Congruent by SSS, SAS, ASA, RHS': { q: 'Teeno sides barabar — kaunsa rule?', steps: ['Side-Side-Side match', 'SSS se congruent'] },
+  'Equal chords are equidistant from centre': { q: 'Do chords dono 6 cm — centre se doori?', steps: ['Equal chords, equal distance', 'Dono ki doori barabar'] },
+  'Corresponding angles are equal': { q: 'Parallel lines, ek angle 70° — corresponding?', steps: ['Corresponding angles barabar', '= 70°'] },
+  // ---------- STATISTICS ----------
+  'Mean = Σx / n': { q: '5, 10, 15 ka mean?', steps: ['Sum = 30, n = 3', '= 30/3 = 10'] },
+  'Median = middle value of ordered data': { q: '3, 7, 9, 12, 15 ka median?', steps: ['Beach wala (3rd) number lo', '= 9'] },
+  'Mode = most frequent value': { q: '2, 4, 4, 4, 7 ka mode?', steps: ['Sabse zyada baar 4 aaya', '= 4'] },
+  'Range = Max − Min': { q: 'Max 45, Min 12 — range?', steps: ['= 45 − 12', '= 33'] },
+  'Probability = favourable / total outcomes': { q: 'Dice par 6 aane ki probability?', steps: ['Favourable 1, total 6', '= 1/6'] },
+  'Median (even n) = average of 2 middle values': { q: '4, 8, 10, 12 ka median?', steps: ['Beech ke 2: 8, 10', '= (8+10)/2 = 9'] },
+  'Frequency = count of a value': { q: '1, 2, 2, 3 me 2 ki frequency?', steps: ['2 do baar aaya', '= 2'] },
+  // ---------- NUMBER SYSTEM ----------
+  'Rational number = p/q, q ≠ 0': { q: 'Kya 3/4 rational hai?', steps: ['p = 3, q = 4 (≠ 0)', 'Haan, rational hai'] },
+  '√2 ≈ 1.414, √3 ≈ 1.732': { q: '2 × √2 approx nikalo.', steps: ['√2 ≈ 1.414', '≈ 2.828'] },
+  'Natural ⊂ Whole ⊂ Integer ⊂ Rational': { q: '−5 kaunsi set me hai?', steps: ['Natural/Whole me nahi (negative)', 'Integer (aur Rational) me hai'] },
+  'Irrational = non-terminating, non-repeating': { q: '0.101101110... kaisa number?', steps: ['Na rukta, na repeat hota', 'Irrational hai'] },
+}
+
+function key(formula: string): string {
+  return formula.trim().replace(/\s+/g, ' ')
+}
+
+export function getFormulaExample(formula: string): FormulaExample | undefined {
+  return examples[key(formula)]
+}
