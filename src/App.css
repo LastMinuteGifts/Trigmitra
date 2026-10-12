@@ -538,6 +538,44 @@ h1 em,
   font-weight: 700;
 }
 
+.science-chip {
+  position: absolute;
+  left: 14px;
+  top: 34px;
+  z-index: 4;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(232, 242, 250, 0.94);
+  border: 1px solid rgba(90, 140, 190, 0.28);
+  box-shadow: 0 16px 28px rgba(24, 35, 53, 0.08);
+  color: #2f5b85;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sci-word {
+  display: inline-block;
+}
+
+.subject-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.subject-tags span {
+  padding: 6px 13px;
+  border-radius: 999px;
+  background: rgba(240, 91, 69, 0.1);
+  color: #c24a38;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .marquee-strip {
   display: flex;
   align-items: center;
