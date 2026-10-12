@@ -114,7 +114,43 @@ function key(formula: string): string {
 }
 
 export function getFormulaExample(formula: string): FormulaExample | undefined {
-  return examples[key(formula)] ?? extraExamples[key(formula)]
+  return examples[key(formula)] ?? extraExamples[key(formula)] ?? physicsExamples[key(formula)]
+}
+
+const physicsExamples: Record<string, FormulaExample> = {
+  // ---------- MOTION ----------
+  'v = u + at': { q: 'u = 0, a = 2 m/s², t = 5 s — v?', steps: ['v = 0 + 2 × 5', '= 10 m/s'] },
+  's = ut + ½at²': { q: 'u = 0, a = 2, t = 5 — s?', steps: ['s = 0 + ½ × 2 × 25', '= 25 m'] },
+  'v² = u² + 2as': { q: 'u = 0, a = 2, s = 25 — v?', steps: ['v² = 0 + 2 × 2 × 25 = 100', 'v = 10 m/s'] },
+  'Average speed = total distance / total time': { q: '100 km in 2 h, phir 60 km in 1 h — avg speed?', steps: ['Total 160 km, time 3 h', '= 53.33 km/h'] },
+  // ---------- FORCE & ENERGY ----------
+  'F = ma': { q: 'm = 5 kg, a = 2 m/s² — F?', steps: ['= 5 × 2', '= 10 N'] },
+  'Weight W = mg (g = 9.8 m/s²)': { q: '5 kg ka weight?', steps: ['= 5 × 9.8', '= 49 N'] },
+  'Momentum p = mv': { q: 'm = 2 kg, v = 3 m/s — p?', steps: ['= 2 × 3', '= 6 kg·m/s'] },
+  'Work W = F × s': { q: 'F = 10 N, s = 5 m — W?', steps: ['= 10 × 5', '= 50 J'] },
+  'KE = ½mv²': { q: 'm = 2 kg, v = 10 m/s — KE?', steps: ['= ½ × 2 × 100', '= 100 J'] },
+  'PE = mgh': { q: 'm = 2 kg, h = 5 m — PE? (g = 10)', steps: ['= 2 × 10 × 5', '= 100 J'] },
+  'Power P = W/t': { q: 'W = 100 J, t = 5 s — P?', steps: ['= 100/5', '= 20 W'] },
+  'Pressure P = F/A': { q: 'F = 100 N, A = 2 m² — P?', steps: ['= 100/2', '= 50 Pa'] },
+  'Density ρ = m/V': { q: 'm = 10 kg, V = 2 m³ — ρ?', steps: ['= 10/2', '= 5 kg/m³'] },
+  'F = GmM/d²': { q: 'Distance double ho to F?', steps: ['F ∝ 1/d²', '1/4 ho jayega'] },
+  'g = GM/R²': { q: 'Earth par g kitna?', steps: ['Formula se nikalta hai', '≈ 9.8 m/s²'] },
+  // ---------- LIGHT ----------
+  'Mirror: 1/v + 1/u = 1/f': { q: 'u = −30 cm, f = −15 cm — v?', steps: ['1/v = 1/−15 − 1/−30 = −1/30', 'v = −30 cm (real image)'] },
+  'Lens: 1/v − 1/u = 1/f': { q: 'u = −20 cm, f = 10 cm — v?', steps: ['1/v = 1/10 + 1/−20 = 1/20', 'v = +20 cm'] },
+  'Magnification m = h′/h = −v/u': { q: 'v = −30, u = −30 — m?', steps: ['m = −(−30)/(−30)', '= −1 (inverted, same size)'] },
+  'Angle i = angle r': { q: 'Ray 40° par aaye — reflected angle?', steps: ['i = r', '= 40°'] },
+  "Snell: n = sin i / sin r": { q: 'i = 45°, r = 30° — n?', steps: ['= sin45/sin30 = 0.707/0.5', '≈ 1.414'] },
+  'Lens power P = 100/f (f in cm)': { q: 'f = 25 cm — power?', steps: ['= 100/25', '= +4 D'] },
+  // ---------- ELECTRICITY ----------
+  'V = IR': { q: 'I = 2 A, R = 5 Ω — V?', steps: ['= 2 × 5', '= 10 V'] },
+  'R = ρL/A': { q: 'Length double ho to R?', steps: ['R ∝ L', 'Double ho jayega'] },
+  'Series: R = R₁ + R₂': { q: '2 Ω + 3 Ω series — R?', steps: ['= 2 + 3', '= 5 Ω'] },
+  'Parallel: 1/R = 1/R₁ + 1/R₂': { q: '2 Ω ∥ 2 Ω — R?', steps: ['1/R = 1/2 + 1/2 = 1', 'R = 1 Ω'] },
+  'P = VI = I²R = V²/R': { q: 'V = 10 V, I = 2 A — P?', steps: ['= 10 × 2', '= 20 W'] },
+  'Q = It': { q: 'I = 2 A, t = 5 s — Q?', steps: ['= 2 × 5', '= 10 C'] },
+  'Heat H = I²Rt': { q: 'I = 2, R = 5, t = 10 — H?', steps: ['= 4 × 5 × 10', '= 200 J'] },
+  'Energy = Power × Time (kWh)': { q: '100 W bulb 5 hours — units?', steps: ['= 0.1 × 5', '= 0.5 kWh'] },
 }
 
 const extraExamples: Record<string, FormulaExample> = {

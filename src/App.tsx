@@ -227,6 +227,55 @@ const formulaCategories: FormulaCategory[] = [
       { formula: '(√a+√b)(√a−√b) = a−b', label: 'Surd identity' },
     ],
   },
+  {
+    name: 'Motion',
+    formulas: [
+      { formula: 'v = u + at', label: 'First equation' },
+      { formula: 's = ut + ½at²', label: 'Second equation' },
+      { formula: 'v² = u² + 2as', label: 'Third equation' },
+      { formula: 'Average speed = total distance / total time', label: 'Average speed' },
+    ],
+  },
+  {
+    name: 'Force & Energy',
+    formulas: [
+      { formula: 'F = ma', label: "Newton's 2nd law" },
+      { formula: 'Weight W = mg (g = 9.8 m/s²)', label: 'Weight' },
+      { formula: 'Momentum p = mv', label: 'Momentum' },
+      { formula: 'Work W = F × s', label: 'Work' },
+      { formula: 'KE = ½mv²', label: 'Kinetic energy' },
+      { formula: 'PE = mgh', label: 'Potential energy' },
+      { formula: 'Power P = W/t', label: 'Power' },
+      { formula: 'Pressure P = F/A', label: 'Pressure' },
+      { formula: 'Density ρ = m/V', label: 'Density' },
+      { formula: 'F = GmM/d²', label: 'Gravitation' },
+      { formula: 'g = GM/R²', label: 'g on planet' },
+    ],
+  },
+  {
+    name: 'Light',
+    formulas: [
+      { formula: 'Mirror: 1/v + 1/u = 1/f', label: 'Mirror formula' },
+      { formula: 'Lens: 1/v − 1/u = 1/f', label: 'Lens formula' },
+      { formula: 'Magnification m = h′/h = −v/u', label: 'Magnification' },
+      { formula: 'Angle i = angle r', label: 'Reflection' },
+      { formula: 'Snell: n = sin i / sin r', label: "Snell's law" },
+      { formula: 'Lens power P = 100/f (f in cm)', label: 'Lens power' },
+    ],
+  },
+  {
+    name: 'Electricity',
+    formulas: [
+      { formula: 'V = IR', label: "Ohm's law" },
+      { formula: 'R = ρL/A', label: 'Resistance' },
+      { formula: 'Series: R = R₁ + R₂', label: 'Series combo' },
+      { formula: 'Parallel: 1/R = 1/R₁ + 1/R₂', label: 'Parallel combo' },
+      { formula: 'P = VI = I²R = V²/R', label: 'Electric power' },
+      { formula: 'Q = It', label: 'Charge' },
+      { formula: 'Heat H = I²Rt', label: 'Heating effect' },
+      { formula: 'Energy = Power × Time (kWh)', label: 'Electric energy' },
+    ],
+  },
 ]
 
 const featuredFormulas = [
@@ -261,6 +310,10 @@ const classTopics = [
   'CLASS 8 · EQUATIONS',
   'CLASS 9 · GEOMETRY',
   'CLASS 10 · TRIGONOMETRY',
+  'CLASS 8 · FORCE',
+  'CLASS 9 · MOTION',
+  'CLASS 10 · LIGHT',
+  'CLASS 10 · ELECTRICITY',
 ]
 
 // Figure renderer: perfect engine (diagramSpec) pehle, raw SVG fallback baad me.
@@ -476,7 +529,7 @@ function App() {
       <section className="marquee-strip" aria-label="AnkNawab features"><span>LEARN THE WHY</span><i>✦</i><span>NOT JUST THE ANSWER</span><i>✦</i><span>EXAM READY, ALWAYS</span><i>✦</i><span>LEARN THE WHY</span></section>
       <section className="section-block how-section" id="how-it-works"><div className="section-heading"><div><span className="section-kicker">THE ANKNAWAB METHOD</span><h2>From stuck to<br /><em>sorted.</em></h2></div><p>Three simple steps between you<br />and that “ohhh, samajh gaya!” moment.</p></div><div className="steps-grid">{steps.map((step, index) => { const Icon = step.icon; return <motion.article className="step-card" key={step.number} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * .08 }}><div className="step-top"><span className="step-number">{step.number}</span><div className="step-icon"><Icon size={20} /></div></div><h3>{step.title}</h3><p>{step.copy}</p><ChevronRight className="step-arrow" size={18} /></motion.article> })}</div></section>
       <section className="section-block identities-section" id="identities"><div className="section-heading"><div><span className="section-kicker">QUICK REFERENCE</span><h2>Formulas worth<br /><em>knowing.</em></h2></div><button className="outline-button" type="button" onClick={() => setShowAllIdentities((value) => !value)}>{showAllIdentities ? 'Hide formulas' : 'View all formulas'} <ArrowRight size={16} /></button></div><div className="cat-chips" role="tablist" aria-label="Formula categories">{['All', ...formulaCategories.map((c) => c.name)].map((name) => <button key={name} role="tab" aria-selected={activeCategory === name} className={activeCategory === name ? 'cat-chip active' : 'cat-chip'} onClick={() => setActiveCategory(name)}>{name}</button>)}</div>{activeCategory === 'All' && !showAllIdentities ? <div className="identity-grid">{featuredFormulas.map((identity) => <article className={`identity-card ${identity.tone}`} key={identity.formula} onClick={() => openExample(identity.formula, identity.label)}><div className="identity-icon"><FileText size={18} /></div><span>{identity.label}</span><h3>{identity.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${identity.label}`}><CircleHelp size={16} /></button></article>)}</div> : <div className="all-identities-panel">{(activeCategory === 'All' ? formulaCategories : formulaCategories.filter((c) => c.name === activeCategory)).map((cat, gi) => <div key={cat.name}><div className="all-identities-header"><span className="section-kicker">{cat.name.toUpperCase()}</span><h3>{cat.name} formulas</h3></div><div className="identity-grid full-grid">{cat.formulas.map((entry, fi) => { const tone = tones[(gi + fi) % tones.length]; return <article className={`identity-card ${tone}`} key={`${cat.name}-${entry.formula}`} onClick={() => openExample(entry.formula, entry.label)}><div className="identity-icon"><FileText size={18} /></div><span>{entry.label}</span><h3>{entry.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${entry.label}`}><CircleHelp size={16} /></button></article> })}</div></div>)}</div>}</section>
-      <section className="practice-band" id="practice"><div><span className="section-kicker">READY WHEN YOU ARE</span><h2>One question can<br /><em>change everything.</em></h2></div><div className="practice-cta"><p>Bring your toughest maths problem, Class 1 to 10. We’ll bring the patience.</p><button className="dark-button" onClick={openUploader}>Start solving <ArrowRight size={17} /></button></div></section>
+      <section className="practice-band" id="practice"><div><span className="section-kicker">READY WHEN YOU ARE</span><h2>One question can<br /><em>change everything.</em></h2></div><div className="practice-cta"><p>Bring your toughest maths or physics problem, Class 1 to 10. We’ll bring the patience.</p><button className="dark-button" onClick={openUploader}>Start solving <ArrowRight size={17} /></button></div></section>
     </main>
     {solution && <section ref={solutionRef} className="solution-panel" aria-labelledby="solution-title"><div className="solution-heading"><div><span className="section-kicker">YOUR ANKNAWAB SOLUTION</span><h2 id="solution-title">Question samjho.<br /><em>Phir solve karo.</em></h2></div><button className="close-solution" onClick={() => { setSolution(null); setIsDemoSolution(false) }}><X size={18} /> Close</button></div>{isDemoSolution && <div style={{ background: '#fff7e6', border: '1px solid #f0c36d', borderRadius: 12, padding: '10px 14px', marginBottom: 16 }}>⚠️ <b>Demo mode:</b> AI busy hai ya key configure nahi hai, isliye sample solution dikh raha hai. <button type="button" onClick={analyzeSolution} style={{ marginLeft: 8, padding: '6px 12px', borderRadius: 8, border: '1px solid #f0c36d', background: '#fff', fontWeight: 700, cursor: 'pointer' }}>Dobara try karo</button></div>}<div className="solution-meta"><div><span>TOPIC</span><b>{solution.topic}</b></div><div><span>TYPE</span><b>{solution.questionType}</b></div><div><span>DIFFICULTY</span><b>{solution.difficulty}</b></div></div><div className="detected-question"><span className="section-kicker">QUESTION DETECTED</span><p>{solution.question}</p><small>Need: {solution.required}</small></div>{solution.wordProblemMeaning && <div className="meaning-card"><span className="section-kicker">PEHLE YE SAMJHO</span><p>{solution.wordProblemMeaning}</p></div>}{(solution.diagram || solution.diagramSpec) && <Figure diagram={solution.diagram} spec={solution.diagramSpec} label="DIAGRAM" />}<div className="solution-steps">{solution.steps.map((step) => <article className="solution-step" key={step.stepNumber}><div className="step-badge">{String(step.stepNumber).padStart(2, '0')}</div><div><span className="section-kicker">STEP {step.stepNumber}</span><h3>{step.expression}</h3><p>{step.explanation}</p>{step.identityUsed && <div className="used-identity"><strong>{step.identityUsed.name}</strong><span>{step.identityUsed.formula}</span><small>{step.identityUsed.reason}</small></div>}{(step.diagram || step.diagramSpec) && <Figure diagram={step.diagram} spec={step.diagramSpec} small />}</div></article>)}</div><div className="final-answer"><span className="section-kicker">FINAL ANSWER</span><h3>{solution.finalAnswer}</h3><p>Exam tip: {solution.examTip ?? 'Steps ko clearly line-by-line likho.'}</p></div></section>}
     {exampleOpen && <div className="example-overlay" role="dialog" aria-modal="true" aria-label="Formula example" onClick={() => setExampleOpen(null)}><div className="example-box" onClick={(event) => event.stopPropagation()}><div className="example-head"><div><span className="section-kicker">{exampleOpen.cat.toUpperCase()}</span><h3>{exampleOpen.formula}</h3></div><button className="close-upload" aria-label="Close example" onClick={() => setExampleOpen(null)}><X size={20} /></button></div><p className="example-label">{exampleOpen.label}</p>{(() => { const ex = getFormulaExample(exampleOpen.formula); if (!ex) return <p className="example-label">Is formula ka example jald aa raha hai.</p>; return <><div className="example-q"><span className="section-kicker">EXAMPLE</span><p>{ex.q}</p></div><ol className="example-steps">{ex.steps.map((s, i) => <li key={i}>{s}</li>)}</ol></> })()}</div></div>}
