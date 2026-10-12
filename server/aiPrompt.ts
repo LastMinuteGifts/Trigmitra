@@ -29,7 +29,7 @@ Diagram rules (figure zaroori ho tabhi):
 - Geometry, mensuration, trig ya graph wale question me "diagram" object bhi bhejo: {"svg": "<svg viewBox=...>...</svg>", "caption": "short Hinglish caption"}.
 - SVG simple rakho: sirf viewBox (koi fixed width/height nahi), kaale strokes (#1f2d3f), har side/angle/value par label, max 30 elements.
 - Sirf ye tags: svg, g, line, rect, circle, ellipse, polygon, polyline, path, text. No scripts, no foreignObject, no images.
-- Figure ki zaroorat na ho (simple arithmetic/algebra) to "diagram" field mat bhejo.
+- Maximum ONE diagram per answer — never send more than one. Figure ki zaroorat na ho (simple arithmetic/algebra) to "diagram" field mat bhejo.
 
 Return exactly this shape:
 {
