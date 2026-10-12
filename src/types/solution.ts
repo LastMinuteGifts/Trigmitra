@@ -20,7 +20,7 @@ export interface DiagramReference {
   caption?: string
 }
 
-export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle'
+export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle' | 'bpt'
 
 export interface DiagramSpec {
   shape: DiagramShape

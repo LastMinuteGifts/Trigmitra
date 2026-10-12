@@ -4,7 +4,7 @@
  * Galat/invalid values par '' return hota hai (phir raw SVG fallback chalta hai).
  */
 
-export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle'
+export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle' | 'bpt'
 
 export interface DiagramSpec {
   shape: DiagramShape
@@ -143,8 +143,42 @@ function rectangle(values: string[]): string {
   return out
 }
 
-function angle(values: string[]): string {
-  const deg = num(values[0] ?? '')
+/**
+ * BPT figure: triangle ABC, DE ∥ BC, D on AB, E on AC.
+ * values = [AD, DB, AE] (jaise ["3 cm","2 cm","4.5 cm"]); EC khud nikalta hai.
+ */
+function bpt(values: string[]): string {
+  const ad = num(values[0] ?? '')
+  const db = num(values[1] ?? '')
+  const ae = num(values[2] ?? '')
+  if (ad === null || db === null || ae === null) return ''
+  if (ad <= 0 || db <= 0 || ae <= 0) return ''
+  const ec = (db * ae) / ad
+  const unitMatch = /[a-zA-Z%°]+/.exec(values[2] ?? values[0] ?? '')
+  const unit = unitMatch ? ` ${unitMatch[0]}` : ''
+  const ecLabel = `${Math.round(ec * 100) / 100}${unit}`
+  const t = ad / (ad + db)
+  if (!(t > 0 && t < 1)) return ''
+  const A: [number, number] = [120, 22]
+  const B: [number, number] = [38, 160]
+  const C: [number, number] = [202, 160]
+  const D: [number, number] = [A[0] + t * (B[0] - A[0]), A[1] + t * (B[1] - A[1])]
+  const E: [number, number] = [A[0] + t * (C[0] - A[0]), A[1] + t * (C[1] - A[1])]
+  let out = poly([A, B, C])
+  out += line(D[0], D[1], E[0], E[1])
+  out += text((A[0] + D[0]) / 2 - 15, (A[1] + D[1]) / 2, values[0], 12)
+  out += text((D[0] + B[0]) / 2 - 15, (D[1] + B[1]) / 2, values[1], 12)
+  out += text((A[0] + E[0]) / 2 + 15, (A[1] + E[1]) / 2, values[2], 12)
+  out += text((E[0] + C[0]) / 2 + 15, (E[1] + C[1]) / 2, ecLabel, 12)
+  out += text(A[0], A[1] - 10, 'A')
+  out += text(B[0] - 11, B[1] + 5, 'B')
+  out += text(C[0] + 11, C[1] + 5, 'C')
+  out += text(D[0] - 11, D[1] + 4, 'D')
+  out += text(E[0] + 11, E[1] + 4, 'E')
+  return out
+}
+
+function angle(values: string[]): string {  const deg = num(values[0] ?? '')
   if (deg === null || deg <= 0 || deg >= 180) return ''
   const vx = 60
   const vy = 140
@@ -176,6 +210,7 @@ export function drawDiagram(spec: DiagramSpec): string {
       case 'circle': inner = circle(spec.values); break
       case 'rectangle': inner = rectangle(spec.values); break
       case 'angle': inner = angle(spec.values); break
+      case 'bpt': inner = bpt(spec.values); break
       default: return ''
     }
   } catch {
