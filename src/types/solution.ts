@@ -11,6 +11,7 @@ export interface SolutionStep {
   expression: string
   explanation: string
   identityUsed?: IdentityReference
+  diagram?: DiagramReference
 }
 
 export interface DiagramReference {

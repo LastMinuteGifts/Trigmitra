@@ -21,6 +21,7 @@ export function buildDemoSolution(): StructuredSolution {
         expression: 'tan A = opposite / adjacent = 3/4',
         explanation: 'tan ka matlab hota hai opposite side / adjacent side. Isliye hum 3 aur 4 ko right triangle ki do sides maan lete hain.',
         identityUsed: undefined,
+        diagram: undefined,
       },
       {
         stepNumber: 2,
@@ -31,6 +32,7 @@ export function buildDemoSolution(): StructuredSolution {
           formula: 'hypotenuse² = opposite² + adjacent²',
           reason: 'Right triangle ki teesri side nikalne ke liye.',
         },
+        diagram: undefined,
       },
       {
         stepNumber: 3,
@@ -41,6 +43,7 @@ export function buildDemoSolution(): StructuredSolution {
           formula: 'sin A = opposite / hypotenuse',
           reason: 'sin A ki value nikalne ke liye.',
         },
+        diagram: undefined,
       },
       {
         stepNumber: 4,
@@ -51,12 +54,14 @@ export function buildDemoSolution(): StructuredSolution {
           formula: 'cos A = adjacent / hypotenuse',
           reason: 'cos A ki value nikalne ke liye.',
         },
+        diagram: undefined,
       },
       {
         stepNumber: 5,
         expression: 'sin A + cos A = 3/5 + 4/5 = 7/5',
         explanation: 'Dono values ko jod do. Denominator same hai, isliye seedha numerator jud jayega.',
         identityUsed: undefined,
+        diagram: undefined,
       },
     ],
     identitiesUsed: [

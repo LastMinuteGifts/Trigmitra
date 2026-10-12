@@ -1328,6 +1328,11 @@ footer p {
   text-align: center;
 }
 
+.step-diagram {
+  margin-top: 16px;
+  padding: 16px;
+}
+
 /* Formula category chips */
 .cat-chips {
   display: flex;

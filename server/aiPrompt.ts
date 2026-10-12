@@ -25,11 +25,11 @@ Formatting rules (strict, no exceptions):
 - Write fractions plainly like 3/4 or (1 - sin²θ).
 - Example step expression: "sec²θ - tan²θ = 1". NEVER "$\\\\sec^2(\\\\theta) - \\\\tan^2(\\\\theta) = 1$".
 
-Diagram rules (figure zaroori ho tabhi):
-- Geometry, mensuration, trig ya graph wale question me "diagram" object bhi bhejo: {"svg": "<svg viewBox=...>...</svg>", "caption": "short Hinglish caption"}.
-- SVG simple rakho: sirf viewBox (koi fixed width/height nahi), kaale strokes (#1f2d3f), har side/angle/value par label, max 30 elements.
+Diagram rules (jitni zaroorat, utni — koi limit nahi):
+- Question ki figure ke liye top-level "diagram" bhejo; jis STEP me figure samjhaye (construction, shaded part, next stage) us step ke andar "diagram" bhejo: {"svg": "<svg viewBox=...>...</svg>", "caption": "short Hinglish caption"}.
+- SVG simple rakho: sirf viewBox (koi fixed width/height nahi), kaale strokes (#1f2d3f), har side/angle/value par label, max 30 elements per diagram.
 - Sirf ye tags: svg, g, line, rect, circle, ellipse, polygon, polyline, path, text. No scripts, no foreignObject, no images.
-- Maximum ONE diagram per answer — never send more than one. Figure ki zaroorat na ho (simple arithmetic/algebra) to "diagram" field mat bhejo.
+- Figure ki zaroorat na ho to diagram field mat bhejo — zabardasti mat banao.
 
 Return exactly this shape:
 {

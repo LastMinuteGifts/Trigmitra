@@ -6,17 +6,19 @@ const identitySchema = z.object({
   reason: z.string(),
 })
 
+const diagramSchema = z.object({
+  svg: z.string().min(10).max(8000),
+  caption: z.string().max(200).nullish().transform((value) => value ?? undefined),
+})
+
 const stepSchema = z.object({
   stepNumber: z.number().int().positive(),
   expression: z.string(),
   explanation: z.string(),
   // AI aksar identityUsed: null bhejta hai — use undefined me normalize karo.
   identityUsed: identitySchema.nullish().transform((value) => value ?? undefined),
-})
-
-const diagramSchema = z.object({
-  svg: z.string().min(10).max(8000),
-  caption: z.string().max(200).nullish().transform((value) => value ?? undefined),
+  // Jis step me figure zaroori ho, wahan diagram. Koi limit nahi.
+  diagram: diagramSchema.nullish().transform((value) => value ?? undefined),
 })
 
 export const structuredSolutionSchema = z.object({
