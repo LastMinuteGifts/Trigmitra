@@ -307,6 +307,7 @@ function App() {
   }
   const cameraInput = useRef<HTMLInputElement>(null)
   const [cropImage, setCropImage] = useState<{ url: string; name: string } | null>(null)
+  const [originalUpload, setOriginalUpload] = useState<File | null>(null)
   const [studentClass, setStudentClass] = useState('')
   const solutionRef = useRef<HTMLElement | null>(null)
   // Answer milte hi answer section me auto-scroll karo.
@@ -349,6 +350,7 @@ function App() {
     setUploadError(null)
     if (cropImage) URL.revokeObjectURL(cropImage.url)
     setCropImage({ url: URL.createObjectURL(file), name: file.name })
+    setOriginalUpload(file)
   }
   const pasteFromClipboard = async () => {
     try {
@@ -399,6 +401,7 @@ function App() {
     if (previewUrl) URL.revokeObjectURL(previewUrl)
     setSelectedFile(null)
     setSelectedUpload(null)
+    setOriginalUpload(null)
     setPreviewUrl(null)
     setUploadError(null)
     clearCrop()
@@ -406,11 +409,11 @@ function App() {
     if (cameraInput.current) cameraInput.current.value = ''
   }
   const adjustCrop = () => {
-    if (!selectedUpload) return
-    if (previewUrl) URL.revokeObjectURL(previewUrl)
-    setPreviewUrl(null)
+    // Hamesha ORIGINAL photo se dobara crop karo — cropped wali se nahi.
+    const src = originalUpload ?? selectedUpload
+    if (!src) return
     if (cropImage) URL.revokeObjectURL(cropImage.url)
-    setCropImage({ url: URL.createObjectURL(selectedUpload), name: selectedUpload.name })
+    setCropImage({ url: URL.createObjectURL(src), name: src.name })
   }
   // Lens-style: modal khula ho to Ctrl+V / paste se image lo.
   useEffect(() => {
