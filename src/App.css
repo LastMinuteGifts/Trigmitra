@@ -210,6 +210,12 @@ footer {
   height: 8px;
   border-radius: 50%;
   background: linear-gradient(135deg, #f7cb6a, #f0b44f);
+  flex-shrink: 0;
+}
+
+.eyebrow-text {
+  display: inline-block;
+  min-width: 190px;
 }
 
 h1, h2, h3, p { margin: 0; }

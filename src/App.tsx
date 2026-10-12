@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowRight, BookOpen, Camera, Check, ChevronRight, CircleHelp, Clipboard, Crop, FileText, History, ImagePlus, Lightbulb, Menu, Sparkles, Upload, X } from 'lucide-react'
 import type { StructuredSolution } from './types/solution'
 import { demoSolution } from './data/demoSolution'
@@ -130,6 +130,20 @@ const readingMessages = [
   'Bas thoda aur, final answer aa raha hai...',
 ]
 
+// Hero badge me har class ka topic rotate hota hai.
+const classTopics = [
+  'CLASS 1 · NUMBERS',
+  'CLASS 2 · ADDITION',
+  'CLASS 3 · TABLES',
+  'CLASS 4 · FRACTIONS',
+  'CLASS 5 · DECIMALS',
+  'CLASS 6 · BODMAS',
+  'CLASS 7 · ALGEBRA',
+  'CLASS 8 · EQUATIONS',
+  'CLASS 9 · GEOMETRY',
+  'CLASS 10 · TRIGONOMETRY',
+]
+
 function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -141,6 +155,14 @@ function App() {
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isReading, setIsReading] = useState(false)
   const [readingIdx, setReadingIdx] = useState(0)
+  const [topicIdx, setTopicIdx] = useState(0)
+  // Hero badge: har 2.5 sec me agle class ka topic.
+  useEffect(() => {
+    const id = window.setInterval(() => {
+      setTopicIdx((i) => (i + 1) % classTopics.length)
+    }, 2500)
+    return () => window.clearInterval(id)
+  }, [])
   const [solution, setSolution] = useState<StructuredSolution | null>(null)
   const [isDemoSolution, setIsDemoSolution] = useState(false)
   const [showAllIdentities, setShowAllIdentities] = useState(false)
@@ -307,7 +329,7 @@ function App() {
       <div className="header-actions"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</button><button className="history-button"><History size={16} /> Track progress</button></div>
     </header>
     <main id="top">
-      <section className="hero-section"><div className="hero-copy"><motion.div className="eyebrow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><span className="eyebrow-dot" /> CLASS 10 · TRIGONOMETRY</motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Photo upload karo.<br /><em>Maths samjho.</em><br />Confident bano.</motion.h1><motion.p className="hero-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>Difficult question ka sirf answer nahi — <strong>har step ka why</strong> samjho, simple Hinglish mein.</motion.p><motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFileSelected} /><input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onFileSelected} /><button className="primary-button" onClick={openUploader}><Upload size={18} /> {selectedFile ? 'Photo selected' : 'Solve my question'} <ArrowRight size={17} /></button><a className="text-button" href="#identities"><BookOpen size={17} /> Explore identities</a></motion.div><div className="trust-line"><span className="avatar-stack"><i>R</i><i>S</i><i>K</i></span><span>Made for curious Class 1–10 minds</span><span className="trust-star">✦</span></div></div>
+      <section className="hero-section"><div className="hero-copy"><motion.div className="eyebrow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><span className="eyebrow-dot" /><AnimatePresence mode="wait"><motion.span key={topicIdx} className="eyebrow-text" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}>{classTopics[topicIdx]}</motion.span></AnimatePresence></motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Photo upload karo.<br /><em>Maths samjho.</em><br />Confident bano.</motion.h1><motion.p className="hero-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>Difficult question ka sirf answer nahi — <strong>har step ka why</strong> samjho, simple Hinglish mein.</motion.p><motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFileSelected} /><input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onFileSelected} /><button className="primary-button" onClick={openUploader}><Upload size={18} /> {selectedFile ? 'Photo selected' : 'Solve my question'} <ArrowRight size={17} /></button><a className="text-button" href="#identities"><BookOpen size={17} /> Explore identities</a></motion.div><div className="trust-line"><span className="avatar-stack"><i>R</i><i>S</i><i>K</i></span><span>Made for curious Class 1–10 minds</span><span className="trust-star">✦</span></div></div>
         <motion.div className="hero-visual" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: .12 }}><div className="visual-grid" /><div className="doodle doodle-left">sin² θ<br /><span>+ cos² θ</span></div><div className="doodle doodle-right">∠</div><div className="question-paper"><div className="paper-top"><span className="paper-tag">QUESTION 04</span><span className="paper-dots">•••</span></div><p className="paper-question">If <b>tan A = 3/4</b>,<br />find the value of<br /><b>sin A + cos A.</b></p><div className="triangle"><span className="tri-height">3</span><span className="tri-base">4</span><span className="tri-hyp">5</span></div><div className="paper-rule" /><div className="paper-answer"><span>hint</span><b>Right triangle ratios</b></div></div><div className="ai-badge"><span className="ai-spark">✦</span><span><b>AI tutor</b><small>ready to explain</small></span><Check size={17} /></div><div className="floating-note"><Lightbulb size={15} /><span>Why this step?</span></div></motion.div>
       </section>
       <section className="marquee-strip" aria-label="AnkNawab features"><span>LEARN THE WHY</span><i>✦</i><span>NOT JUST THE ANSWER</span><i>✦</i><span>EXAM READY, ALWAYS</span><i>✦</i><span>LEARN THE WHY</span></section>
