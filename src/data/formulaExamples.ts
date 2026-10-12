@@ -114,5 +114,87 @@ function key(formula: string): string {
 }
 
 export function getFormulaExample(formula: string): FormulaExample | undefined {
-  return examples[key(formula)]
+  return examples[key(formula)] ?? extraExamples[key(formula)]
+}
+
+const extraExamples: Record<string, FormulaExample> = {
+  // ---------- TRIGONOMETRY (sheet) ----------
+  'sinθ = P/H, cosθ = B/H, tanθ = P/B': { q: 'P = 3, B = 4, H = 5 — teeno ratio?', steps: ['sinθ = 3/5', 'cosθ = 4/5, tanθ = 3/4'] },
+  'tan 30° = 1/√3, tan 45° = 1, tan 60° = √3': { q: 'tan 60° + tan 30°?', steps: ['√3 + 1/√3', '= (3+1)/√3 = 4/√3'] },
+  'tanθ = Height / Distance': { q: 'Distance 10 m, angle 45° — height?', steps: ['Height = 10 × tan 45°', '= 10 × 1 = 10 m'] },
+  'sec(90°−θ) = cosecθ': { q: 'sec 60° ko cosec me likho.', steps: ['sec 60° = sec(90°−30°)', '= cosec 30° = 2'] },
+  'cosec(90°−θ) = secθ': { q: 'cosec 45° ka maan?', steps: ['= sec 45°', '= √2'] },
+  'cot(90°−θ) = tanθ': { q: 'cot 30° ka maan?', steps: ['= tan 60°', '= √3'] },
+  // ---------- ALGEBRA (sheet) ----------
+  'ax + bx = (a+b)x': { q: '3x + 5x jodo.', steps: ['Common x nikalo: (3+5)x', '= 8x'] },
+  'a(b + c) = ab + ac': { q: '2(x + 4) expand karo.', steps: ['2 ko andar baanto', '= 2x + 8'] },
+  'ax + b = c → x = (c−b)/a': { q: '2x + 3 = 11 hal karo.', steps: ['x = (11−3)/2', '= 4'] },
+  'ax + b = cx + d → x = (d−b)/(a−c)': { q: '3x + 2 = x + 8 hal karo.', steps: ['x = (8−2)/(3−1)', '= 6/2 = 3'] },
+  '(a/b)ⁿ = aⁿ/bⁿ': { q: '(2/3)² nikalo.', steps: ['= 2²/3²', '= 4/9'] },
+  'Remainder = p(a) on ÷ (x−a)': { q: 'p(x) = x²−3x+2 ÷ (x−1) — remainder?', steps: ['p(1) = 1 − 3 + 2', '= 0'] },
+  'p(a)=0 → (x−a) is a factor': { q: 'Kya (x−2), x³−8 ka factor hai?', steps: ['p(2) = 8 − 8 = 0', 'Haan, factor hai'] },
+  'a+b+c=0 → a³+b³+c³=3abc': { q: 'a+b+c = 0 ho to a³+b³+c³?', steps: ['Formula seedha lagao', '= 3abc'] },
+  'Zeroes: sum = −b/a, product = c/a': { q: 'x²−7x+12 — sum aur product?', steps: ['Sum = 7', 'Product = 12'] },
+  'x² − (sum)x + product = 0': { q: 'Roots 4 aur 5 — equation banao.', steps: ['Sum 9, product 20', 'x² − 9x + 20 = 0'] },
+  'aₙ = a + (n−1)d': { q: '2, 5, 8... ka 10th term?', steps: ['a = 2, d = 3', '= 2 + 9×3 = 29'] },
+  'Sₙ = n/2 × [2a + (n−1)d]': { q: '1 se 100 tak jod?', steps: ['n = 100, a = 1, d = 1', '= 50 × 101 = 5050'] },
+  'Unique solution: a₁/a₂ ≠ b₁/b₂': { q: 'x+y=5, 2x+3y=12 — kaisa solution?', steps: ['1/2 ≠ 1/3', 'Unique solution'] },
+  'No solution: a₁/a₂ = b₁/b₂ ≠ c₁/c₂': { q: 'x+y=5, x+y=7 — solution?', steps: ['Lines parallel hain', 'No solution'] },
+  'Infinite solutions: ratios all equal': { q: 'x+y=5, 2x+2y=10 — solution?', steps: ['Sab ratios equal', 'Infinitely many'] },
+  'Cross-mult: x = (b₁c₂−b₂c₁)/D': { q: 'x+y−5=0, 2x+3y−12=0 — x?', steps: ['D = 1×3 − 2×1 = 1', 'x = (−12+15)/1 = 3'] },
+  'D>0: 2 roots, D=0: equal, D<0: none': { q: 'x²+2x+5 ke roots?', steps: ['D = 4 − 20 = −16 < 0', 'No real roots'] },
+  'ax + by + c = 0 (line form)': { q: '2x+3y−6=0 ka x-intercept?', steps: ['y = 0 rakho: 2x = 6', 'x = 3'] },
+  // ---------- MENSURATION (sheet) ----------
+  'Cube lateral surface = 4a²': { q: 'a = 5 cube ka LSA?', steps: ['= 4 × 25', '= 100'] },
+  'Cuboid lateral surface = 2h(l+b)': { q: 'l=4, b=3, h=2 — LSA?', steps: ['= 2 × 2 × 7', '= 28'] },
+  'Cylinder total surface = 2πr(h+r)': { q: 'r=7, h=10 — TSA? (π=22/7)', steps: ['= 2 × 22/7 × 7 × 17', '= 748'] },
+  'Cone: l = √(r²+h²), TSA = πr(l+r)': { q: 'r=3, h=4 — l nikalo.', steps: ['l = √(9+16)', '= 5'] },
+  'Hemisphere total surface = 3πr²': { q: 'r=7 — TSA? (π=22/7)', steps: ['= 3 × 22/7 × 49', '= 462'] },
+  'Arc length = θ/360 × 2πr': { q: 'r=7, θ=90° — arc? (π=22/7)', steps: ['= 90/360 × 44', '= 11'] },
+  'Sector area = θ/360 × πr²': { q: 'r=7, θ=90° — sector?', steps: ['= 1/4 × 154', '= 38.5'] },
+  'Segment = sector − triangle': { q: 'Sector 38.5, triangle 24.5 — segment?', steps: ['= 38.5 − 24.5', '= 14'] },
+  'Annulus area = π(R²−r²)': { q: 'R=5, r=3 — ring area? (π=22/7)', steps: ['= 22/7 × (25−9)', '≈ 50.29'] },
+  'Diameter = 2r': { q: 'r = 7 — diameter?', steps: ['= 2 × 7', '= 14'] },
+  '1 m³ = 1000 litres, 1 L = 1000 cm³': { q: '2 m³ kitne litres?', steps: ['1 m³ = 1000 L', '= 2000 L'] },
+  // ---------- ARITHMETIC (sheet) ----------
+  'Dividend = Divisor × Quotient + Remainder': { q: 'Divisor 7, quotient 5, remainder 2 — dividend?', steps: ['= 7 × 5 + 2', '= 37'] },
+  'Divisible by 3: digits sum ÷ 3': { q: 'Kya 123, 3 se divisible?', steps: ['1+2+3 = 6', '6 ÷ 3 — haan'] },
+  'Divisible by 5: ends 0 or 5': { q: 'Kya 145, 5 se divisible?', steps: ['Last digit 5 hai', 'Haan'] },
+  'a/b − c/d = (ad−bc)/bd': { q: '3/4 − 1/2?', steps: ['= (6−4)/8', '= 2/8 = 1/4'] },
+  'a/b × c/d = ac/bd': { q: '2/3 × 3/5?', steps: ['= 6/15', '= 2/5'] },
+  '(a/b) ÷ (c/d) = ad/bc': { q: '3/4 ÷ 2/3?', steps: ['= (3×3)/(4×2)', '= 9/8'] },
+  'Percentage = Part × 100 / Whole': { q: '20/80 ko % me?', steps: ['= 20 × 100/80', '= 25%'] },
+  'SP (profit p%) = CP(1 + p/100)': { q: 'CP=200, 10% profit — SP?', steps: ['= 200 × 1.1', '= 220'] },
+  'Discount% = Discount × 100 / MP': { q: 'Discount 75, MP 500 — %?', steps: ['= 75 × 100/500', '= 15%'] },
+  'Amount with SI = P + SI': { q: 'P=5000, SI=600 — amount?', steps: ['= 5000 + 600', '= 5600'] },
+  'Tax = Rate × Value / 100': { q: '18% rate, value 1000 — tax?', steps: ['= 18 × 1000/100', '= 180'] },
+  'CI = Amount − Principal': { q: 'Amount 1210, P 1000 — CI?', steps: ['= 1210 − 1000', '= 210'] },
+  // ---------- GEOMETRY (sheet) ----------
+  'Complementary: A + B = 90°': { q: 'A = 30° — complement?', steps: ['= 90 − 30', '= 60°'] },
+  'Supplementary: A + B = 180°': { q: 'A = 110° — supplement?', steps: ['= 180 − 110', '= 70°'] },
+  'Angles around a point = 360°': { q: '100°, 120°, 90° — chautha?', steps: ['= 360 − 310', '= 50°'] },
+  'Alternate interior angles are equal': { q: 'Parallel lines, ek 65° — alternate?', steps: ['Barabar hote hain', '= 65°'] },
+  'Co-interior angles sum = 180°': { q: 'Ek 70° — saath wala?', steps: ['= 180 − 70', '= 110°'] },
+  'Isosceles: equal sides → equal angles': { q: 'Do sides equal — angles?', steps: ['Unke opposite angles equal', 'Isosceles rule'] },
+  'Equilateral: each angle = 60°': { q: 'Equilateral ka har angle?', steps: ['= 180/3', '= 60°'] },
+  'Similar: AB/DE = BC/EF = AC/DF': { q: 'Scale 1:2, BC=6 — EF?', steps: ['1/2 = 6/EF', 'EF = 12'] },
+  'Areas ratio = (side ratio)²': { q: 'Sides 1:2 — areas ka ratio?', steps: ['= 1² : 2²', '= 1:4'] },
+  'Section: P divides AB in m:n': { q: 'A(0,0), B(6,0) ko 1:2 me baanto.', steps: ['P = ((6+0)/3, 0)', '= (2, 0)'] },
+  'Tangents from P: PA = PB': { q: 'PA = 8 cm — PB?', steps: ['External point se barabar', '= 8 cm'] },
+  'Tangent length PA = √(OP² − r²)': { q: 'OP=10, r=6 — PA?', steps: ['= √(100−36)', '= √64 = 8'] },
+  'Tangent ⊥ radius at contact': { q: 'Radius-tangent ke beech angle?', steps: ['Perpendicular hote hain', '= 90°'] },
+  // ---------- STATISTICS (sheet) ----------
+  'Grouped mean = Σfx / Σf': { q: 'Σfx=200, Σf=10 — mean?', steps: ['= 200/10', '= 20'] },
+  'Class mark = (upper + lower)/2': { q: 'Class 10–20 ka mark?', steps: ['= (10+20)/2', '= 15'] },
+  'Median = l + [(N/2 − cf)/f]h': { q: 'l=20, N/2−cf=5, f=10, h=10 — median?', steps: ['= 20 + (5/10)×10', '= 25'] },
+  'Mode = l + [(f₁−f₀)/(2f₁−f₀−f₂)]h': { q: 'l=10, f₁=12, f₀=8, f₂=6, h=5 — mode?', steps: ['= 10 + (4/10)×5', '= 12'] },
+  'Mode ≈ 3×Median − 2×Mean': { q: 'Median 15, Mean 14 — mode?', steps: ['= 45 − 28', '= 17'] },
+  'P(not E) = 1 − P(E)': { q: 'P(baarish) = 0.3 — P(nahi)?', steps: ['= 1 − 0.3', '= 0.7'] },
+  'Pie sector angle = freq/total × 360°': { q: 'Freq 15/60 — angle?', steps: ['= 15 × 360/60', '= 90°'] },
+  // ---------- NUMBER SYSTEM (sheet) ----------
+  'Euclid: a = bq + r, 0 ≤ r < b': { q: '17 ÷ 5 — q aur r?', steps: ['17 = 5×3 + 2', 'q = 3, r = 2'] },
+  'Terminating: q = 2ᵐ5ⁿ': { q: 'Kya 3/8 terminate hoga?', steps: ['8 = 2³', 'Haan, terminates'] },
+  'a^(m/n) = ⁿ√(aᵐ)': { q: '8^(2/3)?', steps: ['= ∛(8²) = ∛64', '= 4'] },
+  '1/√a = √a/a': { q: '1/√2 rationalise karo.', steps: ['Upar-neeche √2 se guna', '= √2/2'] },
+  '(√a+√b)(√a−√b) = a−b': { q: '(√5+√3)(√5−√3)?', steps: ['= 5 − 3', '= 2'] },
 }
