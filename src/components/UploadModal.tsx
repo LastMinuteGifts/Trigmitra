@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Camera, Check, CircleHelp, Clipboard, Crop, ImagePlus, PenLine, Sparkles, X } from 'lucide-react'
 import CropEditor from './CropEditor'
+import MathKeyboard from './MathKeyboard'
 
 const readingMessages = [
   'Photo backend ko bhej di...',
@@ -47,6 +48,41 @@ export default function UploadModal(props: UploadModalProps) {
   } = props
 
   const [readingIdx, setReadingIdx] = useState(0)
+  const typeAreaRef = useRef<HTMLTextAreaElement>(null)
+  // Virtual maths keyboard: cursor position par symbol insert karo.
+  const insertSymbol = (symbol: string) => {
+    const el = typeAreaRef.current
+    if (!el) {
+      setQuestionText(questionText + symbol)
+      return
+    }
+    const start = el.selectionStart ?? questionText.length
+    const end = el.selectionEnd ?? questionText.length
+    setQuestionText(questionText.slice(0, start) + symbol + questionText.slice(end))
+    window.requestAnimationFrame(() => {
+      el.focus()
+      const pos = start + symbol.length
+      el.setSelectionRange(pos, pos)
+    })
+  }
+  const keyboardBackspace = () => {
+    const el = typeAreaRef.current
+    if (!el) {
+      setQuestionText(questionText.slice(0, -1))
+      return
+    }
+    const start = el.selectionStart ?? questionText.length
+    const end = el.selectionEnd ?? questionText.length
+    const next = start === end
+      ? questionText.slice(0, Math.max(0, start - 1)) + questionText.slice(end)
+      : questionText.slice(0, start) + questionText.slice(end)
+    const pos = start === end ? Math.max(0, start - 1) : start
+    setQuestionText(next)
+    window.requestAnimationFrame(() => {
+      el.focus()
+      el.setSelectionRange(pos, pos)
+    })
+  }
   // Reading ke dauran progress messages badlo taaki wait chhota lage.
   useEffect(() => {
     if (!isReading) {
@@ -91,12 +127,18 @@ export default function UploadModal(props: UploadModalProps) {
                 <label className="type-label">
                   Apna question yahan likho
                   <textarea
+                    ref={typeAreaRef}
                     value={questionText}
                     onChange={(event) => setQuestionText(event.target.value)}
                     rows={5}
                     placeholder="Jaise: If tan A = 3/4, find sin A + cos A"
                   />
                 </label>
+                <MathKeyboard
+                  onInsert={insertSymbol}
+                  onBackspace={keyboardBackspace}
+                  onClear={() => setQuestionText('')}
+                />
                 <button className="text-button" type="button" onClick={() => setInputMode('photo')}>
                   ← Photo se bhejna hai?
                 </button>
