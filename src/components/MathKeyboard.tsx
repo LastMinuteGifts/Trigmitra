@@ -9,6 +9,7 @@ const ROWS: string[][] = [
   ['+', '−', '×', '÷', '=', '(', ')', '.', '^', '%'],
   ['x', 'y', 'θ', 'π', '√', '²', '³', '°', '≤', '≥'],
   ['±', '≠', '∞', '½', '⅓', '¼', '[', ']', '⌫', 'Clear'],
+  ['sin', 'cos', 'tan', 'sec', 'cosec', 'cot', '(', ')', '°', '∠'],
 ]
 
 export default function MathKeyboard({ onInsert, onBackspace, onClear }: MathKeyboardProps) {
@@ -32,7 +33,12 @@ export default function MathKeyboard({ onInsert, onBackspace, onClear }: MathKey
               )
             }
             return (
-              <button key={key} type="button" className="kb-key" onClick={() => onInsert(key)}>
+              <button
+                key={key}
+                type="button"
+                className={key.length > 2 ? 'kb-key kb-word' : 'kb-key'}
+                onClick={() => onInsert(key)}
+              >
                 {key}
               </button>
             )
