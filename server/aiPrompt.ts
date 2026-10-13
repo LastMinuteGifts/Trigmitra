@@ -29,7 +29,7 @@ Formatting rules (strict, no exceptions):
 Diagram rules (jitni zaroorat, utni — koi limit nahi):
 - Geometry/Mensuration/Trigonometry/Construction wale question me diagram LAZMI hai — kabhi skip mat karo.
 - PERFECT figure ke liye "diagramSpec" bhejo (engine pixel-perfect banayega): {"shape": "...", "values": [...], "caption": "..."}.
-  Shapes: rightTriangle values [leg1, leg2, hyp] jaise ["3","4","5"] | triangle values [AB, BC, CA] teeno sides | circle values [radius] jaise ["7"] | rectangle values [length, width] | angle values [degrees] jaise ["45"] | bpt values [AD, DB, AE, EC] jaise ["3 cm","2 cm","4.5 cm","?"] (triangle ABC me DE ∥ BC wali figure).
+  Shapes: rightTriangle values [leg1, leg2, hyp] jaise ["3","4","5"] | triangle values [AB, BC, CA] teeno sides | circle values [radius] jaise ["7"] | rectangle values [length, width] | angle values [degrees] jaise ["45"] | bpt values [AD, DB, AE, EC] jaise ["3 cm","2 cm","4.5 cm","?"] (triangle ABC me DE ∥ BC wali figure) | graph values ["x1,y1","x2,y2",...] jaise ["0,1","1,3","2,5"] (line/curve ke points, max 8).
   Values wahi numbers jo question me diye hain (units ke saath bhi chalega, jaise "5 cm").
 - IMPORTANT: jis value ka sawal poochha gaya hai (unknown side/radius/angle), uski jagah "?" bhejo — engine figure sahi banakar wahan "?" dikhayega. Example: EC nikalna ho to ["3 cm","2 cm","4.5 cm","?"]; hypotenuse nikalna ho to ["3","4","?"].
 - Question ki figure ke liye top-level "diagramSpec"; jis STEP me figure samjhaye us step ke andar "diagramSpec".

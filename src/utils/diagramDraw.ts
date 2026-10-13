@@ -4,7 +4,7 @@
  * Galat/invalid values par '' return hota hai (phir raw SVG fallback chalta hai).
  */
 
-export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle' | 'bpt'
+export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle' | 'bpt' | 'graph'
 
 export interface DiagramSpec {
   shape: DiagramShape
@@ -219,6 +219,85 @@ function bpt(values: string[]): string {
   return out
 }
 
+/** Coordinate graph: values = ["x1,y1", "x2,y2", ...] points of line/curve. */
+function parseCoord(s: string): [number, number] | null {
+  const parts = s.split(',')
+  if (parts.length !== 2) return null
+  const vals = parts.map((p) => {
+    const m = /-?\d+(\.\d+)?/.exec(p)
+    return m ? parseFloat(m[0]) : NaN
+  })
+  if (vals.some((v) => !Number.isFinite(v))) return null
+  return vals as [number, number]
+}
+
+function niceStep(raw: number): number {
+  const pow = Math.pow(10, Math.floor(Math.log10(raw)))
+  const n = raw / pow
+  if (n <= 1) return pow
+  if (n <= 2) return 2 * pow
+  if (n <= 2.5) return 2.5 * pow
+  if (n <= 5) return 5 * pow
+  return 10 * pow
+}
+
+function tickLabel(v: number): string {
+  return String(Math.round(v * 100) / 100)
+}
+
+function graph(values: string[]): string {
+  const pts: [number, number][] = []
+  for (const v of values.slice(0, 8)) {
+    const p = parseCoord(v)
+    if (p) pts.push(p)
+  }
+  if (pts.length < 2) return ''
+  let minX = Math.min(...pts.map((p) => p[0]))
+  let maxX = Math.max(...pts.map((p) => p[0]))
+  let minY = Math.min(...pts.map((p) => p[1]))
+  let maxY = Math.max(...pts.map((p) => p[1]))
+  if (minX === maxX) { minX -= 1; maxX += 1 }
+  if (minY === maxY) { minY -= 1; maxY += 1 }
+  const padX = (maxX - minX) * 0.12
+  const padY = (maxY - minY) * 0.12
+  minX -= padX; maxX += padX; minY -= padY; maxY += padY
+
+  const L = 42
+  const R = 230
+  const T = 12
+  const B = 148
+  const X = (x: number) => L + ((x - minX) / (maxX - minX)) * (R - L)
+  const Y = (y: number) => B - ((y - minY) / (maxY - minY)) * (B - T)
+
+  let out = ''
+  const stepX = niceStep((maxX - minX) / 4)
+  const stepY = niceStep((maxY - minY) / 4)
+  for (let gx = Math.ceil(minX / stepX) * stepX; gx <= maxX; gx += stepX) {
+    const px = X(gx)
+    out += `<line x1="${round1(px)}" y1="${T}" x2="${round1(px)}" y2="${B}" stroke="#dbe1e8" stroke-width="1"/>`
+    out += `<text x="${round1(px)}" y="${B + 12}" font-size="8" text-anchor="middle" fill="#7b8794">${tickLabel(gx)}</text>`
+  }
+  for (let gy = Math.ceil(minY / stepY) * stepY; gy <= maxY; gy += stepY) {
+    const py = Y(gy)
+    out += `<line x1="${L}" y1="${round1(py)}" x2="${R}" y2="${round1(py)}" stroke="#dbe1e8" stroke-width="1"/>`
+    out += `<text x="${L - 5}" y="${round1(py + 3)}" font-size="8" text-anchor="end" fill="#7b8794">${tickLabel(gy)}</text>`
+  }
+  // Axes (0 line agar range me ho, warna edge par)
+  const xAxisY = minY <= 0 && 0 <= maxY ? Y(0) : B
+  const yAxisX = minX <= 0 && 0 <= maxX ? X(0) : L
+  out += `<line x1="${L}" y1="${round1(xAxisY)}" x2="${R}" y2="${round1(xAxisY)}" stroke="${INK}" stroke-width="1.5"/>`
+  out += `<line x1="${round1(yAxisX)}" y1="${T}" x2="${round1(yAxisX)}" y2="${B}" stroke="${INK}" stroke-width="1.5"/>`
+  out += `<text x="${R - 2}" y="${round1(xAxisY - 5)}" font-size="10" text-anchor="end" fill="${INK}">x</text>`
+  out += `<text x="${round1(yAxisX + 7)}" y="${T + 8}" font-size="10" text-anchor="start" fill="${INK}">y</text>`
+  // Line + dots + labels
+  out += `<polyline points="${pts.map(([x, y]) => `${round1(X(x))},${round1(Y(y))}`).join(' ')}" fill="none" stroke="${INK}" stroke-width="2.5"/>`
+  for (const [x, y] of pts) {
+    out += `<circle cx="${round1(X(x))}" cy="${round1(Y(y))}" r="3" fill="#f05b45"/>`
+    out += `<text x="${round1(X(x) + 7)}" y="${round1(Y(y) - 7)}" font-size="8.5" text-anchor="start" fill="#39465d">(${tickLabel(x)},${tickLabel(y)})</text>`
+  }
+  return out
+}
+
 function angle(values: string[]): string {  const deg = num(values[0] ?? '')
   if (deg === null || deg <= 0 || deg >= 180) return ''
   const vx = 60
@@ -252,6 +331,7 @@ export function drawDiagram(spec: DiagramSpec): string {
       case 'rectangle': inner = rectangle(spec.values); break
       case 'angle': inner = angle(spec.values); break
       case 'bpt': inner = bpt(spec.values); break
+      case 'graph': inner = graph(spec.values); break
       default: return ''
     }
   } catch {

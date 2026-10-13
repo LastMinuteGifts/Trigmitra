@@ -7,9 +7,9 @@ const identitySchema = z.object({
 })
 
 const diagramSpecSchema = z.object({
-  shape: z.enum(['rightTriangle', 'triangle', 'circle', 'rectangle', 'angle', 'bpt']),
-  // rightTriangle: [leg1, leg2, hyp] | triangle: [AB, BC, CA] | circle: [radius] | rectangle: [length, width] | angle: [degrees] | bpt: [AD, DB, AE]
-  values: z.array(z.string().max(20)).min(1).max(4),
+  shape: z.enum(['rightTriangle', 'triangle', 'circle', 'rectangle', 'angle', 'bpt', 'graph']),
+  // rightTriangle: [leg1, leg2, hyp] | triangle: [AB, BC, CA] | circle: [radius] | rectangle: [length, width] | angle: [degrees] | bpt: [AD, DB, AE, EC?] | graph: ["x1,y1", "x2,y2", ...] points
+  values: z.array(z.string().max(24)).min(1).max(10),
   caption: z.string().max(200).nullish().transform((value) => value ?? undefined),
 })
 
