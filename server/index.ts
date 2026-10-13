@@ -5,7 +5,7 @@ import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import multer from 'multer'
 import { z } from 'zod'
-import { solveMathsImage } from './aiClient.js'
+import { solveMathsImage, solveMathsText } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
 
 const env = z.object({
@@ -61,8 +61,11 @@ app.get('/api/demo', (_request, response) => {
 })
 
 app.post('/api/solve', upload.single('questionImage'), async (request, response) => {
-  if (!request.file) {
-    response.status(400).json({ code: 'IMAGE_REQUIRED', message: 'Question image is required.' })
+  const body = (request.body ?? {}) as { questionText?: unknown; description?: unknown; studentClass?: unknown }
+  const questionText = typeof body.questionText === 'string' ? body.questionText.trim().slice(0, 2000) : ''
+  const description = typeof body.description === 'string' ? body.description.trim().slice(0, 1000) : ''
+  if (!request.file && !questionText) {
+    response.status(400).json({ code: 'IMAGE_OR_TEXT_REQUIRED', message: 'Question image ya typed question me se ek chahiye.' })
     return
   }
 
@@ -81,12 +84,15 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
     const studentClass = z.coerce.number().int().min(1).max(10).optional().parse(
       (request.body as { studentClass?: unknown } | undefined)?.studentClass ?? undefined,
     )
-    const solution = await solveMathsImage(request.file.buffer, request.file.mimetype, {
+    const config = {
       apiKey: env.AI_API_KEY,
       apiUrl: env.AI_API_URL,
       model: env.AI_MODEL,
       models: aiModels,
-    }, studentClass)
+    }
+    const solution = request.file
+      ? await solveMathsImage(request.file.buffer, request.file.mimetype, config, studentClass, description || undefined)
+      : await solveMathsText(questionText, config, studentClass)
     response.json({ status: 'complete', solution })
   } catch (error) {
     // AI fail ho jaye to bhi demo fallback do (agar DEMO_MODE on hai).

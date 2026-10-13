@@ -2,7 +2,7 @@
 
 .source-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
   margin-bottom: 14px;
 }
@@ -24,6 +24,55 @@
 .source-btn:hover {
   border-color: rgba(240, 91, 69, 0.5);
   color: #f05b45;
+}
+
+.source-btn.active {
+  border-color: transparent;
+  background: #1f2d3f;
+  color: #fff;
+}
+
+/* Type-your-question stage */
+.type-stage {
+  display: grid;
+  gap: 12px;
+}
+
+.type-label {
+  display: grid;
+  gap: 8px;
+  color: #2c3643;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.type-label textarea,
+.note-field textarea {
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(33, 42, 54, 0.16);
+  background: #fff;
+  color: #1a2433;
+  font: inherit;
+  font-weight: 400;
+  resize: vertical;
+}
+
+.type-label textarea:focus,
+.note-field textarea:focus {
+  outline: 2px solid rgba(240, 91, 69, 0.4);
+  border-color: transparent;
+}
+
+/* Optional note with photo */
+.note-field {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  color: #2c3643;
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .paste-hint {

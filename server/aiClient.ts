@@ -78,7 +78,12 @@ function providerStatus(error: unknown): number | null {
   return null
 }
 
-async function requestOnce(image: Buffer, mimetype: string, config: VisionConfig, model: string, taskText: string): Promise<StructuredSolution> {
+interface ChatMessage {
+  role: 'system' | 'user'
+  content: unknown
+}
+
+async function requestOnce(config: VisionConfig, model: string, messages: ChatMessage[]): Promise<StructuredSolution> {
   const response = await fetch(config.apiUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
@@ -86,10 +91,7 @@ async function requestOnce(image: Buffer, mimetype: string, config: VisionConfig
       model,
       temperature: 0.1,
       response_format: { type: 'json_object' },
-      messages: [
-        { role: 'system', content: mathsTutorSystemPrompt },
-        { role: 'user', content: [{ type: 'text', text: taskText }, { type: 'image_url', image_url: { url: `data:${mimetype};base64,${image.toString('base64')}` } }] },
-      ],
+      messages,
     }),
   })
 
@@ -101,22 +103,14 @@ async function requestOnce(image: Buffer, mimetype: string, config: VisionConfig
   return structuredSolutionSchema.parse(sanitizeSolutionText(extractJson(content)))
 }
 
-export async function solveMathsImage(image: Buffer, mimetype: string, config: VisionConfig, studentClass?: number): Promise<StructuredSolution> {
-  if (!config.apiKey) {
-    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
-  }
-
-  const taskText = studentClass
-    ? `Analyze this Class ${studentClass} maths question image and return the required JSON. The student studies in Class ${studentClass}, so match your explanation level to that class.`
-    : 'Analyze this school maths question image (Class 1 to 10) and return the required JSON.'
-
+async function runWithRetry(config: VisionConfig, buildMessages: () => ChatMessage[]): Promise<StructuredSolution> {
   const models = config.models.length > 0 ? config.models : [config.model]
   let lastError: unknown = new Error('AI_NO_MODEL_TRIED')
 
   for (const model of models) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        return await requestOnce(image, mimetype, config, model, taskText)
+        return await requestOnce(config, model, buildMessages())
       } catch (error) {
         lastError = error
         const status = providerStatus(error)
@@ -132,4 +126,50 @@ export async function solveMathsImage(image: Buffer, mimetype: string, config: V
   }
 
   throw lastError
+}
+
+function classHint(studentClass?: number): string {
+  return studentClass ? ` The student studies in Class ${studentClass}, so match your explanation level to that class.` : ''
+}
+
+export async function solveMathsImage(
+  image: Buffer,
+  mimetype: string,
+  config: VisionConfig,
+  studentClass?: number,
+  description?: string,
+): Promise<StructuredSolution> {
+  if (!config.apiKey) {
+    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
+  }
+
+  let taskText = studentClass
+    ? `Analyze this Class ${studentClass} maths question image and return the required JSON.${classHint(studentClass)}`
+    : 'Analyze this school maths question image (Class 1 to 10) and return the required JSON.'
+  if (description) {
+    taskText += ` Student's note about this photo: "${description}". Use it as a hint.`
+  }
+
+  return runWithRetry(config, () => [
+    { role: 'system', content: mathsTutorSystemPrompt },
+    { role: 'user', content: [{ type: 'text', text: taskText }, { type: 'image_url', image_url: { url: `data:${mimetype};base64,${image.toString('base64')}` } }] },
+  ])
+}
+
+/** Bina photo: typed question + optional note seedha solve karo. */
+export async function solveMathsText(
+  questionText: string,
+  config: VisionConfig,
+  studentClass?: number,
+): Promise<StructuredSolution> {
+  if (!config.apiKey) {
+    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
+  }
+
+  const taskText = `Solve this school maths question typed by the student (Class 1 to 10, Maths or Physics numerical) and return the required JSON.${classHint(studentClass)} Question: "${questionText}"`
+
+  return runWithRetry(config, () => [
+    { role: 'system', content: mathsTutorSystemPrompt },
+    { role: 'user', content: taskText },
+  ])
 }

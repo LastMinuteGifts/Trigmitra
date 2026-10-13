@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Atom, BookOpen, Camera, Check, ChevronRight, CircleHelp, Clipboard, Crop, FileText, History, ImagePlus, Lightbulb, Menu, Sparkles, Upload, X } from 'lucide-react'
+import { ArrowRight, Atom, BookOpen, Camera, Check, ChevronRight, CircleHelp, FileText, History, Lightbulb, Menu, Sparkles, Upload, X } from 'lucide-react'
 import type { DiagramReference, DiagramSpec, StructuredSolution } from './types/solution'
 import { drawDiagram } from './utils/diagramDraw'
+import UploadModal from './components/UploadModal'
 import { demoSolution } from './data/demoSolution'
 import { getFormulaExample } from './data/formulaExamples'
 import { sanitizeSvg } from './utils/sanitizeSvg'
-import CropEditor from './components/CropEditor'
 import './App.css'
 import './mobile.css'
 import './lens.css'
@@ -291,12 +291,8 @@ const steps = [
   { number: '03', icon: Lightbulb, title: 'Solution seekho', copy: 'Har step ka why samjho, phir similar question practice karo.' },
 ]
 
-const readingMessages = [
-  'Photo backend ko bhej di...',
-  'AI question padh raha hai...',
-  'Steps aur identities ban rahe hain...',
-  'Bas thoda aur, final answer aa raha hai...',
-]
+// Hero headline me ghumta shabd: Maths / Science / Physics.
+const sciWords = ['Maths', 'Science', 'Physics']
 
 // Hero badge me har class ka topic rotate hota hai.
 const classTopics = [
@@ -315,9 +311,6 @@ const classTopics = [
   'CLASS 10 · LIGHT',
   'CLASS 10 · ELECTRICITY',
 ]
-
-// Hero headline me ghumta shabd: Maths / Science / Physics.
-const sciWords = ['Maths', 'Science', 'Physics']
 
 // Figure renderer: perfect engine (diagramSpec) pehle, raw SVG fallback baad me.
 function Figure({ diagram, spec, small, label }: { diagram?: DiagramReference; spec?: DiagramSpec; small?: boolean; label?: string }) {
@@ -343,7 +336,6 @@ function App() {
   const [isDragging, setIsDragging] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isReading, setIsReading] = useState(false)
-  const [readingIdx, setReadingIdx] = useState(0)
   const [topicIdx, setTopicIdx] = useState(0)
   // Hero badge: har 2.5 sec me agle class ka topic.
   useEffect(() => {
@@ -365,6 +357,9 @@ function App() {
   const [cropImage, setCropImage] = useState<{ url: string; name: string } | null>(null)
   const [originalUpload, setOriginalUpload] = useState<File | null>(null)
   const [studentClass, setStudentClass] = useState('')
+  const [inputMode, setInputMode] = useState<'photo' | 'text'>('photo')
+  const [questionText, setQuestionText] = useState('')
+  const [photoNote, setPhotoNote] = useState('')
   const solutionRef = useRef<HTMLElement | null>(null)
   // Boot preloader: app paint hone ke baad smooth fade-out.
   useEffect(() => {
@@ -386,17 +381,6 @@ function App() {
       return () => window.clearTimeout(timer)
     }
   }, [solution])
-  // Reading ke dauran progress messages badlo taaki wait chhota lage.
-  useEffect(() => {
-    if (!isReading) {
-      setReadingIdx(0)
-      return
-    }
-    const id = window.setInterval(() => {
-      setReadingIdx((i) => (i + 1) % readingMessages.length)
-    }, 4000)
-    return () => window.clearInterval(id)
-  }, [isReading])
   const chooseFile = () => fileInput.current?.click()
   const chooseCamera = () => cameraInput.current?.click()
   const clearCrop = () => {
@@ -496,11 +480,21 @@ function App() {
     return () => window.removeEventListener('paste', onPaste)
   }, [uploadOpen])
   const analyzeSolution = async () => {
-    if (!selectedUpload) return
+    const isTextMode = inputMode === 'text'
+    if (isTextMode && !questionText.trim()) {
+      setUploadError('Pehle apna question likho.')
+      return
+    }
+    if (!isTextMode && !selectedUpload) return
     setIsReading(true)
     setUploadError(null)
     const formData = new FormData()
-    formData.append('questionImage', selectedUpload)
+    if (isTextMode) {
+      formData.append('questionText', questionText.trim())
+    } else {
+      if (selectedUpload) formData.append('questionImage', selectedUpload)
+      if (photoNote.trim()) formData.append('description', photoNote.trim())
+    }
     if (studentClass) formData.append('studentClass', studentClass)
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
@@ -547,7 +541,32 @@ function App() {
     </main>
     {solution && <section ref={solutionRef} className="solution-panel" aria-labelledby="solution-title"><div className="solution-heading"><div><span className="section-kicker">YOUR ANKNAWAB SOLUTION</span><h2 id="solution-title">Question samjho.<br /><em>Phir solve karo.</em></h2></div><button className="close-solution" onClick={() => { setSolution(null); setIsDemoSolution(false) }}><X size={18} /> Close</button></div>{isDemoSolution && <div style={{ background: '#fff7e6', border: '1px solid #f0c36d', borderRadius: 12, padding: '10px 14px', marginBottom: 16 }}>⚠️ <b>Demo mode:</b> AI busy hai ya key configure nahi hai, isliye sample solution dikh raha hai. <button type="button" onClick={analyzeSolution} style={{ marginLeft: 8, padding: '6px 12px', borderRadius: 8, border: '1px solid #f0c36d', background: '#fff', fontWeight: 700, cursor: 'pointer' }}>Dobara try karo</button></div>}<div className="solution-meta"><div><span>TOPIC</span><b>{solution.topic}</b></div><div><span>TYPE</span><b>{solution.questionType}</b></div><div><span>DIFFICULTY</span><b>{solution.difficulty}</b></div></div><div className="detected-question"><span className="section-kicker">QUESTION DETECTED</span><p>{solution.question}</p><small>Need: {solution.required}</small></div>{solution.wordProblemMeaning && <div className="meaning-card"><span className="section-kicker">PEHLE YE SAMJHO</span><p>{solution.wordProblemMeaning}</p></div>}{(solution.diagram || solution.diagramSpec) && <Figure diagram={solution.diagram} spec={solution.diagramSpec} label="DIAGRAM" />}<div className="solution-steps">{solution.steps.map((step) => <article className="solution-step" key={step.stepNumber}><div className="step-badge">{String(step.stepNumber).padStart(2, '0')}</div><div><span className="section-kicker">STEP {step.stepNumber}</span><h3>{step.expression}</h3><p>{step.explanation}</p>{step.identityUsed && <div className="used-identity"><strong>{step.identityUsed.name}</strong><span>{step.identityUsed.formula}</span><small>{step.identityUsed.reason}</small></div>}{(step.diagram || step.diagramSpec) && <Figure diagram={step.diagram} spec={step.diagramSpec} small />}</div></article>)}</div><div className="final-answer"><span className="section-kicker">FINAL ANSWER</span><h3>{solution.finalAnswer}</h3><p>Exam tip: {solution.examTip ?? 'Steps ko clearly line-by-line likho.'}</p></div></section>}
     {exampleOpen && <div className="example-overlay" role="dialog" aria-modal="true" aria-label="Formula example" onClick={() => setExampleOpen(null)}><div className="example-box" onClick={(event) => event.stopPropagation()}><div className="example-head"><div><span className="section-kicker">{exampleOpen.cat.toUpperCase()}</span><h3>{exampleOpen.formula}</h3></div><button className="close-upload" aria-label="Close example" onClick={() => setExampleOpen(null)}><X size={20} /></button></div><p className="example-label">{exampleOpen.label}</p>{(() => { const ex = getFormulaExample(exampleOpen.formula); if (!ex) return <p className="example-label">Is formula ka example jald aa raha hai.</p>; return <><div className="example-q"><span className="section-kicker">EXAMPLE</span><p>{ex.q}</p></div><ol className="example-steps">{ex.steps.map((s, i) => <li key={i}>{s}</li>)}</ol></> })()}</div></div>}
-    {uploadOpen && <div className="upload-overlay" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="upload-workspace"><div className="upload-header"><div><span className="section-kicker">SOLVER · STEP 01</span><h2 id="upload-title">Question upload karo.</h2></div><button className="close-upload" aria-label="Close upload" onClick={closeUploader}><X size={20} /></button></div>{isReading ? <div className="reading-state"><div className="reading-orbit"><Sparkles size={25} /></div><h3>Question read kar rahe hain...</h3><p>{readingMessages[readingIdx]}</p><div className="loading-line"><span /></div></div> : cropImage ? <CropEditor imageUrl={cropImage.url} fileName={cropImage.name} onCancel={clearCrop} onApply={handleFile} /> : <><div className={isDragging ? 'drop-zone is-dragging' : 'drop-zone'} onDragOver={(event) => { event.preventDefault(); setIsDragging(true) }} onDragLeave={() => setIsDragging(false)} onDrop={(event) => { event.preventDefault(); setIsDragging(false); const file = event.dataTransfer.files[0]; if (file) startCrop(file) }}>{previewUrl ? <div className="preview-wrap"><img src={previewUrl} alt="Selected maths question" /><button className="remove-preview" onClick={adjustCrop}><Crop size={16} /> Adjust crop</button><button className="remove-preview" onClick={removeFile}><X size={16} /> Remove photo</button></div> : <><div className="upload-icon"><ImagePlus size={27} /></div><h3>Photo yahan drop karo</h3><p>ya apne device se ek clear question photo choose karo</p><button className="choose-button" onClick={chooseFile}>Choose photo <ArrowRight size={16} /></button><span className="upload-hint">JPG, PNG, WEBP · max 10 MB</span></>}</div>{!previewUrl && !cropImage && <><div className="source-row"><button className="source-btn" onClick={chooseFile}><ImagePlus size={16} /> Gallery</button><button className="source-btn" onClick={chooseCamera}><Camera size={16} /> Camera</button><button className="source-btn" onClick={pasteFromClipboard}><Clipboard size={16} /> Paste</button></div><p className="paste-hint">Lens ki tarah: photo lo, crop karo — ya screenshot copy karke <kbd>Ctrl</kbd>+<kbd>V</kbd> dabao</p></>}{uploadError && <div className="upload-error"><CircleHelp size={16} /> {uploadError}</div>}<div className="upload-tips"><div><Check size={15} /> Good lighting rakho</div><div><Check size={15} /> Full question visible ho</div><div><Check size={15} /> Image blur na ho</div></div><label className="class-pick">Class <select value={studentClass} onChange={(event) => setStudentClass(event.target.value)} aria-label="Select class"><option value="">Auto (AI pehchane)</option>{[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => <option key={n} value={String(n)}>Class {n}</option>)}</select></label>{previewUrl && <button className="analyze-button" onClick={analyzeSolution}>Understand my question <Sparkles size={17} /></button>}</>}</div></div>}
+    {uploadOpen && <UploadModal
+        closeUploader={closeUploader}
+        isReading={isReading}
+        cropImage={cropImage}
+        clearCrop={clearCrop}
+        handleFile={handleFile}
+        inputMode={inputMode}
+        setInputMode={setInputMode}
+        questionText={questionText}
+        setQuestionText={setQuestionText}
+        isDragging={isDragging}
+        setIsDragging={setIsDragging}
+        startCrop={startCrop}
+        previewUrl={previewUrl}
+        adjustCrop={adjustCrop}
+        removeFile={removeFile}
+        chooseFile={chooseFile}
+        chooseCamera={chooseCamera}
+        pasteFromClipboard={pasteFromClipboard}
+        uploadError={uploadError}
+        studentClass={studentClass}
+        setStudentClass={setStudentClass}
+        photoNote={photoNote}
+        setPhotoNote={setPhotoNote}
+        analyzeSolution={analyzeSolution}
+      />}
     <footer>
       <div className="brand"><span className="brand-mark"><img src="./logo-icon.svg" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></div>
       <div className="footer-meta">
