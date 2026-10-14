@@ -12,6 +12,14 @@ interface AdminSolution {
   createdAt: string
 }
 
+interface AdminUser {
+  id: string
+  email: string
+  createdAt: string
+  lastSignIn: string
+  solves: number
+}
+
 interface AdminOverview {
   totalSolutions: number
   totalUsers: number
@@ -19,6 +27,7 @@ interface AdminOverview {
   topics: Array<{ topic: string; count: number }>
   last7Days: Array<{ day: string; count: number }>
   solutions: AdminSolution[]
+  users: AdminUser[]
 }
 
 const STORAGE_KEY = 'anknawab_admin_key'
@@ -29,6 +38,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
+  const [view, setView] = useState<'solutions' | 'users'>('solutions')
 
   const load = async () => {
     if (!adminKey.trim()) {
@@ -62,6 +72,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
       s.userEmail.toLowerCase().includes(q) ||
       s.question.toLowerCase().includes(q) ||
       s.topic.toLowerCase().includes(q),
+  )
+  const userRows = (overview?.users ?? []).filter(
+    (u) => !q || u.email.toLowerCase().includes(q),
   )
   const maxTopic = Math.max(1, ...(overview?.topics.map((t) => t.count) ?? [1]))
   const maxDay = Math.max(1, ...(overview?.last7Days.map((d) => d.count) ?? [1]))
@@ -149,13 +162,33 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
               </div>
             )}
             <div className="admin-toolbar">
+              <div className="auth-tabs" role="tablist" aria-label="Admin views">
+                <button
+                  role="tab"
+                  aria-selected={view === 'solutions'}
+                  className={view === 'solutions' ? 'cat-chip active' : 'cat-chip'}
+                  onClick={() => setView('solutions')}
+                >
+                  Solutions
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={view === 'users'}
+                  className={view === 'users' ? 'cat-chip active' : 'cat-chip'}
+                  onClick={() => setView('users')}
+                >
+                  Users ({overview?.totalUsers ?? 0})
+                </button>
+              </div>
+            </div>
+            <div className="admin-toolbar">
               <label className="auth-field admin-search-field">
                 <div className="admin-search">
                   <Search size={15} />
                   <input
                     value={query}
                     onChange={(event) => setQuery(event.target.value)}
-                    placeholder="Email, question ya topic..."
+                    placeholder={view === 'users' ? 'Email...' : 'Email, question ya topic...'}
                   />
                 </div>
               </label>
@@ -164,6 +197,39 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
               </button>
             </div>
             {error && <div className="upload-error">{error}</div>}
+            {view === 'users' ? (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Solves</th>
+                      <th>Joined</th>
+                      <th>Last active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userRows.map((u) => (
+                      <tr key={u.id}>
+                        <td data-label="User">
+                          <span className="admin-user">{u.email}</span>
+                        </td>
+                        <td data-label="Solves">
+                          <b>{u.solves}</b>
+                        </td>
+                        <td data-label="Joined">
+                          {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
+                        </td>
+                        <td data-label="Last active">
+                          {u.lastSignIn ? new Date(u.lastSignIn).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {userRows.length === 0 && <p className="example-label">Koi user nahi mila.</p>}
+              </div>
+            ) : (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
@@ -196,6 +262,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
               </table>
               {rows.length === 0 && <p className="example-label">Kuch nahi mila.</p>}
             </div>
+            )}
           </>
         )}
       </div>

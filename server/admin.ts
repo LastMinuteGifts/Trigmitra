@@ -25,6 +25,14 @@ export interface AdminSolutionRow {
   createdAt: string
 }
 
+export interface AdminUserRow {
+  id: string
+  email: string
+  createdAt: string
+  lastSignIn: string
+  solves: number
+}
+
 export interface AdminOverview {
   totalSolutions: number
   totalUsers: number
@@ -32,6 +40,7 @@ export interface AdminOverview {
   topics: Array<{ topic: string; count: number }>
   last7Days: Array<{ day: string; count: number }>
   solutions: AdminSolutionRow[]
+  users: AdminUserRow[]
 }
 
 export async function getAdminOverview(
@@ -41,6 +50,14 @@ export async function getAdminOverview(
   const { data: usersData } = await client.auth.admin.listUsers({ page: 1, perPage: 200 })
   const users = usersData?.users ?? []
   const emailById = new Map(users.map((u) => [u.id, u.email ?? '(no email)']))
+
+  // Har user ke solves gino (halki query, sirf user_id).
+  const { data: countRows } = await client.from('solutions').select('user_id').limit(2000)
+  const solvesByUser = new Map<string, number>()
+  for (const row of countRows ?? []) {
+    const uid = row.user_id as string
+    solvesByUser.set(uid, (solvesByUser.get(uid) ?? 0) + 1)
+  }
 
   const { data: rows, error } = await client
     .from('solutions')
@@ -89,5 +106,12 @@ export async function getAdminOverview(
       .sort((a, b) => (a.day < b.day ? 1 : -1))
       .slice(0, 7),
     solutions,
+    users: users.map((u) => ({
+      id: u.id,
+      email: u.email ?? '(no email)',
+      createdAt: u.created_at,
+      lastSignIn: u.last_sign_in_at ?? '',
+      solves: solvesByUser.get(u.id) ?? 0,
+    })),
   }
 }
