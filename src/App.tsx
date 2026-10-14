@@ -616,6 +616,17 @@ function App() {
     }
   }
 
+  // Admin alag full page par: public site bilkul nahi dikhegi.
+  if (adminOpen) {
+    return (
+      <div className="app-shell">
+        <div className="admin-page">
+          <AdminPanel onClose={closeAdmin} />
+        </div>
+      </div>
+    )
+  }
+
   return <div className="app-shell">
     <header className="site-header">
       <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></a>
@@ -669,7 +680,6 @@ function App() {
       onLogout={async () => { await supabase?.auth.signOut(); setUserEmail(null) }}
       onView={(sol, demo) => { setSolution(sol); setIsDemoSolution(demo); setHistoryOpen(false) }}
     />}
-    {adminOpen && <AdminPanel onClose={closeAdmin} />}
     <footer>
       <div className="brand"><span className="brand-mark"><img src="./logo-icon.svg" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></div>
       <div className="footer-meta">

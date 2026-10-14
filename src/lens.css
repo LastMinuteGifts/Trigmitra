@@ -146,6 +146,27 @@
   }
 }
 
+/* Admin standalone page (public site se bilkul alag) */
+.admin-page {
+  min-height: 100vh;
+  padding: 32px 20px 70px;
+  background:
+    radial-gradient(circle at top, rgba(255, 222, 176, 0.4), transparent 28%),
+    linear-gradient(180deg, #f8f4ee 0%, #f3efe8 100%);
+}
+
+.admin-page .example-overlay {
+  position: static;
+  display: block;
+  padding: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.admin-page .example-box {
+  margin: 0 auto;
+}
+
 /* Footer admin link */
 .admin-link {
   margin-left: 10px;
