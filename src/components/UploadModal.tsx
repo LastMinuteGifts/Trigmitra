@@ -35,6 +35,7 @@ interface UploadModalProps {
   photoNote: string
   setPhotoNote: (value: string) => void
   analyzeSolution: () => void
+  freeLeft: number | null
 }
 
 export default function UploadModal(props: UploadModalProps) {
@@ -44,7 +45,7 @@ export default function UploadModal(props: UploadModalProps) {
     isDragging, setIsDragging, startCrop, previewUrl, adjustCrop, removeFile,
     chooseFile, chooseCamera, pasteFromClipboard,
     uploadError, studentClass, setStudentClass, photoNote, setPhotoNote,
-    analyzeSolution,
+    analyzeSolution, freeLeft,
   } = props
 
   const [readingIdx, setReadingIdx] = useState(0)
@@ -253,6 +254,13 @@ export default function UploadModal(props: UploadModalProps) {
               <button className="analyze-button" onClick={analyzeSolution}>
                 Understand my question <Sparkles size={17} />
               </button>
+            )}
+            {freeLeft !== null && (
+              <p className="paste-hint">
+                {freeLeft > 0
+                  ? `Bina login ${freeLeft} free solve bacha hai — phir login lazmi hoga`
+                  : 'Free solve khatm — aage ke liye login karo'}
+              </p>
             )}
           </>
         )}

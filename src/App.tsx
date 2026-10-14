@@ -330,6 +330,19 @@ function Figure({ diagram, spec, small, label }: { diagram?: DiagramReference; s
   )
 }
 
+// Bina login trial: sirf 1 free solve, uske baad login lazmi.
+const FREE_LIMIT = 1
+const FREE_KEY = 'anknawab_free_solves'
+
+function getFreeUsed(): number {
+  try {
+    const n = Number(localStorage.getItem(FREE_KEY) ?? 0)
+    return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0
+  } catch {
+    return 0
+  }
+}
+
 function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -354,6 +367,7 @@ function App() {
   const [authOpen, setAuthOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
+  const [freeUsed, setFreeUsed] = useState(() => getFreeUsed())
   const [showAllIdentities, setShowAllIdentities] = useState(false)
   const [activeCategory, setActiveCategory] = useState('All')
   const [exampleOpen, setExampleOpen] = useState<{ cat: string; formula: string; label: string } | null>(null)
@@ -520,6 +534,12 @@ function App() {
     return () => window.removeEventListener('paste', onPaste)
   }, [uploadOpen])
   const analyzeSolution = async () => {
+    // Guest trial khatm → pehle login.
+    if (!userEmail && getFreeUsed() >= FREE_LIMIT) {
+      setUploadError('Tumhara 1 free solve khatm ho gaya! Aage solve karne ke liye login karo.')
+      setAuthOpen(true)
+      return
+    }
     const isTextMode = inputMode === 'text'
     if (isTextMode && !questionText.trim()) {
       setUploadError('Pehle apna question likho.')
@@ -547,6 +567,15 @@ function App() {
       setIsDemoSolution(payload.status === 'demo')
       setUploadOpen(false)
       saveSolution(payload.solution, payload.status)
+      if (!userEmail) {
+        const used = getFreeUsed() + 1
+        try {
+          localStorage.setItem(FREE_KEY, String(used))
+        } catch {
+          // ignore
+        }
+        setFreeUsed(used)
+      }
     } catch (error) {
       // Static hosting par backend reachable nahi hota (Failed to fetch /
       // TypeError) → browser me hi offline demo solution dikhao taaki
@@ -557,6 +586,15 @@ function App() {
         setUploadOpen(false)
         setUploadError(null)
         saveSolution(demoSolution, 'demo')
+        if (!userEmail) {
+          const used = getFreeUsed() + 1
+          try {
+            localStorage.setItem(FREE_KEY, String(used))
+          } catch {
+            // ignore
+          }
+          setFreeUsed(used)
+        }
         return
       }
       setUploadError(error instanceof Error ? error.message : 'Something went wrong. Please try again.')
@@ -608,6 +646,7 @@ function App() {
         photoNote={photoNote}
         setPhotoNote={setPhotoNote}
         analyzeSolution={analyzeSolution}
+        freeLeft={userEmail ? null : Math.max(0, FREE_LIMIT - freeUsed)}
       />}
     {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     {historyOpen && <HistoryModal
