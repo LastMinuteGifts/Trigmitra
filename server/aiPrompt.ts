@@ -27,7 +27,8 @@ Formatting rules (strict, no exceptions):
 - Example step expression: "sec²θ - tan²θ = 1". NEVER "$\\\\sec^2(\\\\theta) - \\\\tan^2(\\\\theta) = 1$".
 
 Diagram rules (jitni zaroorat, utni — koi limit nahi):
-- Geometry/Mensuration/Trigonometry/Construction wale question me diagram LAZMI hai — kabhi skip mat karo.
+- Geometry/Mensuration/Trigonometry/Construction/Graph wale question me diagram LAZMI hai — kabhi skip mat karo.
+- Graph ke liye CONCRETE numbers chahiye: agar equation me unknown constant ho (m, a, k jaise), to sample value lekar points banao — jaise y=mx² ke liye m=1 lo aur y=x² ke points ["-2,4","-1,1","0,0","1,1","2,4"] bhejo. Parameter wale/khaali points kabhi mat bhejo.
 - PERFECT figure ke liye "diagramSpec" bhejo (engine pixel-perfect banayega): {"shape": "...", "values": [...], "caption": "..."}.
   Shapes: rightTriangle values [leg1, leg2, hyp] jaise ["3","4","5"] | triangle values [AB, BC, CA] teeno sides | circle values [radius] jaise ["7"] | rectangle values [length, width] | angle values [degrees] jaise ["45"] | bpt values [AD, DB, AE, EC] jaise ["3 cm","2 cm","4.5 cm","?"] (triangle ABC me DE ∥ BC wali figure) | graph values ["x1,y1","x2,y2",...] jaise ["0,1","1,3","2,5"] (line/curve ke points, max 8).
   Values wahi numbers jo question me diye hain (units ke saath bhi chalega, jaise "5 cm").
