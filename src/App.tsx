@@ -6,6 +6,7 @@ import { drawDiagram } from './utils/diagramDraw'
 import UploadModal from './components/UploadModal'
 import AuthModal from './components/AuthModal'
 import HistoryModal from './components/HistoryModal'
+import AdminPanel from './components/AdminPanel'
 import { supabase } from './lib/supabase'
 import { demoSolution } from './data/demoSolution'
 import { getFormulaExample } from './data/formulaExamples'
@@ -352,6 +353,7 @@ function App() {
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [authOpen, setAuthOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [adminOpen, setAdminOpen] = useState(false)
   const [showAllIdentities, setShowAllIdentities] = useState(false)
   const [activeCategory, setActiveCategory] = useState('All')
   const [exampleOpen, setExampleOpen] = useState<{ cat: string; formula: string; label: string } | null>(null)
@@ -615,12 +617,13 @@ function App() {
       onLogout={async () => { await supabase?.auth.signOut(); setUserEmail(null) }}
       onView={(sol, demo) => { setSolution(sol); setIsDemoSolution(demo); setHistoryOpen(false) }}
     />}
+    {adminOpen && <AdminPanel onClose={() => setAdminOpen(false)} />}
     <footer>
       <div className="brand"><span className="brand-mark"><img src="./logo-icon.svg" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></div>
       <div className="footer-meta">
         <span className="developer-credit">by ASAD • student of Millat Academy</span>
       </div>
-      <span>© 2026 AnkNawab</span>
+      <span>© 2026 AnkNawab</span> <button type="button" className="admin-link" onClick={() => setAdminOpen(true)}>Admin</button>
     </footer>
   </div>
 }

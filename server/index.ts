@@ -7,6 +7,7 @@ import multer from 'multer'
 import { z } from 'zod'
 import { solveMathsImage, solveMathsText } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
+import { getAdminClient, getAdminOverview } from './admin.js'
 
 const env = z.object({
   PORT: z.coerce.number().default(4000),
@@ -16,6 +17,9 @@ const env = z.object({
   AI_MODEL: z.string().default('gpt-4o-mini'),
   AI_MODELS: z.string().optional(),
   DEMO_MODE: z.string().default('true'),
+  SUPABASE_URL: z.string().url().optional(),
+  SUPABASE_SERVICE_KEY: z.string().trim().optional().transform((v) => (v ? v : undefined)),
+  ADMIN_SECRET: z.string().trim().optional().transform((v) => (v ? v : undefined)),
 }).parse(process.env)
 
 const aiModels = (env.AI_MODELS ?? env.AI_MODEL).split(',').map((s) => s.trim()).filter(Boolean)
@@ -112,6 +116,35 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
     }
     console.error(error)
     response.status(502).json({ code: 'AI_ANALYSIS_FAILED', message: 'Question analyze nahi ho paya. Please try again.' })
+  }
+})
+
+const adminAuth: express.RequestHandler = (request, response, next) => {
+  if (!env.ADMIN_SECRET) {
+    response.status(503).json({ code: 'ADMIN_NOT_CONFIGURED', message: 'Admin is not configured on server.' })
+    return
+  }
+  const key = request.header('x-admin-key')
+  if (!key || key !== env.ADMIN_SECRET) {
+    response.status(403).json({ code: 'ADMIN_FORBIDDEN', message: 'Wrong admin key.' })
+    return
+  }
+  next()
+}
+
+app.get('/api/admin/overview', adminAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  try {
+    const limit = z.coerce.number().int().min(1).max(200).optional().parse(request.query.limit ?? undefined) ?? 100
+    const overview = await getAdminOverview(client, limit)
+    response.json({ status: 'ok', overview })
+  } catch (error) {
+    console.error(error)
+    response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'Admin data load nahi hua.' })
   }
 })
 
