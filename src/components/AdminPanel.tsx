@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { KeyRound, Search, X } from 'lucide-react'
+import { FileText, FlaskConical, KeyRound, RotateCw, Search, ShieldCheck, Tags, Users, X } from 'lucide-react'
 
 interface AdminSolution {
   id: string
@@ -17,6 +17,7 @@ interface AdminOverview {
   totalUsers: number
   demoCount: number
   topics: Array<{ topic: string; count: number }>
+  last7Days: Array<{ day: string; count: number }>
   solutions: AdminSolution[]
 }
 
@@ -62,16 +63,21 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
       s.question.toLowerCase().includes(q) ||
       s.topic.toLowerCase().includes(q),
   )
+  const maxTopic = Math.max(1, ...(overview?.topics.map((t) => t.count) ?? [1]))
+  const maxDay = Math.max(1, ...(overview?.last7Days.map((d) => d.count) ?? [1]))
 
   return (
     <div className="example-overlay" role="dialog" aria-modal="true" aria-label="Admin panel" onClick={onClose}>
       <div className="example-box admin-box" onClick={(event) => event.stopPropagation()}>
-        <div className="example-head">
+        <div className="admin-hero">
+          <div className="admin-hero-icon">
+            <ShieldCheck size={22} />
+          </div>
           <div>
             <span className="section-kicker">ADMIN ONLY</span>
             <h3>Admin panel</h3>
           </div>
-          <button className="close-upload" aria-label="Close admin" onClick={onClose}>
+          <button className="close-upload admin-close" aria-label="Close admin" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
@@ -97,38 +103,66 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
           </>
         ) : (
           <>
-            <div className="history-stats admin-stats">
-              <div>
-                <b>{overview.totalUsers}</b>
-                <span>users</span>
+            <div className="admin-cards">
+              <div className="admin-card">
+                <div className="admin-card-icon blue"><Users size={18} /></div>
+                <div><b>{overview.totalUsers}</b><span>total users</span></div>
               </div>
-              <div>
-                <b>{overview.totalSolutions}</b>
-                <span>solutions</span>
+              <div className="admin-card">
+                <div className="admin-card-icon coral"><FileText size={18} /></div>
+                <div><b>{overview.totalSolutions}</b><span>solutions</span></div>
               </div>
-              <div>
-                <b>{overview.demoCount}</b>
-                <span>demo</span>
+              <div className="admin-card">
+                <div className="admin-card-icon yellow"><FlaskConical size={18} /></div>
+                <div><b>{overview.demoCount}</b><span>demo fallback</span></div>
+              </div>
+              <div className="admin-card">
+                <div className="admin-card-icon green"><Tags size={18} /></div>
+                <div><b>{overview.topics.length}</b><span>topics</span></div>
               </div>
             </div>
             {overview.topics.length > 0 && (
-              <div className="subject-tags admin-topics">
-                {overview.topics.map((t) => (
-                  <span key={t.topic}>{t.topic} · {t.count}</span>
-                ))}
+              <div className="admin-section">
+                <span className="section-kicker">TOP TOPICS</span>
+                <div className="topic-bars">
+                  {overview.topics.slice(0, 6).map((t) => (
+                    <div className="topic-bar-row" key={t.topic}>
+                      <span>{t.topic}</span>
+                      <div className="topic-bar"><i style={{ width: `${Math.round((t.count / maxTopic) * 100)}%` }} /></div>
+                      <b>{t.count}</b>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
-            <label className="auth-field">
-              Search
-              <div className="admin-search">
-                <Search size={15} />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Email, question ya topic..."
-                />
+            {overview.last7Days.length > 0 && (
+              <div className="admin-section">
+                <span className="section-kicker">LAST 7 DAYS</span>
+                <div className="week-bars">
+                  {overview.last7Days.map((d) => (
+                    <div className="week-bar" key={d.day} title={`${d.day}: ${d.count}`}>
+                      <i style={{ height: `${Math.max(8, Math.round((d.count / maxDay) * 100))}%` }} />
+                      <span>{d.day.slice(5)}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </label>
+            )}
+            <div className="admin-toolbar">
+              <label className="auth-field admin-search-field">
+                <div className="admin-search">
+                  <Search size={15} />
+                  <input
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    placeholder="Email, question ya topic..."
+                  />
+                </div>
+              </label>
+              <button className="tool-btn" type="button" onClick={load} disabled={busy}>
+                <RotateCw size={15} /> Refresh
+              </button>
+            </div>
             {error && <div className="upload-error">{error}</div>}
             <div className="admin-table-wrap">
               <table className="admin-table">
@@ -143,11 +177,16 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 <tbody>
                   {rows.map((s) => (
                     <tr key={s.id}>
-                      <td data-label="User">{s.userEmail}</td>
+                      <td data-label="User">
+                        <span className="admin-user">{s.userEmail}</span>
+                        {s.isDemo && <span className="pill-demo">demo</span>}
+                      </td>
                       <td data-label="Question" title={s.question}>
                         {s.question.length > 90 ? `${s.question.slice(0, 90)}…` : s.question}
                       </td>
-                      <td data-label="Topic">{s.topic}</td>
+                      <td data-label="Topic">
+                        <span className="history-topic">{s.topic}</span>
+                      </td>
                       <td data-label="Date">
                         {new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
                       </td>
