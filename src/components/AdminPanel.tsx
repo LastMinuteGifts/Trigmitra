@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FileText, FlaskConical, KeyRound, RotateCw, Search, ShieldCheck, Tags, Users, X } from 'lucide-react'
+import { Check, FileText, FlaskConical, KeyRound, RotateCw, Search, ShieldCheck, Tags, Users, X } from 'lucide-react'
 
 interface AdminSolution {
   id: string
@@ -18,9 +18,11 @@ interface AdminUser {
   createdAt: string
   lastSignIn: string
   solves: number
+  solvesToday: number
   plan: string
   expiresAt: string
   accessActive: boolean
+  dailyLimit: number | null
 }
 
 interface AdminOverview {
@@ -42,6 +44,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [view, setView] = useState<'solutions' | 'users'>('solutions')
+  const [drafts, setDrafts] = useState<Record<string, { plan: string; limit: string }>>({})
+  const draftOf = (u: AdminUser) =>
+    drafts[u.id] ?? { plan: u.accessActive ? u.plan : '', limit: u.dailyLimit?.toString() ?? '' }
 
   const load = async () => {
     if (!adminKey.trim()) {
@@ -68,11 +73,19 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
-  // Access do / wapas lo — expiry automatic cut hogi.
-  const setAccess = async (userId: string, plan: string) => {
+  // Access + daily limit save karo.
+  const setAccess = async (userId: string, plan: string, limitStr: string) => {
     if (!adminKey.trim()) {
       setError('Pehle admin key likho.')
       return
+    }
+    let dailyLimit: number | null = null
+    if (limitStr.trim() !== '') {
+      dailyLimit = Number(limitStr)
+      if (!Number.isInteger(dailyLimit) || dailyLimit < 1 || dailyLimit > 1000) {
+        setError('Daily limit 1 se 1000 tak number me likho (khali = unlimited).')
+        return
+      }
     }
     setBusy(true)
     setError(null)
@@ -81,12 +94,17 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
       const response = await fetch(`${apiUrl}/admin/access`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey.trim() },
-        body: JSON.stringify({ userId, plan }),
+        body: JSON.stringify({ userId, plan, dailyLimit }),
       })
       const payload = (await response.json()) as { message?: string }
       if (!response.ok) {
         throw new Error(payload.message ?? 'Save nahi hua.')
       }
+      setDrafts((prev) => {
+        const next = { ...prev }
+        delete next[userId]
+        return next
+      })
       await load()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Kuch gadbad hui.')
@@ -246,12 +264,18 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                       </td>
                       <td data-label="Solves">
                         <b>{u.solves}</b>
+                        <small className="access-until">{u.solvesToday} today</small>
                       </td>
                       <td data-label="Access">
                         <select
                           className="access-select"
-                          value={u.accessActive ? u.plan : ''}
-                          onChange={(event) => setAccess(u.id, event.target.value)}
+                          value={draftOf(u).plan}
+                          onChange={(event) =>
+                            setDrafts((prev) => ({
+                              ...prev,
+                              [u.id]: { ...draftOf(u), plan: event.target.value },
+                            }))
+                          }
                           disabled={busy}
                           aria-label={`Access for ${u.email}`}
                         >
@@ -260,6 +284,34 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                           <option value="month">1 month</option>
                           <option value="year">1 year</option>
                         </select>
+                        <div className="access-row">
+                          <input
+                            className="limit-input"
+                            type="number"
+                            min={1}
+                            max={1000}
+                            placeholder="∞/day"
+                            title="Daily limit (khali = unlimited)"
+                            value={draftOf(u).limit}
+                            onChange={(event) =>
+                              setDrafts((prev) => ({
+                                ...prev,
+                                [u.id]: { ...draftOf(u), limit: event.target.value },
+                              }))
+                            }
+                            disabled={busy}
+                            aria-label={`Daily limit for ${u.email}`}
+                          />
+                          <button
+                            className="tool-btn access-save"
+                            type="button"
+                            onClick={() => setAccess(u.id, draftOf(u).plan, draftOf(u).limit)}
+                            disabled={busy}
+                            aria-label={`Save access for ${u.email}`}
+                          >
+                            <Check size={15} />
+                          </button>
+                        </div>
                         {u.accessActive && u.expiresAt && (
                           <small className="access-until">
                             till {new Date(u.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}

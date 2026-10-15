@@ -7,7 +7,7 @@ import multer from 'multer'
 import { z } from 'zod'
 import { solveMathsImage, solveMathsText } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
-import { getAdminClient, getAdminOverview, setUserAccess } from './admin.js'
+import { getAdminClient, getAdminOverview, setUserAccess, checkSolveAllowed } from './admin.js'
 
 const env = z.object({
   PORT: z.coerce.number().default(4000),
@@ -71,6 +71,22 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
   if (!request.file && !questionText) {
     response.status(400).json({ code: 'IMAGE_OR_TEXT_REQUIRED', message: 'Question image ya typed question me se ek chahiye.' })
     return
+  }
+
+  // Logged-in user: access + daily limit (server-side sakht check).
+  const authHeader = request.header('authorization')
+  if (authHeader?.startsWith('Bearer ')) {
+    const adminClient = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+    if (adminClient) {
+      const { data } = await adminClient.auth.getUser(authHeader.slice(7))
+      if (data.user) {
+        const check = await checkSolveAllowed(adminClient, data.user.id)
+        if (!check.allowed) {
+          response.status(403).json({ code: 'ACCESS_OR_LIMIT', message: check.reason ?? 'Access allowed nahi hai.' })
+          return
+        }
+      }
+    }
   }
 
   // AI key nahi hai → offline demo solution do taaki UI kabhi atak na jaye.
@@ -158,8 +174,9 @@ app.post('/api/admin/access', adminAuth, async (request, response) => {
     const body = z.object({
       userId: z.string().uuid(),
       plan: z.enum(['none', 'week', 'month', 'year']),
+      dailyLimit: z.number().int().min(1).max(1000).nullish(),
     }).parse(request.body)
-    const result = await setUserAccess(client, body.userId, body.plan)
+    const result = await setUserAccess(client, body.userId, body.plan, body.dailyLimit ?? null)
     response.json({ status: 'ok', access: result })
   } catch (error) {
     if (error instanceof z.ZodError) {

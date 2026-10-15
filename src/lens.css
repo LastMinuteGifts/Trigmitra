@@ -383,6 +383,28 @@
   max-width: 130px;
 }
 
+.access-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.limit-input {
+  width: 72px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(33, 42, 54, 0.16);
+  background: #fff;
+  color: #1a2433;
+  font: inherit;
+  font-size: 12px;
+}
+
+.access-save {
+  padding: 7px 10px;
+}
+
 .access-until {
   display: block;
   margin-top: 4px;

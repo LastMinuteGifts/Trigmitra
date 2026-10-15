@@ -28,6 +28,7 @@ export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin
   const [items, setItems] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [quota, setQuota] = useState<{ used: number; limit: number | null } | null>(null)
 
   useEffect(() => {
     const db = supabase
@@ -62,6 +63,38 @@ export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin
       setLoading(false)
     }
     load()
+    return () => {
+      cancelled = true
+    }
+  }, [userEmail])
+
+  useEffect(() => {
+    if (!supabase || !userEmail) {
+      setQuota(null)
+      return
+    }
+    let cancelled = false
+    const loadQuota = async () => {
+      const db = supabase
+      if (!db) return
+      const { data } = await db.auth.getUser()
+      if (!data.user || cancelled) return
+      const grant = await db.from('access_grants').select('daily_limit').eq('user_id', data.user.id).maybeSingle()
+      const limit = (grant.data as { daily_limit: number | null } | null)?.daily_limit ?? null
+      if (limit === null) {
+        if (!cancelled) setQuota({ used: 0, limit: null })
+        return
+      }
+      const today = new Date()
+      today.setUTCHours(0, 0, 0, 0)
+      const counted = await db
+        .from('solutions')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', data.user.id)
+        .gte('created_at', today.toISOString())
+      if (!cancelled) setQuota({ used: counted.count ?? 0, limit })
+    }
+    loadQuota()
     return () => {
       cancelled = true
     }
@@ -107,6 +140,7 @@ export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin
             {accessExpiry ? (
               <p className="access-line">
                 Access valid till {new Date(accessExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                {quota && quota.limit !== null && ` · Aaj: ${quota.used}/${quota.limit} used`}
               </p>
             ) : (
               <p className="access-line over">No active access — admin se access lo</p>

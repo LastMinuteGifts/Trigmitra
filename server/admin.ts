@@ -31,9 +31,11 @@ export interface AdminUserRow {
   createdAt: string
   lastSignIn: string
   solves: number
+  solvesToday: number
   plan: string
   expiresAt: string
   accessActive: boolean
+  dailyLimit: number | null
 }
 
 export interface AdminOverview {
@@ -62,10 +64,31 @@ export async function getAdminOverview(
     solvesByUser.set(uid, (solvesByUser.get(uid) ?? 0) + 1)
   }
 
+  // Aaj ke solves gino (UTC day) — daily limit ke liye.
+  const todayStart = new Date()
+  todayStart.setUTCHours(0, 0, 0, 0)
+  const { data: todayRows } = await client
+    .from('solutions')
+    .select('user_id')
+    .gte('created_at', todayStart.toISOString())
+    .limit(5000)
+  const todayByUser = new Map<string, number>()
+  for (const row of todayRows ?? []) {
+    const uid = row.user_id as string
+    todayByUser.set(uid, (todayByUser.get(uid) ?? 0) + 1)
+  }
+
   // Access grants: kis user ka access kab tak valid hai.
-  const { data: grants } = await client.from('access_grants').select('user_id, plan, expires_at')
+  const { data: grants } = await client.from('access_grants').select('user_id, plan, expires_at, daily_limit')
   const grantByUser = new Map(
-    (grants ?? []).map((g) => [g.user_id as string, { plan: g.plan as string, expiresAt: g.expires_at as string }]),
+    (grants ?? []).map((g) => [
+      g.user_id as string,
+      {
+        plan: g.plan as string,
+        expiresAt: g.expires_at as string,
+        dailyLimit: (g.daily_limit as number | null) ?? null,
+      },
+    ]),
   )
   const now = Date.now()
 
@@ -125,9 +148,11 @@ export async function getAdminOverview(
         createdAt: u.created_at,
         lastSignIn: u.last_sign_in_at ?? '',
         solves: solvesByUser.get(u.id) ?? 0,
+        solvesToday: todayByUser.get(u.id) ?? 0,
         plan: grant?.plan ?? '',
         expiresAt: grant?.expiresAt ?? '',
         accessActive: active,
+        dailyLimit: grant?.dailyLimit ?? null,
       }
     }),
   }
@@ -135,12 +160,13 @@ export async function getAdminOverview(
 
 const PLAN_DAYS: Record<string, number> = { week: 7, month: 30, year: 365 }
 
-/** Access do (plan) ya wapas lo ('none'). Expiry automatic — har check par compare hota hai. */
+/** Access do (plan + daily limit) ya wapas lo ('none'). Expiry automatic — har check par compare hota hai. */
 export async function setUserAccess(
   client: SupabaseClient,
   userId: string,
   plan: string,
-): Promise<{ plan: string; expiresAt: string } | null> {
+  dailyLimit?: number | null,
+): Promise<{ plan: string; expiresAt: string; dailyLimit: number | null } | null> {
   if (plan === 'none') {
     const { error } = await client.from('access_grants').delete().eq('user_id', userId)
     if (error) throw new Error(`ADMIN_DB_${error.code ?? 'ERROR'}`)
@@ -148,11 +174,44 @@ export async function setUserAccess(
   }
   const days = PLAN_DAYS[plan]
   if (!days) throw new Error('ADMIN_BAD_PLAN')
+  const limit = dailyLimit ?? null
+  if (limit !== null && (!Number.isInteger(limit) || limit < 1 || limit > 1000)) {
+    throw new Error('ADMIN_BAD_LIMIT')
+  }
   const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
   const { error } = await client.from('access_grants').upsert(
-    { user_id: userId, plan, granted_at: new Date().toISOString(), expires_at: expiresAt },
+    { user_id: userId, plan, granted_at: new Date().toISOString(), expires_at: expiresAt, daily_limit: limit },
     { onConflict: 'user_id' },
   )
   if (error) throw new Error(`ADMIN_DB_${error.code ?? 'ERROR'}`)
-  return { plan, expiresAt }
+  return { plan, expiresAt, dailyLimit: limit }
+}
+
+/** Solve se pehle: grant valid + aaj ka quota bacha? Returns {allowed, reason} */
+export async function checkSolveAllowed(
+  client: SupabaseClient,
+  userId: string,
+): Promise<{ allowed: boolean; reason?: string; limit?: number; used?: number }> {
+  const { data: grant } = await client
+    .from('access_grants')
+    .select('expires_at, daily_limit')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!grant || new Date(grant.expires_at as string).getTime() <= Date.now()) {
+    return { allowed: false, reason: 'Tumhara access khatm ho gaya hai. Access ke liye admin se rabta karo.' }
+  }
+  const limit = (grant.daily_limit as number | null) ?? null
+  if (limit === null) return { allowed: true }
+  const todayStart = new Date()
+  todayStart.setUTCHours(0, 0, 0, 0)
+  const { count } = await client
+    .from('solutions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', todayStart.toISOString())
+  const used = count ?? 0
+  if (used >= limit) {
+    return { allowed: false, reason: `Aaj ka limit khatm! Roz ke ${limit} questions poore ho gaye. Kal phir try karo.`, limit, used }
+  }
+  return { allowed: true, limit, used }
 }

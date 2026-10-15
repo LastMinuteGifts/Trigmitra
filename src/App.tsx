@@ -615,9 +615,20 @@ function App() {
       if (photoNote.trim()) formData.append('description', photoNote.trim())
     }
     if (studentClass) formData.append('studentClass', studentClass)
+    // Logged-in user ka token bhejo taaki server access + daily limit check kare.
+    let authHeaders: Record<string, string> = {}
+    if (supabase && userEmail) {
+      try {
+        const { data } = await supabase.auth.getSession()
+        const token = data.session?.access_token
+        if (token) authHeaders = { Authorization: `Bearer ${token}` }
+      } catch {
+        // ignore — bina token request jayegi
+      }
+    }
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
-      const response = await fetch(`${apiUrl}/solve`, { method: 'POST', body: formData })
+      const response = await fetch(`${apiUrl}/solve`, { method: 'POST', headers: authHeaders, body: formData })
       const payload = await response.json() as { status?: string; solution?: StructuredSolution; message?: string; code?: string }
       if (!response.ok || !payload.solution) {
         throw new Error(payload.message ?? 'Question analyze nahi ho paya. Please try again.')
