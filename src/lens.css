@@ -426,6 +426,12 @@
 
 .admin-dash .auth-field input,
 .admin-dash .admin-search input,
+.admin-page .admin-search input {
+  background: #1a2433;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  padding: 12px 14px 12px 38px;
+}
 .admin-dash .access-select,
 .admin-dash .limit-input {
   background: #1a2433;
