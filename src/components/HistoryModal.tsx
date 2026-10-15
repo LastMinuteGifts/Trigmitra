@@ -17,13 +17,14 @@ export interface HistoryItem {
 
 interface HistoryModalProps {
   userEmail: string | null
+  accessExpiry: string | null
   onClose: () => void
   onLogin: () => void
   onLogout: () => void
   onView: (solution: StructuredSolution, isDemo: boolean) => void
 }
 
-export default function HistoryModal({ userEmail, onClose, onLogin, onLogout, onView }: HistoryModalProps) {
+export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin, onLogout, onView }: HistoryModalProps) {
   const [items, setItems] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -103,6 +104,13 @@ export default function HistoryModal({ userEmail, onClose, onLogin, onLogout, on
                 <LogOut size={14} /> Logout
               </button>
             </div>
+            {accessExpiry ? (
+              <p className="access-line">
+                Access valid till {new Date(accessExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+            ) : (
+              <p className="access-line over">No active access — admin se access lo</p>
+            )}
             <div className="history-stats">
               <div>
                 <b>{items.length}</b>

@@ -7,7 +7,7 @@ import multer from 'multer'
 import { z } from 'zod'
 import { solveMathsImage, solveMathsText } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
-import { getAdminClient, getAdminOverview } from './admin.js'
+import { getAdminClient, getAdminOverview, setUserAccess } from './admin.js'
 
 const env = z.object({
   PORT: z.coerce.number().default(4000),
@@ -145,6 +145,29 @@ app.get('/api/admin/overview', adminAuth, async (request, response) => {
   } catch (error) {
     console.error(error)
     response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'Admin data load nahi hua.' })
+  }
+})
+
+app.post('/api/admin/access', adminAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  try {
+    const body = z.object({
+      userId: z.string().uuid(),
+      plan: z.enum(['none', 'week', 'month', 'year']),
+    }).parse(request.body)
+    const result = await setUserAccess(client, body.userId, body.plan)
+    response.json({ status: 'ok', access: result })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'ADMIN_BAD_INPUT', message: 'Galat input.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'ADMIN_SAVE_FAILED', message: 'Access save nahi hua.' })
   }
 })
 

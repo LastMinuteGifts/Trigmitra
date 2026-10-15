@@ -371,6 +371,46 @@
   text-transform: uppercase;
 }
 
+.access-select {
+  padding: 7px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(33, 42, 54, 0.16);
+  background: #fff;
+  color: #1a2433;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  max-width: 130px;
+}
+
+.access-until {
+  display: block;
+  margin-top: 4px;
+  color: #2e7d4f;
+  font-size: 10.5px;
+  font-weight: 700;
+}
+
+.access-expired {
+  display: block;
+  margin-top: 4px;
+  color: #b04a3e;
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.access-line {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: #2e7d4f;
+  font-weight: 700;
+}
+
+.access-line.over {
+  color: #b04a3e;
+}
+
 @media (max-width: 760px) {
   .admin-cards {
     grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -31,6 +31,9 @@ export interface AdminUserRow {
   createdAt: string
   lastSignIn: string
   solves: number
+  plan: string
+  expiresAt: string
+  accessActive: boolean
 }
 
 export interface AdminOverview {
@@ -58,6 +61,13 @@ export async function getAdminOverview(
     const uid = row.user_id as string
     solvesByUser.set(uid, (solvesByUser.get(uid) ?? 0) + 1)
   }
+
+  // Access grants: kis user ka access kab tak valid hai.
+  const { data: grants } = await client.from('access_grants').select('user_id, plan, expires_at')
+  const grantByUser = new Map(
+    (grants ?? []).map((g) => [g.user_id as string, { plan: g.plan as string, expiresAt: g.expires_at as string }]),
+  )
+  const now = Date.now()
 
   const { data: rows, error } = await client
     .from('solutions')
@@ -106,12 +116,43 @@ export async function getAdminOverview(
       .sort((a, b) => (a.day < b.day ? 1 : -1))
       .slice(0, 7),
     solutions,
-    users: users.map((u) => ({
-      id: u.id,
-      email: u.email ?? '(no email)',
-      createdAt: u.created_at,
-      lastSignIn: u.last_sign_in_at ?? '',
-      solves: solvesByUser.get(u.id) ?? 0,
-    })),
+    users: users.map((u) => {
+      const grant = grantByUser.get(u.id)
+      const active = !!grant && new Date(grant.expiresAt).getTime() > now
+      return {
+        id: u.id,
+        email: u.email ?? '(no email)',
+        createdAt: u.created_at,
+        lastSignIn: u.last_sign_in_at ?? '',
+        solves: solvesByUser.get(u.id) ?? 0,
+        plan: grant?.plan ?? '',
+        expiresAt: grant?.expiresAt ?? '',
+        accessActive: active,
+      }
+    }),
   }
+}
+
+const PLAN_DAYS: Record<string, number> = { week: 7, month: 30, year: 365 }
+
+/** Access do (plan) ya wapas lo ('none'). Expiry automatic — har check par compare hota hai. */
+export async function setUserAccess(
+  client: SupabaseClient,
+  userId: string,
+  plan: string,
+): Promise<{ plan: string; expiresAt: string } | null> {
+  if (plan === 'none') {
+    const { error } = await client.from('access_grants').delete().eq('user_id', userId)
+    if (error) throw new Error(`ADMIN_DB_${error.code ?? 'ERROR'}`)
+    return null
+  }
+  const days = PLAN_DAYS[plan]
+  if (!days) throw new Error('ADMIN_BAD_PLAN')
+  const expiresAt = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+  const { error } = await client.from('access_grants').upsert(
+    { user_id: userId, plan, granted_at: new Date().toISOString(), expires_at: expiresAt },
+    { onConflict: 'user_id' },
+  )
+  if (error) throw new Error(`ADMIN_DB_${error.code ?? 'ERROR'}`)
+  return { plan, expiresAt }
 }

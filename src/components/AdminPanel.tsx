@@ -18,6 +18,9 @@ interface AdminUser {
   createdAt: string
   lastSignIn: string
   solves: number
+  plan: string
+  expiresAt: string
+  accessActive: boolean
 }
 
 interface AdminOverview {
@@ -61,6 +64,32 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Kuch gadbad hui.')
     } finally {
+      setBusy(false)
+    }
+  }
+
+  // Access do / wapas lo — expiry automatic cut hogi.
+  const setAccess = async (userId: string, plan: string) => {
+    if (!adminKey.trim()) {
+      setError('Pehle admin key likho.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${apiUrl}/admin/access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey.trim() },
+        body: JSON.stringify({ userId, plan }),
+      })
+      const payload = (await response.json()) as { message?: string }
+      if (!response.ok) {
+        throw new Error(payload.message ?? 'Save nahi hua.')
+      }
+      await load()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kuch gadbad hui.')
       setBusy(false)
     }
   }
@@ -200,23 +229,46 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
             {view === 'users' ? (
               <div className="admin-table-wrap">
                 <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Solves</th>
-                      <th>Joined</th>
-                      <th>Last active</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {userRows.map((u) => (
-                      <tr key={u.id}>
-                        <td data-label="User">
-                          <span className="admin-user">{u.email}</span>
-                        </td>
-                        <td data-label="Solves">
-                          <b>{u.solves}</b>
-                        </td>
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Solves</th>
+                    <th>Access</th>
+                    <th>Joined</th>
+                    <th>Last active</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userRows.map((u) => (
+                    <tr key={u.id}>
+                      <td data-label="User">
+                        <span className="admin-user">{u.email}</span>
+                      </td>
+                      <td data-label="Solves">
+                        <b>{u.solves}</b>
+                      </td>
+                      <td data-label="Access">
+                        <select
+                          className="access-select"
+                          value={u.accessActive ? u.plan : ''}
+                          onChange={(event) => setAccess(u.id, event.target.value)}
+                          disabled={busy}
+                          aria-label={`Access for ${u.email}`}
+                        >
+                          <option value="">No access</option>
+                          <option value="week">1 week</option>
+                          <option value="month">1 month</option>
+                          <option value="year">1 year</option>
+                        </select>
+                        {u.accessActive && u.expiresAt && (
+                          <small className="access-until">
+                            till {new Date(u.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                          </small>
+                        )}
+                        {!u.accessActive && u.expiresAt && (
+                          <small className="access-expired">expired</small>
+                        )}
+                      </td>
                         <td data-label="Joined">
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                         </td>

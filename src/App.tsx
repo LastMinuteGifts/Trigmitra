@@ -343,6 +343,34 @@ function getFreeUsed(): number {
   }
 }
 
+// Logged-in user ka access abhi valid hai? Expiry har baar check hoti hai — automatic cut.
+async function hasActiveAccess(): Promise<boolean> {
+  if (!supabase) return true
+  try {
+    const { data } = await supabase.auth.getUser()
+    if (!data.user) return false
+    const res = await supabase.from('access_grants').select('expires_at').eq('user_id', data.user.id).maybeSingle()
+    const row = res.data as { expires_at: string } | null
+    return !!row && new Date(row.expires_at).getTime() > Date.now()
+  } catch {
+    return false
+  }
+}
+
+async function getAccessExpiry(): Promise<string | null> {
+  if (!supabase) return null
+  try {
+    const { data } = await supabase.auth.getUser()
+    if (!data.user) return null
+    const res = await supabase.from('access_grants').select('expires_at').eq('user_id', data.user.id).maybeSingle()
+    const row = res.data as { expires_at: string } | null
+    if (!row || new Date(row.expires_at).getTime() <= Date.now()) return null
+    return row.expires_at
+  } catch {
+    return null
+  }
+}
+
 function App() {
   const fileInput = useRef<HTMLInputElement>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -381,6 +409,7 @@ function App() {
     }
   }
   const [freeUsed, setFreeUsed] = useState(() => getFreeUsed())
+  const [accessExpiry, setAccessExpiry] = useState<string | null>(null)
   const [showAllIdentities, setShowAllIdentities] = useState(false)
   const [activeCategory, setActiveCategory] = useState('All')
   const [exampleOpen, setExampleOpen] = useState<{ cat: string; formula: string; label: string } | null>(null)
@@ -417,6 +446,14 @@ function App() {
     })
     return () => listener.subscription.unsubscribe()
   }, [])
+  // Login badalte hi access expiry lao.
+  useEffect(() => {
+    if (!userEmail) {
+      setAccessExpiry(null)
+      return
+    }
+    getAccessExpiry().then(setAccessExpiry)
+  }, [userEmail])
   // Solved solution history me save karo (login ho tabhi).
   const saveSolution = async (sol: StructuredSolution, status?: string) => {
     if (!supabase) return
@@ -553,6 +590,15 @@ function App() {
       setAuthOpen(true)
       return
     }
+    // Logged-in user ka access valid hai? Expiry automatic cut karti hai.
+    if (userEmail) {
+      const allowed = await hasActiveAccess()
+      if (!allowed) {
+        setAccessExpiry(null)
+        setUploadError('Tumhara access khatm ho gaya hai. Access ke liye admin se rabta karo.')
+        return
+      }
+    }
     const isTextMode = inputMode === 'text'
     if (isTextMode && !questionText.trim()) {
       setUploadError('Pehle apna question likho.')
@@ -675,6 +721,7 @@ function App() {
     {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     {historyOpen && <HistoryModal
       userEmail={userEmail}
+      accessExpiry={accessExpiry}
       onClose={() => setHistoryOpen(false)}
       onLogin={() => { setHistoryOpen(false); setAuthOpen(true) }}
       onLogout={async () => { await supabase?.auth.signOut(); setUserEmail(null) }}
