@@ -143,7 +143,7 @@ export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin
                 {quota && quota.limit !== null && ` · Aaj: ${quota.used}/${quota.limit} used`}
               </p>
             ) : (
-              <p className="access-line over">No active access — admin se access lo</p>
+              <p className="access-line over">No active access — please contact the admin</p>
             )}
             <div className="history-stats">
               <div>

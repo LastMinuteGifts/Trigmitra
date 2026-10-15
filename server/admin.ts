@@ -198,7 +198,7 @@ export async function checkSolveAllowed(
     .eq('user_id', userId)
     .maybeSingle()
   if (!grant || new Date(grant.expires_at as string).getTime() <= Date.now()) {
-    return { allowed: false, reason: 'Tumhara access khatm ho gaya hai. Access ke liye admin se rabta karo.' }
+    return { allowed: false, reason: 'Your access has expired. Please contact the admin for access.' }
   }
   const limit = (grant.daily_limit as number | null) ?? null
   if (limit === null) return { allowed: true }
@@ -211,7 +211,7 @@ export async function checkSolveAllowed(
     .gte('created_at', todayStart.toISOString())
   const used = count ?? 0
   if (used >= limit) {
-    return { allowed: false, reason: `Aaj ka limit khatm! Roz ke ${limit} questions poore ho gaye. Kal phir try karo.`, limit, used }
+    return { allowed: false, reason: `Daily limit reached! You have used all ${limit} questions for today. Please try again tomorrow.`, limit, used }
   }
   return { allowed: true, limit, used }
 }

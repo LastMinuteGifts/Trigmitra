@@ -595,7 +595,7 @@ function App() {
       const allowed = await hasActiveAccess()
       if (!allowed) {
         setAccessExpiry(null)
-        setUploadError('Tumhara access khatm ho gaya hai. Access ke liye admin se rabta karo.')
+        setUploadError('Your access has expired. Please contact the admin for access.')
         return
       }
     }
