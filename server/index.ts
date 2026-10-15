@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import crypto from 'node:crypto'
 import cors from 'cors'
 import express, { type ErrorRequestHandler } from 'express'
 import rateLimit from 'express-rate-limit'
@@ -20,6 +21,7 @@ const env = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_KEY: z.string().trim().optional().transform((v) => (v ? v : undefined)),
   ADMIN_SECRET: z.string().trim().optional().transform((v) => (v ? v : undefined)),
+  AI_DAILY_BUDGET: z.coerce.number().int().min(1).default(500),
 }).parse(process.env)
 
 const aiModels = (env.AI_MODELS ?? env.AI_MODEL).split(',').map((s) => s.trim()).filter(Boolean)
@@ -28,6 +30,8 @@ const normalizeOrigin = (value: string) => value.trim().replace(/\/+$/, '').toLo
 const allowedOrigins = env.CLIENT_ORIGIN.split(',').map(normalizeOrigin).filter(Boolean)
 
 const app = express()
+// Render proxy ke peeche sahi client IP ke liye (warna rate-limit bekaar).
+app.set('trust proxy', 1)
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024, files: 1 },
@@ -50,6 +54,30 @@ app.use(cors({
 app.use(express.json({ limit: '32kb' }))
 app.use(rateLimit({ windowMs: 60 * 1000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false }))
 
+// Solve endpoint par sakht limit: 10 min me max 12 AI calls per IP (abuse guard).
+const solveLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 12,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { code: 'RATE_LIMITED', message: 'Bahut zyada requests. Thodi der rukkar phir try karo.' },
+})
+
+// Roz ka AI budget cap (bill protection): exceed ho to demo fallback.
+let budgetDay = new Date().toISOString().slice(0, 10)
+let budgetUsed = 0
+function budgetLeft(): boolean {
+  const today = new Date().toISOString().slice(0, 10)
+  if (today !== budgetDay) {
+    budgetDay = today
+    budgetUsed = 0
+  }
+  return budgetUsed < env.AI_DAILY_BUDGET
+}
+function budgetSpend(): void {
+  budgetUsed++
+}
+
 app.get('/api/health', (_request, response) => {
   response.json({
     status: 'ok',
@@ -64,7 +92,7 @@ app.get('/api/demo', (_request, response) => {
   response.json({ status: 'demo', solution: buildDemoSolution() })
 })
 
-app.post('/api/solve', upload.single('questionImage'), async (request, response) => {
+app.post('/api/solve', solveLimiter, upload.single('questionImage'), async (request, response) => {
   const body = (request.body ?? {}) as { questionText?: unknown; description?: unknown; studentClass?: unknown }
   const questionText = typeof body.questionText === 'string' ? body.questionText.trim().slice(0, 2000) : ''
   const description = typeof body.description === 'string' ? body.description.trim().slice(0, 1000) : ''
@@ -104,6 +132,9 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
     const studentClass = z.coerce.number().int().min(1).max(10).optional().parse(
       (request.body as { studentClass?: unknown } | undefined)?.studentClass ?? undefined,
     )
+    if (!budgetLeft()) {
+      throw new Error('AI_BUDGET_OVER')
+    }
     const config = {
       apiKey: env.AI_API_KEY,
       apiUrl: env.AI_API_URL,
@@ -113,6 +144,7 @@ app.post('/api/solve', upload.single('questionImage'), async (request, response)
     const solution = request.file
       ? await solveMathsImage(request.file.buffer, request.file.mimetype, config, studentClass, description || undefined)
       : await solveMathsText(questionText, config, studentClass)
+    budgetSpend()
     response.json({ status: 'complete', solution })
   } catch (error) {
     // AI fail ho jaye to bhi demo fallback do (agar DEMO_MODE on hai).
@@ -141,7 +173,10 @@ const adminAuth: express.RequestHandler = (request, response, next) => {
     return
   }
   const key = request.header('x-admin-key')
-  if (!key || key !== env.ADMIN_SECRET) {
+  const expected = Buffer.from(env.ADMIN_SECRET)
+  const actual = Buffer.from(key ?? '')
+  // Timing-safe compare taaki key guess karna mushkil ho.
+  if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) {
     response.status(403).json({ code: 'ADMIN_FORBIDDEN', message: 'Wrong admin key.' })
     return
   }
