@@ -15,6 +15,25 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
+  const resendLink = async () => {
+    if (!supabase) return
+    if (!email.trim()) {
+      setError('Pehle email likho.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const { error } = await supabase.auth.resend({ type: 'signup', email: email.trim() })
+      if (error) throw error
+      setNotice('Naya link bhej diya! Email check karo (spam folder bhi dekho).')
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kuch gadbad hui. Phir try karo.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const submit = async () => {
     if (!supabase) {
       setError('Login abhi setup nahi hai.')
@@ -123,6 +142,9 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         {notice && <div className="auth-notice">{notice}</div>}
         <button className="analyze-button auth-submit" onClick={submit} disabled={busy}>
           {busy ? 'Ruko...' : mode === 'login' ? (<><LogIn size={16} /> Login karo</>) : (<><UserPlus size={16} /> Account banao</>)}
+        </button>
+        <button className="text-button resend-link" type="button" onClick={resendLink} disabled={busy}>
+          Link nahi aaya ya expire ho gaya? Dobara bhejo
         </button>
       </div>
     </div>

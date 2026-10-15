@@ -1003,6 +1003,12 @@ button.admin-card:hover {
   justify-content: center;
 }
 
+.resend-link {
+  justify-content: center;
+  width: 100%;
+  font-size: 12px;
+}
+
 /* History modal */
 .history-box {
   display: grid;
