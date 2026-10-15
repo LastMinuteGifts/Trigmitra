@@ -151,8 +151,10 @@
   min-height: 100vh;
   padding: 32px 20px 70px;
   background:
-    radial-gradient(circle at top, rgba(255, 222, 176, 0.4), transparent 28%),
-    linear-gradient(180deg, #f8f4ee 0%, #f3efe8 100%);
+    radial-gradient(circle at 20% 0%, rgba(240, 91, 69, 0.14), transparent 40%),
+    radial-gradient(circle at 85% 20%, rgba(97, 125, 157, 0.18), transparent 45%),
+    linear-gradient(180deg, #141c28 0%, #0c1119 100%);
+  color: #e8edf3;
 }
 
 .admin-page .example-overlay {
@@ -165,6 +167,131 @@
 
 .admin-page .example-box {
   margin: 0 auto;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-page .example-head h3 {
+  color: #fff;
+}
+
+.admin-page .example-label {
+  color: #9aa7b5;
+}
+
+.admin-page .admin-card {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.admin-page .admin-card b {
+  color: #fff;
+}
+
+.admin-page .admin-card span {
+  color: #8b98a9;
+}
+
+.admin-page .admin-section {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.09);
+}
+
+.admin-page .section-kicker {
+  color: #f7c661;
+}
+
+.admin-page .topic-bar-row {
+  color: #d4dce6;
+}
+
+.admin-page .topic-bar {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.admin-page .topic-bar-row b {
+  color: #fff;
+}
+
+.admin-page .week-bar span {
+  color: #8b98a9;
+}
+
+.admin-page .auth-field {
+  color: #c6d0db;
+}
+
+.admin-page .auth-field input,
+.admin-page .admin-search input,
+.admin-page .access-select,
+.admin-page .limit-input {
+  background: #1a2433;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.admin-page .admin-search svg {
+  color: #8b98a9;
+}
+
+.admin-page .admin-table-wrap {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-page .admin-table th {
+  background: #1a2433;
+  color: #8b98a9;
+}
+
+.admin-page .admin-table td {
+  color: #d4dce6;
+  border-bottom-color: rgba(255, 255, 255, 0.07);
+}
+
+.admin-page .history-topic {
+  background: rgba(247, 198, 97, 0.16);
+  color: #f7c661;
+}
+
+.admin-page .tool-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.admin-page .tool-btn:hover:not(:disabled) {
+  border-color: rgba(240, 91, 69, 0.6);
+  color: #ff8d76;
+}
+
+.admin-page .cat-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #d4dce6;
+}
+
+.admin-page .cat-chip.active {
+  background: #f05b45;
+  border-color: transparent;
+  color: #fff;
+}
+
+.admin-page .auth-notice {
+  background: rgba(84, 160, 110, 0.14);
+  border-color: rgba(84, 160, 110, 0.35);
+  color: #9fd8ae;
+}
+
+.admin-page .access-until {
+  color: #9fd8ae;
+}
+
+.admin-page .close-upload:not(.admin-close) {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #fff;
 }
 
 /* Footer admin link */
