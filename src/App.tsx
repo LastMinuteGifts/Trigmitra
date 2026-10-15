@@ -739,7 +739,6 @@ function App() {
       onView={(sol, demo) => { setSolution(sol); setIsDemoSolution(demo); setHistoryOpen(false) }}
     />}
     <footer>
-      <div className="brand"><span className="brand-mark"><img src="./logo-icon.svg" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></div>
       <div className="footer-meta">
         <span className="developer-credit">by ASAD • student of Millat Academy</span>
       </div>
