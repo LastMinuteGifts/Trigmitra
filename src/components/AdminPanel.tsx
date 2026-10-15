@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, FileText, FlaskConical, KeyRound, RotateCw, Search, ShieldCheck, Tags, Users, X } from 'lucide-react'
+import { ArrowLeft, Check, FileText, FlaskConical, KeyRound, RotateCw, Search, Tags, Users } from 'lucide-react'
 
 interface AdminSolution {
   id: string
@@ -127,22 +127,42 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const maxDay = Math.max(1, ...(overview?.last7Days.map((d) => d.count) ?? [1]))
 
   return (
-    <div className="example-overlay" role="dialog" aria-modal="true" aria-label="Admin panel" onClick={onClose}>
-      <div className="example-box admin-box" onClick={(event) => event.stopPropagation()}>
-        <div className="admin-hero">
-          <div className="admin-hero-icon">
-            <ShieldCheck size={22} />
-          </div>
+    <div className="admin-dash">
+      <aside className="admin-side">
+        <div className="admin-brand">
+          <img src="./logo-icon.svg" alt="AnkNawab" />
           <div>
-            <span className="section-kicker">ADMIN ONLY</span>
-            <h3>Admin panel</h3>
+            <b>ANKNAWAB</b>
+            <span>admin console</span>
           </div>
-          <button className="close-upload admin-close" aria-label="Close admin" onClick={onClose}>
-            <X size={20} />
+        </div>
+        {overview && (
+          <nav className="admin-nav" aria-label="Admin sections">
+            <button
+              className={view === 'solutions' ? 'active' : ''}
+              onClick={() => setView('solutions')}
+            >
+              <FileText size={17} /> Solutions
+            </button>
+            <button
+              className={view === 'users' ? 'active' : ''}
+              onClick={() => setView('users')}
+            >
+              <Users size={17} /> Users ({overview.totalUsers})
+            </button>
+          </nav>
+        )}
+        <div className="admin-side-foot">
+          <button type="button" onClick={onClose}>
+            <ArrowLeft size={16} /> Back to site
           </button>
         </div>
+      </aside>
+      <main className="admin-main">
         {!overview ? (
-          <>
+          <div className="admin-login-card">
+            <span className="section-kicker">ADMIN ONLY</span>
+            <h2>Admin panel</h2>
             <p className="example-label">Kaun kya solve kar raha hai — ye dekhne ke liye admin key dalo.</p>
             <label className="auth-field">
               Admin key
@@ -160,9 +180,18 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
             <button className="analyze-button auth-submit" onClick={load} disabled={busy}>
               {busy ? 'Ruko...' : (<><KeyRound size={16} /> Open panel</>)}
             </button>
-          </>
+          </div>
         ) : (
           <>
+            <header className="admin-topbar">
+              <div>
+                <span className="section-kicker">{view === 'users' ? 'USERS' : 'OVERVIEW'}</span>
+                <h2>{view === 'users' ? 'All users' : 'Dashboard'}</h2>
+              </div>
+              <button className="tool-btn" type="button" onClick={load} disabled={busy}>
+                <RotateCw size={15} /> Refresh
+              </button>
+            </header>
             <div className="admin-cards">
               <div className="admin-card">
                 <div className="admin-card-icon blue"><Users size={18} /></div>
@@ -181,52 +210,34 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 <div><b>{overview.topics.length}</b><span>topics</span></div>
               </div>
             </div>
-            {overview.topics.length > 0 && (
-              <div className="admin-section">
-                <span className="section-kicker">TOP TOPICS</span>
-                <div className="topic-bars">
-                  {overview.topics.slice(0, 6).map((t) => (
-                    <div className="topic-bar-row" key={t.topic}>
-                      <span>{t.topic}</span>
-                      <div className="topic-bar"><i style={{ width: `${Math.round((t.count / maxTopic) * 100)}%` }} /></div>
-                      <b>{t.count}</b>
-                    </div>
-                  ))}
+            <div className="admin-cols">
+              {overview.topics.length > 0 && (
+                <div className="admin-section">
+                  <span className="section-kicker">TOP TOPICS</span>
+                  <div className="topic-bars">
+                    {overview.topics.slice(0, 6).map((t) => (
+                      <div className="topic-bar-row" key={t.topic}>
+                        <span>{t.topic}</span>
+                        <div className="topic-bar"><i style={{ width: `${Math.round((t.count / maxTopic) * 100)}%` }} /></div>
+                        <b>{t.count}</b>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            {overview.last7Days.length > 0 && (
-              <div className="admin-section">
-                <span className="section-kicker">LAST 7 DAYS</span>
-                <div className="week-bars">
-                  {overview.last7Days.map((d) => (
-                    <div className="week-bar" key={d.day} title={`${d.day}: ${d.count}`}>
-                      <i style={{ height: `${Math.max(8, Math.round((d.count / maxDay) * 100))}%` }} />
-                      <span>{d.day.slice(5)}</span>
-                    </div>
-                  ))}
+              )}
+              {overview.last7Days.length > 0 && (
+                <div className="admin-section">
+                  <span className="section-kicker">LAST 7 DAYS</span>
+                  <div className="week-bars">
+                    {overview.last7Days.map((d) => (
+                      <div className="week-bar" key={d.day} title={`${d.day}: ${d.count}`}>
+                        <i style={{ height: `${Math.max(8, Math.round((d.count / maxDay) * 100))}%` }} />
+                        <span>{d.day.slice(5)}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-            <div className="admin-toolbar">
-              <div className="auth-tabs" role="tablist" aria-label="Admin views">
-                <button
-                  role="tab"
-                  aria-selected={view === 'solutions'}
-                  className={view === 'solutions' ? 'cat-chip active' : 'cat-chip'}
-                  onClick={() => setView('solutions')}
-                >
-                  Solutions
-                </button>
-                <button
-                  role="tab"
-                  aria-selected={view === 'users'}
-                  className={view === 'users' ? 'cat-chip active' : 'cat-chip'}
-                  onClick={() => setView('users')}
-                >
-                  Users ({overview?.totalUsers ?? 0})
-                </button>
-              </div>
+              )}
             </div>
             <div className="admin-toolbar">
               <label className="auth-field admin-search-field">
@@ -239,88 +250,85 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                   />
                 </div>
               </label>
-              <button className="tool-btn" type="button" onClick={load} disabled={busy}>
-                <RotateCw size={15} /> Refresh
-              </button>
             </div>
             {error && <div className="upload-error">{error}</div>}
             {view === 'users' ? (
               <div className="admin-table-wrap">
                 <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Solves</th>
-                    <th>Access</th>
-                    <th>Joined</th>
-                    <th>Last active</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {userRows.map((u) => (
-                    <tr key={u.id}>
-                      <td data-label="User">
-                        <span className="admin-user">{u.email}</span>
-                      </td>
-                      <td data-label="Solves">
-                        <b>{u.solves}</b>
-                        <small className="access-until">{u.solvesToday} today</small>
-                      </td>
-                      <td data-label="Access">
-                        <select
-                          className="access-select"
-                          value={draftOf(u).plan}
-                          onChange={(event) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [u.id]: { ...draftOf(u), plan: event.target.value },
-                            }))
-                          }
-                          disabled={busy}
-                          aria-label={`Access for ${u.email}`}
-                        >
-                          <option value="">No access</option>
-                          <option value="week">1 week</option>
-                          <option value="month">1 month</option>
-                          <option value="year">1 year</option>
-                        </select>
-                        <div className="access-row">
-                          <input
-                            className="limit-input"
-                            type="number"
-                            min={1}
-                            max={1000}
-                            placeholder="∞/day"
-                            title="Daily limit (khali = unlimited)"
-                            value={draftOf(u).limit}
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Solves</th>
+                      <th>Access</th>
+                      <th>Joined</th>
+                      <th>Last active</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {userRows.map((u) => (
+                      <tr key={u.id}>
+                        <td data-label="User">
+                          <span className="admin-user">{u.email}</span>
+                        </td>
+                        <td data-label="Solves">
+                          <b>{u.solves}</b>
+                          <small className="access-until">{u.solvesToday} today</small>
+                        </td>
+                        <td data-label="Access">
+                          <select
+                            className="access-select"
+                            value={draftOf(u).plan}
                             onChange={(event) =>
                               setDrafts((prev) => ({
                                 ...prev,
-                                [u.id]: { ...draftOf(u), limit: event.target.value },
+                                [u.id]: { ...draftOf(u), plan: event.target.value },
                               }))
                             }
                             disabled={busy}
-                            aria-label={`Daily limit for ${u.email}`}
-                          />
-                          <button
-                            className="tool-btn access-save"
-                            type="button"
-                            onClick={() => setAccess(u.id, draftOf(u).plan, draftOf(u).limit)}
-                            disabled={busy}
-                            aria-label={`Save access for ${u.email}`}
+                            aria-label={`Access for ${u.email}`}
                           >
-                            <Check size={15} />
-                          </button>
-                        </div>
-                        {u.accessActive && u.expiresAt && (
-                          <small className="access-until">
-                            till {new Date(u.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                          </small>
-                        )}
-                        {!u.accessActive && u.expiresAt && (
-                          <small className="access-expired">expired</small>
-                        )}
-                      </td>
+                            <option value="">No access</option>
+                            <option value="week">1 week</option>
+                            <option value="month">1 month</option>
+                            <option value="year">1 year</option>
+                          </select>
+                          <div className="access-row">
+                            <input
+                              className="limit-input"
+                              type="number"
+                              min={1}
+                              max={1000}
+                              placeholder="∞/day"
+                              title="Daily limit (khali = unlimited)"
+                              value={draftOf(u).limit}
+                              onChange={(event) =>
+                                setDrafts((prev) => ({
+                                  ...prev,
+                                  [u.id]: { ...draftOf(u), limit: event.target.value },
+                                }))
+                              }
+                              disabled={busy}
+                              aria-label={`Daily limit for ${u.email}`}
+                            />
+                            <button
+                              className="tool-btn access-save"
+                              type="button"
+                              onClick={() => setAccess(u.id, draftOf(u).plan, draftOf(u).limit)}
+                              disabled={busy}
+                              aria-label={`Save access for ${u.email}`}
+                            >
+                              <Check size={15} />
+                            </button>
+                          </div>
+                          {u.accessActive && u.expiresAt && (
+                            <small className="access-until">
+                              till {new Date(u.expiresAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                            </small>
+                          )}
+                          {!u.accessActive && u.expiresAt && (
+                            <small className="access-expired">expired</small>
+                          )}
+                        </td>
                         <td data-label="Joined">
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}
                         </td>
@@ -334,42 +342,42 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 {userRows.length === 0 && <p className="example-label">Koi user nahi mila.</p>}
               </div>
             ) : (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Question</th>
-                    <th>Topic</th>
-                    <th>Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((s) => (
-                    <tr key={s.id}>
-                      <td data-label="User">
-                        <span className="admin-user">{s.userEmail}</span>
-                        {s.isDemo && <span className="pill-demo">demo</span>}
-                      </td>
-                      <td data-label="Question" title={s.question}>
-                        {s.question.length > 90 ? `${s.question.slice(0, 90)}…` : s.question}
-                      </td>
-                      <td data-label="Topic">
-                        <span className="history-topic">{s.topic}</span>
-                      </td>
-                      <td data-label="Date">
-                        {new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      </td>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>User</th>
+                      <th>Question</th>
+                      <th>Topic</th>
+                      <th>Date</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              {rows.length === 0 && <p className="example-label">Kuch nahi mila.</p>}
-            </div>
+                  </thead>
+                  <tbody>
+                    {rows.map((s) => (
+                      <tr key={s.id}>
+                        <td data-label="User">
+                          <span className="admin-user">{s.userEmail}</span>
+                          {s.isDemo && <span className="pill-demo">demo</span>}
+                        </td>
+                        <td data-label="Question" title={s.question}>
+                          {s.question.length > 90 ? `${s.question.slice(0, 90)}…` : s.question}
+                        </td>
+                        <td data-label="Topic">
+                          <span className="history-topic">{s.topic}</span>
+                        </td>
+                        <td data-label="Date">
+                          {new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {rows.length === 0 && <p className="example-label">Kuch nahi mila.</p>}
+              </div>
             )}
           </>
         )}
-      </div>
+      </main>
     </div>
   )
 }

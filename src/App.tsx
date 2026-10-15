@@ -675,13 +675,7 @@ function App() {
 
   // Admin alag full page par: public site bilkul nahi dikhegi.
   if (adminOpen) {
-    return (
-      <div className="app-shell">
-        <div className="admin-page">
-          <AdminPanel onClose={closeAdmin} />
-        </div>
-      </div>
-    )
+    return <AdminPanel onClose={closeAdmin} />
   }
 
   return <div className="app-shell">
