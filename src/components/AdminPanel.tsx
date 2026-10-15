@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { ArrowLeft, Check, FileText, FlaskConical, KeyRound, RotateCw, Search, Tags, Users } from 'lucide-react'
 
 interface AdminSolution {
@@ -44,6 +44,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [view, setView] = useState<'solutions' | 'users'>('solutions')
+  const [topicFilter, setTopicFilter] = useState<string | null>(null)
+  const [demoOnly, setDemoOnly] = useState(false)
+  const topicsRef = useRef<HTMLDivElement>(null)
   const [drafts, setDrafts] = useState<Record<string, { plan: string; limit: string }>>({})
   const draftOf = (u: AdminUser) =>
     drafts[u.id] ?? { plan: u.accessActive ? u.plan : '', limit: u.dailyLimit?.toString() ?? '' }
@@ -115,11 +118,18 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const q = query.trim().toLowerCase()
   const rows = (overview?.solutions ?? []).filter(
     (s) =>
-      !q ||
-      s.userEmail.toLowerCase().includes(q) ||
-      s.question.toLowerCase().includes(q) ||
-      s.topic.toLowerCase().includes(q),
+      (!topicFilter || s.topic === topicFilter) &&
+      (!demoOnly || s.isDemo) &&
+      (!q ||
+        s.userEmail.toLowerCase().includes(q) ||
+        s.question.toLowerCase().includes(q) ||
+        s.topic.toLowerCase().includes(q)),
   )
+  const clearFilters = () => {
+    setTopicFilter(null)
+    setDemoOnly(false)
+    setQuery('')
+  }
   const userRows = (overview?.users ?? []).filter(
     (u) => !q || u.email.toLowerCase().includes(q),
   )
@@ -193,38 +203,76 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
               </button>
             </header>
             <div className="admin-cards">
-              <div className="admin-card">
+              <button type="button" className="admin-card" onClick={() => setView('users')} title="See all users">
                 <div className="admin-card-icon blue"><Users size={18} /></div>
                 <div><b>{overview.totalUsers}</b><span>total users</span></div>
-              </div>
-              <div className="admin-card">
+              </button>
+              <button
+                type="button"
+                className="admin-card"
+                onClick={() => { setView('solutions'); setTopicFilter(null); setDemoOnly(false) }}
+                title="See all solutions"
+              >
                 <div className="admin-card-icon coral"><FileText size={18} /></div>
                 <div><b>{overview.totalSolutions}</b><span>solutions</span></div>
-              </div>
-              <div className="admin-card">
+              </button>
+              <button
+                type="button"
+                className="admin-card"
+                onClick={() => { setView('solutions'); setTopicFilter(null); setDemoOnly(true) }}
+                title="See demo fallbacks only"
+              >
                 <div className="admin-card-icon yellow"><FlaskConical size={18} /></div>
                 <div><b>{overview.demoCount}</b><span>demo fallback</span></div>
-              </div>
-              <div className="admin-card">
+              </button>
+              <button
+                type="button"
+                className="admin-card"
+                onClick={() => {
+                  setView('solutions')
+                  setTopicFilter(null)
+                  setDemoOnly(false)
+                  topicsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+                title="See topic breakdown"
+              >
                 <div className="admin-card-icon green"><Tags size={18} /></div>
                 <div><b>{overview.topics.length}</b><span>topics</span></div>
-              </div>
+              </button>
             </div>
             <div className="admin-cols">
-              {overview.topics.length > 0 && (
-                <div className="admin-section">
-                  <span className="section-kicker">TOP TOPICS</span>
-                  <div className="topic-bars">
-                    {overview.topics.slice(0, 6).map((t) => (
-                      <div className="topic-bar-row" key={t.topic}>
-                        <span>{t.topic}</span>
-                        <div className="topic-bar"><i style={{ width: `${Math.round((t.count / maxTopic) * 100)}%` }} /></div>
-                        <b>{t.count}</b>
-                      </div>
-                    ))}
-                  </div>
+            {overview.topics.length > 0 && (
+              <div className="admin-section" ref={topicsRef}>
+                <span className="section-kicker">TOP TOPICS · TAP TO FILTER</span>
+                <div className="topic-bars">
+                  {overview.topics.slice(0, 6).map((t) => (
+                    <div
+                      className={topicFilter === t.topic ? 'topic-bar-row selected' : 'topic-bar-row'}
+                      key={t.topic}
+                      role="button"
+                      tabIndex={0}
+                      title={`Filter by ${t.topic}`}
+                      onClick={() => {
+                        setView('solutions')
+                        setDemoOnly(false)
+                        setTopicFilter((prev) => (prev === t.topic ? null : t.topic))
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          setView('solutions')
+                          setDemoOnly(false)
+                          setTopicFilter((prev) => (prev === t.topic ? null : t.topic))
+                        }
+                      }}
+                    >
+                      <span>{t.topic}</span>
+                      <div className="topic-bar"><i style={{ width: `${Math.round((t.count / maxTopic) * 100)}%` }} /></div>
+                      <b>{t.count}</b>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </div>
+            )}
               {overview.last7Days.length > 0 && (
                 <div className="admin-section">
                   <span className="section-kicker">LAST 7 DAYS</span>
@@ -252,6 +300,24 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
               </label>
             </div>
             {error && <div className="upload-error">{error}</div>}
+            {(topicFilter || demoOnly) && view === 'solutions' && (
+              <div className="filter-bar">
+                <span>Filtered:</span>
+                {topicFilter && (
+                  <button type="button" className="filter-chip" onClick={() => setTopicFilter(null)}>
+                    {topicFilter} ×
+                  </button>
+                )}
+                {demoOnly && (
+                  <button type="button" className="filter-chip" onClick={() => setDemoOnly(false)}>
+                    demo only ×
+                  </button>
+                )}
+                <button type="button" className="text-button filter-clear" onClick={clearFilters}>
+                  Clear all
+                </button>
+              </div>
+            )}
             {view === 'users' ? (
               <div className="admin-table-wrap">
                 <table className="admin-table">
