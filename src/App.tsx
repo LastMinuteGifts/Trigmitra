@@ -396,9 +396,16 @@ function App() {
   const [authOpen, setAuthOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
-  // Admin alag link se: #/admin khule to panel kholo.
+  // Admin alag link se: #/admin khule to panel kholo + admin manifest lagao
+  // taaki "Install app" karne par alag Admin app install ho.
   useEffect(() => {
-    const sync = () => setAdminOpen(window.location.hash === '#/admin')
+    const sync = () => {
+      const isAdmin = window.location.hash === '#/admin'
+      setAdminOpen(isAdmin)
+      const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
+      if (manifest) manifest.href = isAdmin ? './admin.webmanifest' : './manifest.webmanifest'
+      document.title = isAdmin ? 'AnkNawab Admin' : 'ANKNAWAB | Sawalon Ka Nawab'
+    }
     sync()
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
