@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react'
-import { ArrowLeft, Check, FileText, FlaskConical, KeyRound, RotateCw, Search, Tags, Users } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, Bell, Check, FileText, FlaskConical, KeyRound, RotateCw, Search, Tags, Users } from 'lucide-react'
 
 interface AdminSolution {
   id: string
@@ -36,6 +36,7 @@ interface AdminOverview {
 }
 
 const STORAGE_KEY = 'anknawab_admin_key'
+const SEEN_KEY = 'anknawab_admin_seen'
 
 export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [adminKey, setAdminKey] = useState(() => sessionStorage.getItem(STORAGE_KEY) ?? '')
@@ -48,6 +49,26 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [demoOnly, setDemoOnly] = useState(false)
   const topicsRef = useRef<HTMLDivElement>(null)
   const [drafts, setDrafts] = useState<Record<string, { plan: string; limit: string }>>({})
+  const [seenAt, setSeenAt] = useState(() => {
+    try {
+      return Number(localStorage.getItem(SEEN_KEY) ?? 0) || 0
+    } catch {
+      return 0
+    }
+  })
+  // Users tab kholte hi alerts seen mark ho jate hain.
+  useEffect(() => {
+    if (view === 'users' && overview) {
+      const now = Date.now()
+      try {
+        localStorage.setItem(SEEN_KEY, String(now))
+      } catch {
+        // ignore
+      }
+      setSeenAt(now)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view])
   const draftOf = (u: AdminUser) =>
     drafts[u.id] ?? { plan: u.accessActive ? u.plan : '', limit: u.dailyLimit?.toString() ?? '' }
 
@@ -130,9 +151,14 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     setDemoOnly(false)
     setQuery('')
   }
-  const userRows = (overview?.users ?? []).filter(
-    (u) => !q || u.email.toLowerCase().includes(q),
-  )
+  const userRows = (overview?.users ?? [])
+    .filter((u) => !q || u.email.toLowerCase().includes(q))
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+  const unread = (overview?.users ?? []).filter(
+    (u) => u.createdAt && new Date(u.createdAt).getTime() > seenAt,
+  ).length
+  const isNewUser = (iso: string) =>
+    !!iso && Date.now() - new Date(iso).getTime() < 7 * 24 * 60 * 60 * 1000
   const maxTopic = Math.max(1, ...(overview?.topics.map((t) => t.count) ?? [1]))
   const maxDay = Math.max(1, ...(overview?.last7Days.map((d) => d.count) ?? [1]))
 
@@ -198,9 +224,15 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 <span className="section-kicker">{view === 'users' ? 'USERS' : 'OVERVIEW'}</span>
                 <h2>{view === 'users' ? 'All users' : 'Dashboard'}</h2>
               </div>
-              <button className="tool-btn" type="button" onClick={load} disabled={busy}>
-                <RotateCw size={15} /> Refresh
-              </button>
+              <div className="admin-top-actions">
+                <button className="tool-btn bell-btn" type="button" onClick={() => setView('users')} title="New user alerts">
+                  <Bell size={15} /> Alerts
+                  {unread > 0 && <span className="bell-count">{unread}</span>}
+                </button>
+                <button className="tool-btn" type="button" onClick={load} disabled={busy}>
+                  <RotateCw size={15} /> Refresh
+                </button>
+              </div>
             </header>
             <div className="admin-cards">
               <button type="button" className="admin-card" onClick={() => setView('users')} title="See all users">
@@ -333,9 +365,10 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                   <tbody>
                     {userRows.map((u) => (
                       <tr key={u.id}>
-                        <td data-label="User">
-                          <span className="admin-user">{u.email}</span>
-                        </td>
+                      <td data-label="User">
+                        <span className="admin-user">{u.email}</span>
+                        {isNewUser(u.createdAt) && <span className="pill-new">new</span>}
+                      </td>
                         <td data-label="Solves">
                           <b>{u.solves}</b>
                           <small className="access-until">{u.solvesToday} today</small>

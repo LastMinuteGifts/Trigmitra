@@ -275,6 +275,43 @@
   letter-spacing: -0.02em;
 }
 
+.admin-top-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bell-btn {
+  position: relative;
+}
+
+.bell-count {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #f05b45;
+  color: #fff;
+  font-size: 10.5px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.pill-new {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgba(84, 160, 110, 0.2);
+  color: #7fd695;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .admin-login-card {
   display: grid;
   gap: 14px;

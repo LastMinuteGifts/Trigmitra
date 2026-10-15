@@ -8,6 +8,7 @@ interface AuthModalProps {
 
 export default function AuthModal({ onClose }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
@@ -23,6 +24,10 @@ export default function AuthModal({ onClose }: AuthModalProps) {
       setError('Email likho aur kam se kam 6 letters ka password rakho.')
       return
     }
+    if (mode === 'signup' && name.trim().length < 2) {
+      setError('Apna naam likho (kam se kam 2 letters).')
+      return
+    }
     setBusy(true)
     setError(null)
     setNotice(null)
@@ -32,7 +37,11 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         if (error) throw error
         onClose()
       } else {
-        const { data, error } = await supabase.auth.signUp({ email: email.trim(), password })
+        const { data, error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+          options: { data: { display_name: name.trim() } },
+        })
         if (error) throw error
         if (data.session) {
           onClose()
@@ -88,6 +97,18 @@ export default function AuthModal({ onClose }: AuthModalProps) {
             autoComplete="email"
           />
         </label>
+        {mode === 'signup' && (
+          <label className="auth-field">
+            Tumhara naam
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Jaise: Asad"
+              autoComplete="given-name"
+            />
+          </label>
+        )}
         <label className="auth-field">
           Password
           <input

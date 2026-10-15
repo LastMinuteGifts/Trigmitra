@@ -392,6 +392,7 @@ function App() {
   const [solution, setSolution] = useState<StructuredSolution | null>(null)
   const [isDemoSolution, setIsDemoSolution] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
+  const [userName, setUserName] = useState<string | null>(null)
   const [authOpen, setAuthOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
@@ -438,11 +439,17 @@ function App() {
   // Login session track karo.
   useEffect(() => {
     if (!supabase) return
+    const applySession = (email: string | null, name: string | null) => {
+      setUserEmail(email)
+      setUserName(name && name.trim() ? name.trim() : null)
+    }
     supabase.auth.getSession().then(({ data }) => {
-      setUserEmail(data.session?.user?.email ?? null)
+      const u = data.session?.user
+      applySession(u?.email ?? null, (u?.user_metadata?.display_name as string | undefined) ?? null)
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user?.email ?? null)
+      const u = session?.user
+      applySession(u?.email ?? null, (u?.user_metadata?.display_name as string | undefined) ?? null)
     })
     return () => listener.subscription.unsubscribe()
   }, [])
@@ -682,7 +689,7 @@ function App() {
     <header className="site-header">
       <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></a>
       <nav className={mobileMenuOpen ? 'main-nav is-open' : 'main-nav'} aria-label="Main navigation"><a className="active" href="#top">Home</a><a href="#how-it-works">How it works</a><a href="#identities">Identities</a><a href="#practice">Practice</a></nav>
-      <div className="header-actions"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</button><button className="history-button" onClick={() => setHistoryOpen(true)}><History size={16} /> Track progress</button>{userEmail ? <button className="user-chip" title={userEmail} onClick={() => setHistoryOpen(true)}>{userEmail[0].toUpperCase()}</button> : <button className="user-chip login-chip" onClick={() => setAuthOpen(true)}>Login</button>}</div>
+      <div className="header-actions"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</button><button className="history-button" onClick={() => setHistoryOpen(true)}><History size={16} /> Track progress</button>{userEmail ? <button className="user-chip" title={userName ?? userEmail} onClick={() => setHistoryOpen(true)}>{(userName?.[0] ?? userEmail[0]).toUpperCase()}</button> : <button className="user-chip login-chip" onClick={() => setAuthOpen(true)}>Login</button>}</div>
     </header>
     <main id="top">
       <section className="hero-section"><div className="hero-copy"><motion.div className="eyebrow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><span className="eyebrow-dot" /><AnimatePresence mode="wait"><motion.span key={topicIdx} className="eyebrow-text" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}>{classTopics[topicIdx]}</motion.span></AnimatePresence></motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Photo upload karo.<br /><em><AnimatePresence mode="wait"><motion.span key={topicIdx % sciWords.length} className="sci-word" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.35 }}>{sciWords[topicIdx % sciWords.length]} samjho.</motion.span></AnimatePresence></em><br />Confident bano.</motion.h1><motion.p className="hero-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>Maths ho ya Physics — difficult question ka sirf answer nahi, <strong>har step ka why</strong> samjho, simple Hinglish mein.</motion.p><motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFileSelected} /><input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onFileSelected} /><button className="primary-button" onClick={openUploader}><Upload size={18} /> {selectedFile ? 'Photo selected' : 'Solve my question'} <ArrowRight size={17} /></button><a className="text-button" href="#identities"><BookOpen size={17} /> Explore identities</a></motion.div><div className="trust-line"><span className="avatar-stack"><i>R</i><i>S</i><i>K</i></span><span>Made for curious Class 1–10 minds</span><span className="trust-star">✦</span></div></div>
