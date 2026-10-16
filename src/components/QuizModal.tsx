@@ -1,8 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Award, Check, RotateCcw, Search, Sparkles, Target, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Award, Check, RotateCcw, Search, Target, X } from 'lucide-react'
 import { formulaCategories } from '../data/formulas'
 import { getFormulaExample } from '../data/formulaExamples'
-import { supabase } from '../lib/supabase'
 
 export interface QuizExplain {
   q: string
@@ -92,7 +91,6 @@ export function buildQuiz(count: number, cats: string[] = []): QuizQuestion[] {
 }
 
 const BEST_KEY = 'anknawab_quiz_best'
-const UNLOCK_COUNT = 10
 
 function getBest(): number {
   try {
@@ -109,48 +107,12 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
   const [topicQuery, setTopicQuery] = useState('')
   const [count, setCount] = useState(10)
   const [setupError, setSetupError] = useState<string | null>(null)
-  const [personalCats, setPersonalCats] = useState<string[] | null>(null)
-  const [solvedTotal, setSolvedTotal] = useState(0)
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [idx, setIdx] = useState(0)
   const [picked, setPicked] = useState<number | null>(null)
   const [score, setScore] = useState(0)
   const [best, setBest] = useState(() => getBest())
-
-  // Login user ke topics — 10+ solves par suggestion.
-  useEffect(() => {
-    let cancelled = false
-    const check = async () => {
-      try {
-        if (!supabase) return
-        const { data } = await supabase.auth.getUser()
-        if (!data.user || cancelled) return
-        const res = await supabase.from('solutions').select('topic').limit(200)
-        if (cancelled) return
-        const rows = ((res.data ?? []) as Array<{ topic: string }>)
-        const counts = new Map<string, number>()
-        for (const r of rows) {
-          const t = (r.topic || '').trim()
-          if (formulaCategories.some((c) => c.name === t)) {
-            counts.set(t, (counts.get(t) ?? 0) + 1)
-          }
-        }
-        if (rows.length >= UNLOCK_COUNT && counts.size > 0) {
-          setPersonalCats(
-            [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 3).map(([name]) => name),
-          )
-          setSolvedTotal(rows.length)
-        }
-      } catch {
-        // ignore — normal quiz chalega
-      }
-    }
-    check()
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   const visibleCats = useMemo(() => {
     if (quizClass === 'All') return formulaCategories.map((c) => c.name)
@@ -172,13 +134,6 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
   const toggleCat = (name: string) => {
     setSetupError(null)
     setSelectedCats((prev) => (prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]))
-  }
-
-  const useMyTopics = () => {
-    if (!personalCats) return
-    setQuizClass('All')
-    setSelectedCats(personalCats)
-    setSetupError(null)
   }
 
   const startQuiz = () => {
@@ -253,11 +208,6 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
         </div>
         {phase === 'setup' ? (
           <div className="quiz-setup">
-            {personalCats && (
-              <button type="button" className="quiz-suggest" onClick={useMyTopics}>
-                <Sparkles size={15} /> Tumne {solvedTotal} solve kiye — My topics use karo: {personalCats.join(', ')}
-              </button>
-            )}
             <label className="auth-field">
               Class chuno
               <select value={quizClass} onChange={(event) => setQuizClass(event.target.value)}>
