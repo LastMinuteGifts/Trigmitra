@@ -96,6 +96,7 @@ export function buildDemoSolution(): StructuredSolution {
       shape: 'rightTriangle',
       values: ['3', '4', '5'],
       caption: '3-4-5 right triangle (A par right angle)',
+      details: undefined,
     },
     examTip: 'Triangle bana kar sides 3, 4, 5 likho, phir sin aur cos ke formula line-by-line likho.',
     practiceQuestion: 'If tan A = 5/12 ho, to sin A − cos A ka maan nikalo.',

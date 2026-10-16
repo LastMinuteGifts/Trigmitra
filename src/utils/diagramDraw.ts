@@ -4,12 +4,21 @@
  * Galat/invalid values par '' return hota hai (phir raw SVG fallback chalta hai).
  */
 
-export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle' | 'bpt' | 'graph'
+export type DiagramShape = 'rightTriangle' | 'triangle' | 'circle' | 'rectangle' | 'angle' | 'bpt' | 'graph' | 'circleFigure'
+
+export interface CircleFigureDetails {
+  points: string[]
+  chords?: [string, string][]
+  diameter?: [string, string]
+  tangents?: string[]
+  angles?: Array<{ at: string; label: string }>
+}
 
 export interface DiagramSpec {
   shape: DiagramShape
   values: string[]
   caption?: string
+  details?: CircleFigureDetails
 }
 
 const INK = '#1f2d3f'
@@ -298,6 +307,99 @@ function graph(values: string[]): string {
   return out
 }
 
+/**
+ * Circle wali labeled figure: diameter, chords, tangents, marked angles.
+ * details = { points: ["A","B","C"], diameter: ["A","C"], chords: [["A","B"]],
+ *             tangents: ["A"], angles: [{at:"C", label:"50°"}] }.
+ * Points khud lagte hain (diameter wale aamne-saamne), labels sawal wale.
+ */
+function circleFigure(values: string[], details?: CircleFigureDetails): string {
+  if (!details || details.points.length < 2) return ''
+  const cx = 120
+  const cy = 94
+  const R = 62
+  const names = details.points.slice(0, 6)
+  const pos = new Map<string, [number, number]>()
+  pos.set('O', [cx, cy])
+
+  const dia = details.diameter && names.includes(details.diameter[0]) && names.includes(details.diameter[1])
+    ? details.diameter
+    : null
+  const others = names.filter((n) => n !== 'O' && (!dia || (n !== dia[0] && n !== dia[1])))
+  if (dia) {
+    const [p, q] = dia
+    pos.set(p, [cx - R, cy])
+    pos.set(q, [cx + R, cy])
+  } else {
+    // Bina diameter: pehle 2 points aamne-saamne.
+    pos.set(names[0], [cx - R, cy])
+    if (names[1] !== 'O') pos.set(names[1], [cx + R, cy])
+  }
+  others.forEach((n, i) => {
+    if (pos.has(n)) return
+    const deg = 155 - i * (110 / Math.max(others.length, 1))
+    const rad = (deg * Math.PI) / 180
+    pos.set(n, [cx + R * Math.cos(rad), cy - R * Math.sin(rad)])
+  })
+
+  const at = (n: string): [number, number] | null => pos.get(n) ?? null
+  let out = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="${INK}" stroke-width="2.5"/>`
+
+  if (dia) {
+    const P = at(dia[0])
+    const Q = at(dia[1])
+    if (P && Q) out += line(P[0], P[1], Q[0], Q[1], 2)
+  }
+  for (const [a, b] of details.chords ?? []) {
+    const P = at(a)
+    const Q = at(b)
+    if (P && Q) out += line(P[0], P[1], Q[0], Q[1], 2.5)
+  }
+  for (const t of details.tangents ?? []) {
+    const P = at(t)
+    if (!P) continue
+    // Tangent = radius ke perpendicular, dono taraf.
+    const dx = P[0] - cx
+    const dy = P[1] - cy
+    const len = Math.hypot(dx, dy) || 1
+    const tx = -dy / len
+    const ty = dx / len
+    const L = R * 0.62
+    out += line(P[0] - tx * L, P[1] - ty * L, P[0] + tx * L, P[1] + ty * L, 2.5)
+    out += text(P[0] + tx * (L + 13), P[1] + ty * (L + 13), 'T', 12)
+  }
+  for (const a of details.angles ?? []) {
+    const P = at(a.at)
+    if (!P) continue
+    const dx = P[0] - cx
+    const dy = P[1] - cy
+    const len = Math.hypot(dx, dy) || 1
+    out += `<circle cx="${round1(P[0])}" cy="${round1(P[1])}" r="13" fill="none" stroke="${INK}" stroke-width="1.5"/>`
+    out += text(P[0] + (dx / len) * 27, P[1] + (dy / len) * 27 + 4, a.label, 12)
+  }
+
+  // Radius (sirf number diya ho to; "?" ho to ? dikhao)
+  const rv = values[0]
+  if (rv !== undefined && rv !== '') {
+    out += line(cx, cy, cx + R, cy, 2)
+    out += text(cx + R / 2, cy - 8, isUnknown(rv) ? '?' : rv, 12)
+  }
+  // Sab points + O par dot aur naam.
+  for (const n of names) {
+    const P = at(n)
+    if (!P) continue
+    out += `<circle cx="${round1(P[0])}" cy="${round1(P[1])}" r="2.5" fill="${INK}"/>`
+    if (n !== 'O') {
+      const dx = P[0] - cx
+      const dy = P[1] - cy
+      const len = Math.hypot(dx, dy) || 1
+      out += text(P[0] + (dx / len) * 15, P[1] + (dy / len) * 15 + 4, n, 12)
+    }
+  }
+  out += text(cx - 9, cy + 20, 'O', 12)
+  return out
+}
+
 function angle(values: string[]): string {  const deg = num(values[0] ?? '')
   if (deg === null || deg <= 0 || deg >= 180) return ''
   const vx = 60
@@ -332,6 +434,7 @@ export function drawDiagram(spec: DiagramSpec): string {
       case 'angle': inner = angle(spec.values); break
       case 'bpt': inner = bpt(spec.values); break
       case 'graph': inner = graph(spec.values); break
+      case 'circleFigure': inner = circleFigure(spec.values, spec.details); break
       default: return ''
     }
   } catch {

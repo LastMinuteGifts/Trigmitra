@@ -7,9 +7,17 @@ const identitySchema = z.object({
 })
 
 const diagramSpecSchema = z.object({
-  shape: z.enum(['rightTriangle', 'triangle', 'circle', 'rectangle', 'angle', 'bpt', 'graph']),
-  // rightTriangle: [leg1, leg2, hyp] | triangle: [AB, BC, CA] | circle: [radius] | rectangle: [length, width] | angle: [degrees] | bpt: [AD, DB, AE, EC?] | graph: ["x1,y1", "x2,y2", ...] points
-  values: z.array(z.string().max(24)).min(1).max(10),
+  shape: z.enum(['rightTriangle', 'triangle', 'circle', 'rectangle', 'angle', 'bpt', 'graph', 'circleFigure']),
+  // rightTriangle: [leg1, leg2, hyp] | triangle: [AB, BC, CA] | circle: [radius] | rectangle: [length, width] | angle: [degrees] | bpt: [AD, DB, AE, EC?] | graph: ["x1,y1", ...] | circleFigure: [radius?]
+  values: z.array(z.string().max(24)).min(0).max(10),
+  // Sirf circleFigure ke liye: points/chords/tangent/angle ki details.
+  details: z.object({
+    points: z.array(z.string().max(4)).min(2).max(6),
+    chords: z.array(z.tuple([z.string().max(4), z.string().max(4)])).max(4).optional(),
+    diameter: z.tuple([z.string().max(4), z.string().max(4)]).optional(),
+    tangents: z.array(z.string().max(4)).max(3).optional(),
+    angles: z.array(z.object({ at: z.string().max(4), label: z.string().max(10) })).max(4).optional(),
+  }).nullish().transform((value) => value ?? undefined),
   caption: z.string().max(200).nullish().transform((value) => value ?? undefined),
 })
 

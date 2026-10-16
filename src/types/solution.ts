@@ -26,6 +26,13 @@ export interface DiagramSpec {
   shape: DiagramShape
   values: string[]
   caption?: string
+  details?: {
+    points: string[]
+    chords?: [string, string][]
+    diameter?: [string, string]
+    tangents?: string[]
+    angles?: Array<{ at: string; label: string }>
+  }
 }
 
 export interface StructuredSolution {
