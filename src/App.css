@@ -1411,6 +1411,32 @@ footer p {
   height: auto;
 }
 
+.diagram-svg .jxg-holder {
+  width: min(440px, 100%);
+}
+
+.diagram-svg .jxg-holder > div {
+  width: 100% !important;
+}
+
+/* JSXGraph container (library CSS nahi lete — minimal khud) */
+.diagram-svg .jxgbox {
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+  user-select: none;
+}
+
+.diagram-svg .jxgbox svg {
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+}
+
+[data-theme="dark"] .diagram-svg .jxgbox {
+  filter: none;
+}
+
 .diagram-card small {
   display: block;
   margin-top: 10px;

@@ -4,6 +4,7 @@ import { ArrowRight, Atom, BookOpen, Camera, Check, ChevronRight, CircleHelp, Fi
 import type { DiagramReference, DiagramSpec, StructuredSolution } from './types/solution'
 import { drawDiagram } from './utils/diagramDraw'
 import UploadModal from './components/UploadModal'
+import FigureView from './components/FigureView'
 import QuizPage from './components/QuizModal'
 import DoubtBox from './components/DoubtBox'
 import AuthModal from './components/AuthModal'
@@ -46,15 +47,24 @@ const classTopics = [
   'CLASS 10 · ELECTRICITY',
 ]
 
-// Figure renderer: perfect engine (diagramSpec) pehle, raw SVG fallback baad me.
+// Figure renderer: JSXGraph (exact geometry) pehle, purana SVG engine fallback baad me.
 function Figure({ diagram, spec, small, label }: { diagram?: DiagramReference; spec?: DiagramSpec; small?: boolean; label?: string }) {
-  const svg = (spec && drawDiagram(spec)) || (diagram ? sanitizeSvg(diagram.svg) : '')
-  if (!svg) return null
+  const [jxgFailed, setJxgFailed] = useState(false)
   const caption = spec?.caption ?? diagram?.caption
+  const specKey = spec ? JSON.stringify(spec) : ''
+  if (!spec && !diagram) return null
   return (
     <div className={small ? 'diagram-card step-diagram' : 'diagram-card'}>
       {label && <span className="section-kicker">{label}</span>}
-      <div className="diagram-svg" dangerouslySetInnerHTML={{ __html: svg }} />
+      {spec && !jxgFailed ? (
+        <FigureView key={specKey} spec={spec} onError={() => setJxgFailed(true)} />
+      ) : (
+        (() => {
+          const svg = (spec && drawDiagram(spec)) || (diagram ? sanitizeSvg(diagram.svg) : '')
+          if (!svg) return null
+          return <div className="diagram-svg" dangerouslySetInnerHTML={{ __html: svg }} />
+        })()
+      )}
       {caption && <small>{caption}</small>}
     </div>
   )
