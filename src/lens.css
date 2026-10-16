@@ -990,6 +990,37 @@ button.admin-card:hover {
   border-color: transparent;
 }
 
+.password-wrap {
+  position: relative;
+}
+
+.password-wrap input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 42px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #7b8794;
+  cursor: pointer;
+}
+
+.password-toggle:hover {
+  background: rgba(240, 91, 69, 0.1);
+  color: #f05b45;
+}
+
 .auth-notice {
   padding: 10px 14px;
   border-radius: 12px;

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LogIn, UserPlus, X } from 'lucide-react'
+import { Eye, EyeOff, LogIn, UserPlus, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface AuthModalProps {
@@ -12,6 +12,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
 
@@ -130,13 +131,23 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         )}
         <label className="auth-field">
           Password
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="Kam se kam 6 letters"
-            autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-          />
+          <div className="password-wrap">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Kam se kam 6 letters"
+              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
+            </button>
+          </div>
         </label>
         {error && <div className="upload-error">{error}</div>}
         {notice && <div className="auth-notice">{notice}</div>}
