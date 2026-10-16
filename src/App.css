@@ -1556,6 +1556,7 @@ footer p {
 @media (max-width: 760px) {
   .example-overlay { padding: 12px; }
   .example-box { padding: 20px 18px 18px; }
+  .example-box.quiz-box { padding: 24px 18px 22px; }
 }
 
 /* ============ DARK THEME ============ */
@@ -2018,7 +2019,43 @@ footer p {
 /* Practice quiz */
 .quiz-box {
   display: grid;
-  gap: 14px;
+  gap: 16px;
+  width: min(700px, 100%);
+  padding: 32px 30px 28px;
+}
+
+.quiz-resume {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px dashed rgba(240, 91, 69, 0.55);
+  background: rgba(240, 91, 69, 0.06);
+  text-align: center;
+}
+
+.quiz-resume p {
+  color: #2c3643;
+  font-size: 13.5px;
+}
+
+.quiz-resume-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.quiz-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.end-quiz-btn {
+  font-size: 12px;
+  padding: 8px 14px;
 }
 
 .quiz-menu {
@@ -2051,6 +2088,8 @@ footer p {
 
 .quiz-score-line {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   font-size: 11.5px;
@@ -2060,22 +2099,23 @@ footer p {
 
 .quiz-prompt {
   color: #1a2433;
-  font-size: clamp(19px, 3.4vw, 26px);
+  font-size: clamp(20px, 3.4vw, 27px);
   font-family: Georgia, serif;
-  line-height: 1.35;
+  line-height: 1.45;
   overflow-wrap: break-word;
+  margin: 4px 0;
 }
 
 .quiz-options {
   display: grid;
-  gap: 10px;
+  gap: 12px;
 }
 
 .quiz-opt {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 13px 15px;
+  padding: 15px 17px;
   border-radius: 14px;
   border: 1px solid rgba(32, 41, 56, 0.12);
   background: rgba(255, 255, 255, 0.7);

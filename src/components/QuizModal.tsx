@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Award, Check, RotateCcw, Search, Target, X } from 'lucide-react'
 import { formulaCategories } from '../data/formulas'
 import { getFormulaExample } from '../data/formulaExamples'
@@ -91,6 +91,42 @@ export function buildQuiz(count: number, cats: string[] = []): QuizQuestion[] {
 }
 
 const BEST_KEY = 'anknawab_quiz_best'
+const PROGRESS_KEY = 'anknawab_quiz_progress'
+
+interface SavedQuiz {
+  questions: QuizQuestion[]
+  idx: number
+  score: number
+  picked: number | null
+  answered: number
+}
+
+function loadSavedQuiz(): SavedQuiz | null {
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw) as SavedQuiz
+    if (!Array.isArray(data.questions) || data.questions.length === 0) return null
+    if (typeof data.idx !== 'number' || data.idx < 0 || data.idx >= data.questions.length) return null
+    return {
+      questions: data.questions,
+      idx: data.idx,
+      score: typeof data.score === 'number' ? data.score : 0,
+      picked: typeof data.picked === 'number' ? data.picked : null,
+      answered: typeof data.answered === 'number' ? data.answered : 0,
+    }
+  } catch {
+    return null
+  }
+}
+
+function clearProgress() {
+  try {
+    localStorage.removeItem(PROGRESS_KEY)
+  } catch {
+    // ignore
+  }
+}
 
 function getBest(): number {
   try {
@@ -109,10 +145,22 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
   const [setupError, setSetupError] = useState<string | null>(null)
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
+  const [savedQuiz, setSavedQuiz] = useState<SavedQuiz | null>(() => loadSavedQuiz())
   const [idx, setIdx] = useState(0)
   const [picked, setPicked] = useState<number | null>(null)
   const [score, setScore] = useState(0)
+  const [answered, setAnswered] = useState(0)
   const [best, setBest] = useState(() => getBest())
+
+  // Khelte waqt progress save hota rahe — beech me chhoda to wapas milega.
+  useEffect(() => {
+    if (phase !== 'asking' || questions.length === 0) return
+    try {
+      localStorage.setItem(PROGRESS_KEY, JSON.stringify({ questions, idx, score, picked, answered }))
+    } catch {
+      // ignore
+    }
+  }, [phase, questions, idx, score, picked, answered])
 
   const visibleCats = useMemo(() => {
     if (quizClass === 'All') return formulaCategories.map((c) => c.name)
@@ -148,7 +196,31 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
     setIdx(0)
     setPicked(null)
     setScore(0)
+    setAnswered(0)
+    setSavedQuiz(null)
+    clearProgress()
     setPhase('asking')
+  }
+
+  const resumeQuiz = () => {
+    if (!savedQuiz) return
+    setQuestions(savedQuiz.questions)
+    setIdx(savedQuiz.idx)
+    setScore(savedQuiz.score)
+    setPicked(savedQuiz.picked)
+    setAnswered(savedQuiz.answered)
+    setSavedQuiz(null)
+    setPhase('asking')
+  }
+
+  const discardSaved = () => {
+    clearProgress()
+    setSavedQuiz(null)
+  }
+
+  const endQuiz = () => {
+    clearProgress()
+    setPhase('done')
   }
 
   const done = phase === 'done'
@@ -158,6 +230,7 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
   const pick = (i: number) => {
     if (picked !== null || !current) return
     setPicked(i)
+    setAnswered((a) => a + 1)
     if (i === current.answer) {
       const s = score + 1
       setScore(s)
@@ -174,6 +247,7 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
 
   const next = () => {
     if (idx + 1 >= questions.length) {
+      clearProgress()
       setPhase('done')
     } else {
       setPicked(null)
@@ -182,10 +256,12 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
   }
 
   const backToSetup = () => {
+    clearProgress()
     setPhase('setup')
     setPicked(null)
     setIdx(0)
     setScore(0)
+    setAnswered(0)
   }
 
   return (
@@ -208,6 +284,22 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
         </div>
         {phase === 'setup' ? (
           <div className="quiz-setup">
+            {savedQuiz && (
+              <div className="quiz-resume">
+                <p>
+                  Adhura quiz mila: <b>Q{savedQuiz.idx + 1}/{savedQuiz.questions.length}</b>, Score{' '}
+                  <b>{savedQuiz.score}</b> — wahin se shuru karo?
+                </p>
+                <div className="quiz-resume-actions">
+                  <button className="analyze-button" type="button" onClick={resumeQuiz}>
+                    Resume quiz
+                  </button>
+                  <button className="outline-button" type="button" onClick={discardSaved}>
+                    Discard
+                  </button>
+                </div>
+              </div>
+            )}
             <label className="auth-field">
               Class chuno
               <select value={quizClass} onChange={(event) => setQuizClass(event.target.value)}>
@@ -285,6 +377,9 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
             <div className="quiz-score-line">
               <span>{current.sub}</span>
               <span>Score: {score} · Best: {best}</span>
+              <button type="button" className="text-button end-quiz-btn" onClick={endQuiz}>
+                End quiz
+              </button>
             </div>
             <p className="quiz-prompt">{current.prompt}</p>
             <div className="quiz-options">
@@ -332,15 +427,17 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
         ) : done && questions.length > 0 ? (
           <div className="quiz-result">
             <Award size={40} />
-            <h3>{score} / {questions.length}</h3>
+            <h3>{score} / {answered}</h3>
             <p>
-              {score === questions.length
+              {answered > 0 && score === answered
                 ? 'Perfect! Tum to Nawab nikle!'
-                : score / questions.length >= 0.7
+                : answered > 0 && score / answered >= 0.7
                   ? 'Bahut khoob! Thodi aur practice.'
                   : 'Koi baat nahi — formulas revise karke phir try karo.'}
             </p>
-            <p className="example-label">Best score: {Math.max(best, score)} / {questions.length}</p>
+            <p className="example-label">
+              {answered} of {questions.length} attempted · Best score: {Math.max(best, score)}
+            </p>
             <div className="quiz-result-actions">
               <button className="analyze-button" onClick={backToSetup}>
                 <RotateCcw size={16} /> New quiz
