@@ -136,7 +136,7 @@ function getBest(): number {
   }
 }
 
-export default function QuizModal({ onClose }: { onClose: () => void }) {
+export function QuizRunner({ onExit }: { onExit: () => void }) {
   const [phase, setPhase] = useState<'setup' | 'asking' | 'done'>('setup')
   const [quizClass, setQuizClass] = useState<string>('All')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
@@ -265,8 +265,7 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="example-overlay" role="dialog" aria-modal="true" aria-label="Practice quiz" onClick={onClose}>
-      <div className="example-box quiz-box" onClick={(event) => event.stopPropagation()}>
+    <div className="example-box quiz-box quiz-page-box">
         <div className="example-head">
           <div>
             <span className="section-kicker">PRACTICE QUIZ</span>
@@ -278,7 +277,7 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
                   : `Question ${Math.min(idx + 1, questions.length)} / ${questions.length}`}
             </h3>
           </div>
-          <button className="close-upload" aria-label="Close quiz" onClick={onClose}>
+          <button className="close-upload" aria-label="Close quiz" onClick={onExit}>
             <X size={20} />
           </button>
         </div>
@@ -442,13 +441,23 @@ export default function QuizModal({ onClose }: { onClose: () => void }) {
               <button className="analyze-button" onClick={backToSetup}>
                 <RotateCcw size={16} /> New quiz
               </button>
-              <button className="outline-button" type="button" onClick={onClose}>
-                Close
+              <button className="outline-button" type="button" onClick={onExit}>
+                Back to site
               </button>
             </div>
           </div>
         ) : null}
-      </div>
+    </div>
+  )
+}
+
+export default function QuizPage({ onExit }: { onExit: () => void }) {
+  return (
+    <div className="quiz-page">
+      <button type="button" className="text-button quiz-back" onClick={onExit}>
+        ← Back to site
+      </button>
+      <QuizRunner onExit={onExit} />
     </div>
   )
 }

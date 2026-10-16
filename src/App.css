@@ -2024,6 +2024,23 @@ footer p {
   padding: 32px 30px 28px;
 }
 
+.quiz-page {
+  min-height: 100vh;
+  padding: 26px 18px 70px;
+  display: grid;
+  gap: 16px;
+  justify-items: center;
+  align-content: start;
+}
+
+.quiz-page .quiz-box {
+  width: min(760px, 100%);
+}
+
+.quiz-back {
+  justify-self: start;
+}
+
 .quiz-resume {
   display: grid;
   gap: 10px;
