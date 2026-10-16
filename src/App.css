@@ -1739,6 +1739,20 @@ footer p {
   border-color: rgba(255, 255, 255, 0.09);
 }
 
+[data-theme="dark"] .diagram-svg svg text {
+  fill: #dbe4ee;
+}
+
+[data-theme="dark"] .diagram-svg svg :is(line, polyline, polygon, path, rect, circle, ellipse)[stroke="#1f2d3f"],
+[data-theme="dark"] .diagram-svg svg :is(line, polyline, polygon, path, rect, circle, ellipse)[stroke="#000"],
+[data-theme="dark"] .diagram-svg svg :is(line, polyline, polygon, path, rect, circle, ellipse)[stroke="black"] {
+  stroke: #dbe4ee;
+}
+
+[data-theme="dark"] .diagram-svg svg [fill="#1f2d3f"] {
+  fill: #dbe4ee;
+}
+
 [data-theme="dark"] .diagram-card small {
   color: #8b98a9;
 }
