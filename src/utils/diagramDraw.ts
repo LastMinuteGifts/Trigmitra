@@ -50,6 +50,16 @@ function text(x: number, y: number, s: string, size = 13): string {
   return `<text x="${round1(x)}" y="${round1(y)}" font-size="${size}" text-anchor="middle" fill="${INK}">${esc(s)}</text>`
 }
 
+/** Poochhi hui value ("?") — coral, bold, badi. */
+function hotText(x: number, y: number, s: string): string {
+  return `<text x="${round1(x)}" y="${round1(y)}" font-size="16" font-weight="bold" text-anchor="middle" fill="#f05b45">${esc(s)}</text>`
+}
+
+/** Normal label, lekin "?" ho to hot style. */
+function qtext(x: number, y: number, s: string, size = 12): string {
+  return s === '?' ? hotText(x, y, s) : text(x, y, s, size)
+}
+
 function poly(points: [number, number][], width = 2.5): string {
   const p = points.map(([x, y]) => `${round1(x)},${round1(y)}`).join(' ')
   return `<polygon points="${p}" fill="none" stroke="${INK}" stroke-width="${width}"/>`
@@ -87,8 +97,8 @@ function rightTriangle(values: string[]): string {
   const label = (i: number, fallback: string) => (isUnknown(values[i]) ? '?' : (values[i] ?? fallback))
   let out = poly([[ax, ay], [bx, by], [cx, cy]])
   out += `<rect x="${round1(ax)}" y="${round1(ay - q)}" width="${q}" height="${q}" fill="none" stroke="${INK}" stroke-width="2"/>`
-  out += text((ax + bx) / 2 - 13, (ay + by) / 2, label(0, ''))
-  out += text((ax + cx) / 2, ay + 17, label(1, ''))
+  out += qtext((ax + bx) / 2 - 13, (ay + by) / 2, label(0, ''))
+  out += qtext((ax + cx) / 2, ay + 17, label(1, ''))
   if (values[2] !== undefined) {
     const mx = (bx + cx) / 2
     const my = (by + cy) / 2
@@ -97,7 +107,7 @@ function rightTriangle(values: string[]): string {
     const dx = mx - gx
     const dy = my - gy
     const len = Math.hypot(dx, dy) || 1
-    out += text(mx + (dx / len) * 15, my + (dy / len) * 15 + 4, label(2, ''))
+    out += qtext(mx + (dx / len) * 15, my + (dy / len) * 15 + 4, label(2, ''))
   }
   out += text(ax - 9, ay + 15, 'A')
   out += text(bx - 9, by + 4, 'B')
@@ -153,7 +163,7 @@ function circle(values: string[]): string {
   let out = `<circle cx="${cx}" cy="${cy}" r="${round1(R)}" fill="none" stroke="${INK}" stroke-width="2.5"/>`
   out += line(cx, cy, cx + R, cy, 2)
   out += `<circle cx="${cx}" cy="${cy}" r="2.5" fill="${INK}"/>`
-  out += text(cx + R / 2, cy - 8, isUnknown(values[0]) ? '?' : (values[0] ?? ''))
+  out += qtext(cx + R / 2, cy - 8, isUnknown(values[0]) ? '?' : (values[0] ?? ''))
   out += text(cx, cy + R + 16, 'O')
   return out
 }
@@ -216,10 +226,10 @@ function bpt(values: string[]): string {
   const E: [number, number] = [A[0] + t * (C[0] - A[0]), A[1] + t * (C[1] - A[1])]
   let out = poly([A, B, C])
   out += line(D[0], D[1], E[0], E[1])
-  out += text((A[0] + D[0]) / 2 - 15, (A[1] + D[1]) / 2, showQ(0) ? '?' : values[0], 12)
-  out += text((D[0] + B[0]) / 2 - 15, (D[1] + B[1]) / 2, showQ(1) ? '?' : values[1], 12)
-  out += text((A[0] + E[0]) / 2 + 15, (A[1] + E[1]) / 2, showQ(2) ? '?' : values[2], 12)
-  out += text((E[0] + C[0]) / 2 + 15, (E[1] + C[1]) / 2, ecLabel, 12)
+  out += qtext((A[0] + D[0]) / 2 - 15, (A[1] + D[1]) / 2, showQ(0) ? '?' : values[0])
+  out += qtext((D[0] + B[0]) / 2 - 15, (D[1] + B[1]) / 2, showQ(1) ? '?' : values[1])
+  out += qtext((A[0] + E[0]) / 2 + 15, (A[1] + E[1]) / 2, showQ(2) ? '?' : values[2])
+  out += qtext((E[0] + C[0]) / 2 + 15, (E[1] + C[1]) / 2, ecLabel)
   out += text(A[0], A[1] - 10, 'A')
   out += text(B[0] - 11, B[1] + 5, 'B')
   out += text(C[0] + 11, C[1] + 5, 'C')
@@ -355,27 +365,39 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
     const Q = at(b)
     if (P && Q) out += line(P[0], P[1], Q[0], Q[1], 2.5)
   }
-  for (const t of details.tangents ?? []) {
+  for (const t of [...new Set(details.tangents ?? [])]) {
     const P = at(t)
     if (!P) continue
-    // Tangent = radius ke perpendicular, dono taraf.
+    // Tangent = radius ke perpendicular, dono taraf. Label sirf ek (top end).
     const dx = P[0] - cx
     const dy = P[1] - cy
     const len = Math.hypot(dx, dy) || 1
     const tx = -dy / len
     const ty = dx / len
-    const L = R * 0.62
-    out += line(P[0] - tx * L, P[1] - ty * L, P[0] + tx * L, P[1] + ty * L, 2.5)
-    out += text(P[0] + tx * (L + 13), P[1] + ty * (L + 13), 'T', 12)
+    const L = R * 0.5
+    const ex = P[0] + tx * L
+    const ey = P[1] + ty * L
+    out += line(P[0] - tx * L, P[1] - ty * L, ex, ey, 2.5)
+    out += text(ex + tx * 15, ey + ty * 15 - 6, 'T', 12)
   }
   for (const a of details.angles ?? []) {
     const P = at(a.at)
     if (!P) continue
-    const dx = P[0] - cx
-    const dy = P[1] - cy
-    const len = Math.hypot(dx, dy) || 1
-    out += `<circle cx="${round1(P[0])}" cy="${round1(P[1])}" r="13" fill="none" stroke="${INK}" stroke-width="1.5"/>`
-    out += text(P[0] + (dx / len) * 27, P[1] + (dy / len) * 27 + 4, a.label, 12)
+    // Chhoti arc andar ki taraf (center ki direction me), label uske paas.
+    const dx = cx - P[0]
+    const dy = cy - P[1]
+    const base = Math.atan2(dy, dx)
+    const r = 15
+    const a1 = base - 0.7
+    const a2 = base + 0.7
+    const sx = P[0] + r * Math.cos(a1)
+    const sy = P[1] + r * Math.sin(a1)
+    const tx = P[0] + r * Math.cos(a2)
+    const ty = P[1] + r * Math.sin(a2)
+    out += `<path d="M ${round1(sx)} ${round1(sy)} A ${r} ${r} 0 0 1 ${round1(tx)} ${round1(ty)}" fill="none" stroke="${INK}" stroke-width="1.5"/>`
+    const lx = P[0] + (r + 13) * Math.cos(base)
+    const ly = P[1] + (r + 13) * Math.sin(base)
+    out += a.label === '?' ? hotText(lx, ly + 4, '?') : text(lx, ly + 4, a.label, 12)
   }
 
   // Radius (sirf number diya ho to; "?" ho to ? dikhao)
@@ -384,7 +406,7 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
     out += line(cx, cy, cx + R, cy, 2)
     out += text(cx + R / 2, cy - 8, isUnknown(rv) ? '?' : rv, 12)
   }
-  // Sab points + O par dot aur naam.
+  // Sab points + O par dot aur naam (naam bahar, angle-label se takkar nahi).
   for (const n of names) {
     const P = at(n)
     if (!P) continue
@@ -393,7 +415,7 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
       const dx = P[0] - cx
       const dy = P[1] - cy
       const len = Math.hypot(dx, dy) || 1
-      out += text(P[0] + (dx / len) * 15, P[1] + (dy / len) * 15 + 4, n, 12)
+      out += text(P[0] + (dx / len) * 17, P[1] + (dy / len) * 17 + 4, n, 12)
     }
   }
   out += text(cx - 9, cy + 20, 'O', 12)
