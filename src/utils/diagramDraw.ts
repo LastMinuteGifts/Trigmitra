@@ -365,10 +365,18 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
     const Q = at(b)
     if (P && Q) out += line(P[0], P[1], Q[0], Q[1], 2.5)
   }
+  // Takkar-guard: do labels 16px se paas ho to baad wala skip.
+  const placed: [number, number][] = []
+  const free = (x: number, y: number): boolean =>
+    placed.every(([px, py]) => Math.hypot(x - px, y - py) > 16)
+  const mark = (x: number, y: number): void => {
+    placed.push([x, y])
+  }
+
   for (const t of [...new Set(details.tangents ?? [])]) {
     const P = at(t)
     if (!P) continue
-    // Tangent = radius ke perpendicular, dono taraf. Label sirf ek (top end).
+    // Tangent = radius ke perpendicular, dono taraf.
     const dx = P[0] - cx
     const dy = P[1] - cy
     const len = Math.hypot(dx, dy) || 1
@@ -378,7 +386,15 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
     const ex = P[0] + tx * L
     const ey = P[1] + ty * L
     out += line(P[0] - tx * L, P[1] - ty * L, ex, ey, 2.5)
-    out += text(ex + tx * 15, ey + ty * 15 - 6, 'T', 12)
+    // 'T' sirf tab likho jab T naam ka point ho hi nahi (warna double).
+    if (!names.some((n) => n.toLowerCase() === 't')) {
+      const tlx = ex + tx * 15
+      const tly = ey + ty * 15 - 6
+      if (free(tlx, tly)) {
+        out += text(tlx, tly, 'T', 12)
+        mark(tlx, tly)
+      }
+    }
   }
   for (const a of details.angles ?? []) {
     const P = at(a.at)
@@ -397,14 +413,30 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
     out += `<path d="M ${round1(sx)} ${round1(sy)} A ${r} ${r} 0 0 1 ${round1(tx)} ${round1(ty)}" fill="none" stroke="${INK}" stroke-width="1.5"/>`
     const lx = P[0] + (r + 13) * Math.cos(base)
     const ly = P[1] + (r + 13) * Math.sin(base)
-    out += a.label === '?' ? hotText(lx, ly + 4, '?') : text(lx, ly + 4, a.label, 12)
+    if (a.label === '?') {
+      if (free(lx, ly + 4)) {
+        out += hotText(lx, ly + 4, '?')
+        mark(lx, ly + 4)
+      }
+    } else if (free(lx, ly + 4)) {
+      out += text(lx, ly + 4, a.label, 12)
+      mark(lx, ly + 4)
+    }
   }
 
   // Radius (sirf number diya ho to; "?" ho to ? dikhao)
   const rv = values[0]
   if (rv !== undefined && rv !== '') {
     out += line(cx, cy, cx + R, cy, 2)
-    out += text(cx + R / 2, cy - 8, isUnknown(rv) ? '?' : rv, 12)
+    if (isUnknown(rv)) {
+      if (free(cx + R / 2, cy - 8)) {
+        out += hotText(cx + R / 2, cy - 8, '?')
+        mark(cx + R / 2, cy - 8)
+      }
+    } else {
+      out += text(cx + R / 2, cy - 8, rv, 12)
+      mark(cx + R / 2, cy - 8)
+    }
   }
   // Sab points + O par dot aur naam (naam bahar, angle-label se takkar nahi).
   for (const n of names) {
@@ -415,7 +447,12 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
       const dx = P[0] - cx
       const dy = P[1] - cy
       const len = Math.hypot(dx, dy) || 1
-      out += text(P[0] + (dx / len) * 17, P[1] + (dy / len) * 17 + 4, n, 12)
+      const lx = P[0] + (dx / len) * 17
+      const ly = P[1] + (dy / len) * 17 + 4
+      if (free(lx, ly)) {
+        out += text(lx, ly, n, 12)
+        mark(lx, ly)
+      }
     }
   }
   out += text(cx - 9, cy + 20, 'O', 12)
