@@ -301,11 +301,11 @@ function graph(values: string[]): string {
     out += `<line x1="${L}" y1="${round1(py)}" x2="${R}" y2="${round1(py)}" stroke="#dbe1e8" stroke-width="1"/>`
     out += `<text x="${L - 5}" y="${round1(py + 3)}" font-size="8" text-anchor="end" fill="#7b8794">${tickLabel(gy)}</text>`
   }
-  // Axes (0 line agar range me ho, warna edge par)
+  // Axes (0 line agar range me ho, warna edge par) — arrowheads ke saath.
   const xAxisY = minY <= 0 && 0 <= maxY ? Y(0) : B
   const yAxisX = minX <= 0 && 0 <= maxX ? X(0) : L
-  out += `<line x1="${L}" y1="${round1(xAxisY)}" x2="${R}" y2="${round1(xAxisY)}" stroke="${INK}" stroke-width="1.5"/>`
-  out += `<line x1="${round1(yAxisX)}" y1="${T}" x2="${round1(yAxisX)}" y2="${B}" stroke="${INK}" stroke-width="1.5"/>`
+  out += `<line x1="${L}" y1="${round1(xAxisY)}" x2="${R}" y2="${round1(xAxisY)}" stroke="${INK}" stroke-width="1.5" marker-end="url(#ankArrow)"/>`
+  out += `<line x1="${round1(yAxisX)}" y1="${B}" x2="${round1(yAxisX)}" y2="${T}" stroke="${INK}" stroke-width="1.5" marker-end="url(#ankArrow)"/>`
   out += `<text x="${R - 2}" y="${round1(xAxisY - 5)}" font-size="10" text-anchor="end" fill="${INK}">x</text>`
   out += `<text x="${round1(yAxisX + 7)}" y="${T + 8}" font-size="10" text-anchor="start" fill="${INK}">y</text>`
   // Line + dots + labels
@@ -386,6 +386,11 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
     const ex = P[0] + tx * L
     const ey = P[1] + ty * L
     out += line(P[0] - tx * L, P[1] - ty * L, ex, ey, 2.5)
+    // Tangent ⊥ radius: contact par right-angle square.
+    const ux = dx / len
+    const uy = dy / len
+    const q = 9
+    out += `<path d="M ${round1(P[0] + ux * q)} ${round1(P[1] + uy * q)} L ${round1(P[0] + (ux + tx) * q)} ${round1(P[1] + (uy + ty) * q)} L ${round1(P[0] + tx * q)} ${round1(P[1] + ty * q)}" fill="none" stroke="${INK}" stroke-width="1.5"/>`
     // 'T' sirf tab likho jab T naam ka point ho hi nahi (warna double).
     if (!names.some((n) => n.toLowerCase() === 't')) {
       const tlx = ex + tx * 15
@@ -410,6 +415,8 @@ function circleFigure(values: string[], details?: CircleFigureDetails): string {
     const sy = P[1] + r * Math.sin(a1)
     const tx = P[0] + r * Math.cos(a2)
     const ty = P[1] + r * Math.sin(a2)
+    // Halki shade + arc — textbook jaisa angle.
+    out += `<path d="M ${round1(P[0])} ${round1(P[1])} L ${round1(sx)} ${round1(sy)} A ${r} ${r} 0 0 1 ${round1(tx)} ${round1(ty)} Z" fill="rgba(240,91,69,0.12)"/>`
     out += `<path d="M ${round1(sx)} ${round1(sy)} A ${r} ${r} 0 0 1 ${round1(tx)} ${round1(ty)}" fill="none" stroke="${INK}" stroke-width="1.5"/>`
     const lx = P[0] + (r + 13) * Math.cos(base)
     const ly = P[1] + (r + 13) * Math.sin(base)
@@ -474,8 +481,10 @@ function angle(values: string[]): string {  const deg = num(values[0] ?? '')
   const sy = vy
   const tx = vx + r * Math.cos(rad)
   const ty = vy - r * Math.sin(rad)
-  let out = line(vx, vy, ex, ey)
-  out += line(vx, vy, fx, fy)
+  const ray = (x2: number, y2: number): string =>
+    `<line x1="${vx}" y1="${vy}" x2="${round1(x2)}" y2="${round1(y2)}" stroke="${INK}" stroke-width="2.5" marker-end="url(#ankArrow)"/>`
+  let out = ray(ex, ey)
+  out += ray(fx, fy)
   out += `<path d="M ${round1(sx)} ${round1(sy)} A ${r} ${r} 0 0 0 ${round1(tx)} ${round1(ty)}" fill="none" stroke="${INK}" stroke-width="2"/>`
   const mid = rad / 2
   out += text(vx + 56 * Math.cos(mid), vy - 56 * Math.sin(mid) + 4, values[0].includes('°') ? values[0] : `${values[0]}°`)
@@ -500,5 +509,8 @@ export function drawDiagram(spec: DiagramSpec): string {
     return ''
   }
   if (!inner) return ''
-  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${DEFMARKERS}${inner}</svg>`
 }
+
+/** Shared arrowhead marker + soft shade (textbook finish). */
+const DEFMARKERS = `<defs><marker id="ankArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 1 L 9 5 L 0 9 z" fill="${INK}"/></marker></defs>`

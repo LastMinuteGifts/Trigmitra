@@ -1754,6 +1754,10 @@ footer p {
   fill: #dbe4ee;
 }
 
+[data-theme="dark"] .diagram-svg svg marker path {
+  fill: #dbe4ee;
+}
+
 [data-theme="dark"] .diagram-card small {
   color: #8b98a9;
 }
