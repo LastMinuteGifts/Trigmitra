@@ -694,7 +694,7 @@ function App() {
 
   return <div className="app-shell">
     <header className="site-header">
-      <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></a>
+      <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg?v=2" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></a>
       <nav className={mobileMenuOpen ? 'main-nav is-open' : 'main-nav'} aria-label="Main navigation"><a className="active" href="#top">Home</a><a href="#how-it-works">How it works</a><a href="#identities">Identities</a><a href="#practice">Practice</a></nav>
       <div className="header-actions"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</button><button className="history-button" onClick={() => setHistoryOpen(true)}><History size={16} /> Track progress</button>{userEmail ? <button className="user-chip" title={userName ?? userEmail} onClick={() => setHistoryOpen(true)}>{(userName?.[0] ?? userEmail[0]).toUpperCase()}</button> : <button className="user-chip login-chip" onClick={() => setAuthOpen(true)}>Login</button>}</div>
     </header>
