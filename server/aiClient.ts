@@ -79,18 +79,25 @@ function providerStatus(error: unknown): number | null {
 }
 
 interface ChatMessage {
-  role: 'system' | 'user'
+  role: 'system' | 'user' | 'assistant'
   content: unknown
 }
 
-async function requestOnce(config: VisionConfig, model: string, messages: ChatMessage[]): Promise<StructuredSolution> {
+async function requestOnce<T>(
+  config: VisionConfig,
+  model: string,
+  messages: ChatMessage[],
+  parse: (content: string) => T,
+  jsonMode: boolean,
+  temperature: number,
+): Promise<T> {
   const response = await fetch(config.apiUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${config.apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model,
-      temperature: 0.1,
-      response_format: { type: 'json_object' },
+      temperature,
+      ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
       messages,
     }),
   })
@@ -100,17 +107,23 @@ async function requestOnce(config: VisionConfig, model: string, messages: ChatMe
   const content = payload.choices?.[0]?.message?.content
   if (!content) throw new Error('AI_EMPTY_RESPONSE')
 
-  return structuredSolutionSchema.parse(sanitizeSolutionText(extractJson(content)))
+  return parse(content)
 }
 
-async function runWithRetry(config: VisionConfig, buildMessages: () => ChatMessage[]): Promise<StructuredSolution> {
+async function runWithRetry<T>(
+  config: VisionConfig,
+  buildMessages: () => ChatMessage[],
+  parse: (content: string) => T,
+  jsonMode = true,
+  temperature = 0.1,
+): Promise<T> {
   const models = config.models.length > 0 ? config.models : [config.model]
   let lastError: unknown = new Error('AI_NO_MODEL_TRIED')
 
   for (const model of models) {
     for (let attempt = 1; attempt <= 2; attempt++) {
       try {
-        return await requestOnce(config, model, buildMessages())
+        return await requestOnce(config, model, buildMessages(), parse, jsonMode, temperature)
       } catch (error) {
         lastError = error
         const status = providerStatus(error)
@@ -127,6 +140,9 @@ async function runWithRetry(config: VisionConfig, buildMessages: () => ChatMessa
 
   throw lastError
 }
+
+const parseSolution = (content: string): StructuredSolution =>
+  structuredSolutionSchema.parse(sanitizeSolutionText(extractJson(content)))
 
 function classHint(studentClass?: number): string {
   return studentClass ? ` The student studies in Class ${studentClass}, so match your explanation level to that class.` : ''
@@ -153,7 +169,7 @@ export async function solveMathsImage(
   return runWithRetry(config, () => [
     { role: 'system', content: mathsTutorSystemPrompt },
     { role: 'user', content: [{ type: 'text', text: taskText }, { type: 'image_url', image_url: { url: `data:${mimetype};base64,${image.toString('base64')}` } }] },
-  ])
+  ], parseSolution)
 }
 
 /** Bina photo: typed question + optional note seedha solve karo. */
@@ -171,5 +187,42 @@ export async function solveMathsText(
   return runWithRetry(config, () => [
     { role: 'system', content: mathsTutorSystemPrompt },
     { role: 'user', content: taskText },
-  ])
+  ], parseSolution)
+}
+
+const doubtSystemPrompt = `You are AnkNawab, a friendly Indian school teacher (Classes 1 to 10, Maths + Physics numericals). The student just saw a step-by-step solution and now has a DOUBT about it. Answer ONLY the doubt in simple Hinglish, under 80 words. Plain text only with Unicode math (θ ² √ × ÷ − °), never LaTeX ($, backslashes).`
+
+export interface DoubtTurn {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface DoubtContext {
+  question: string
+  finalAnswer: string
+  steps: string[]
+}
+
+/** Solution par follow-up doubt ka jawab do (plain text). */
+export async function askDoubt(
+  turns: DoubtTurn[],
+  context: DoubtContext,
+  config: VisionConfig,
+): Promise<string> {
+  if (!config.apiKey) {
+    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
+  }
+
+  const contextText = `Solved question: "${context.question}". Final answer: ${context.finalAnswer}. Steps: ${context.steps.join(' | ')}`
+  return runWithRetry(
+    config,
+    () => [
+      { role: 'system', content: doubtSystemPrompt },
+      { role: 'user', content: contextText },
+      ...turns.map((t) => ({ role: t.role, content: t.content })),
+    ],
+    (content) => sanitizeMathText(content).slice(0, 1500),
+    false,
+    0.3,
+  )
 }

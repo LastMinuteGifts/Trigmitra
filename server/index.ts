@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import multer from 'multer'
 import { z } from 'zod'
-import { solveMathsImage, solveMathsText } from './aiClient.js'
+import { solveMathsImage, solveMathsText, askDoubt } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
 import { getAdminClient, getAdminOverview, setUserAccess, checkSolveAllowed } from './admin.js'
 
@@ -220,6 +220,61 @@ app.post('/api/admin/access', adminAuth, async (request, response) => {
     }
     console.error(error)
     response.status(502).json({ code: 'ADMIN_SAVE_FAILED', message: 'Access save nahi hua.' })
+  }
+})
+
+// Doubt chat par halki limit (free AI chat abuse guard).
+const doubtLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 20,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { code: 'RATE_LIMITED', message: 'Bahut zyada requests. Thodi der rukkar phir try karo.' },
+})
+
+app.post('/api/doubt', doubtLimiter, async (request, response) => {
+  try {
+    const body = z.object({
+      messages: z.array(z.object({
+        role: z.enum(['user', 'assistant']),
+        content: z.string().min(1).max(1000),
+      })).min(1).max(8),
+      context: z.object({
+        question: z.string().max(1000).optional().default(''),
+        finalAnswer: z.string().max(500).optional().default(''),
+        steps: z.array(z.string().max(500)).max(12).optional().default([]),
+      }).optional(),
+    }).parse(request.body)
+    if (!budgetLeft()) {
+      throw new Error('AI_BUDGET_OVER')
+    }
+    const reply = await askDoubt(
+      body.messages,
+      {
+        question: body.context?.question ?? '',
+        finalAnswer: body.context?.finalAnswer ?? '',
+        steps: body.context?.steps ?? [],
+      },
+      {
+        apiKey: env.AI_API_KEY,
+        apiUrl: env.AI_API_URL,
+        model: env.AI_MODEL,
+        models: aiModels,
+      },
+    )
+    budgetSpend()
+    response.json({ reply })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'DOUBT_BAD_INPUT', message: 'Sawal sahi se bhejo.' })
+      return
+    }
+    if (error instanceof Error && error.message === 'AI_PROVIDER_NOT_CONFIGURED') {
+      response.status(503).json({ code: 'AI_PROVIDER_NOT_CONFIGURED', message: 'AI abhi configured nahi hai.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'DOUBT_FAILED', message: 'Jawab nahi aaya. Phir try karo.' })
   }
 })
 
