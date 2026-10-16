@@ -1883,6 +1883,19 @@ footer p {
   gap: 14px;
 }
 
+.quiz-menu {
+  display: grid;
+  gap: 12px;
+}
+
+.quiz-menu .reading-state {
+  text-align: center;
+}
+
+.quiz-menu p b {
+  color: #f05b45;
+}
+
 .quiz-progress {
   height: 8px;
   border-radius: 99px;
