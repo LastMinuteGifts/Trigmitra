@@ -1877,6 +1877,144 @@ footer p {
   color: #9aa7b5;
 }
 
+/* Quiz band (dedicated quiz card section) */
+.quiz-band {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 1240px;
+  margin: 0 auto 58px;
+  padding: 38px 48px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, #232f42 0%, #31435c 60%, #3c2f4e 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 48px rgba(20, 28, 38, 0.18);
+}
+
+.quiz-band h2 {
+  margin-top: 10px;
+  color: #fff;
+  font-size: clamp(30px, 3.4vw, 46px);
+  letter-spacing: -0.05em;
+  line-height: 1.02;
+}
+
+.quiz-band h2 em {
+  color: #f7c661;
+}
+
+.quiz-band .practice-cta p {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.quiz-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f7c661, #f0a13c);
+  color: #241a08;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 14px 26px rgba(247, 198, 97, 0.35);
+}
+
+.quiz-button:hover {
+  transform: translateY(-2px);
+}
+
+/* Quiz setup */
+.quiz-setup {
+  display: grid;
+  gap: 14px;
+}
+
+.quiz-suggest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 15px;
+  border-radius: 14px;
+  border: 1px dashed rgba(240, 91, 69, 0.55);
+  background: rgba(240, 91, 69, 0.07);
+  color: #c24a38;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.quiz-topics-head {
+  margin-top: 2px;
+}
+
+.quiz-cats {
+  margin-top: 0;
+}
+
+.quiz-cats .cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.quiz-count-row {
+  display: grid;
+  gap: 8px;
+}
+
+.quiz-count-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.quiz-explain {
+  padding: 16px 18px;
+  border-radius: 14px;
+  border-left: 4px solid #2e7d4f;
+  background: rgba(84, 160, 110, 0.09);
+}
+
+.quiz-explain p {
+  margin-top: 8px;
+  color: #2a3646;
+  font-size: 13.5px;
+  line-height: 1.65;
+}
+
+.quiz-explain .example-steps {
+  margin-top: 10px;
+}
+
+@media (max-width: 760px) {
+  .quiz-band {
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 0 0 28px;
+    padding: 35px 22px;
+  }
+}
+
+[data-theme="dark"] .quiz-suggest {
+  color: #ffb59d;
+}
+
+[data-theme="dark"] .quiz-explain {
+  background: rgba(84, 160, 110, 0.13);
+}
+
+[data-theme="dark"] .quiz-explain p {
+  color: #d4dce6;
+}
+
 /* Practice quiz */
 .quiz-box {
   display: grid;
