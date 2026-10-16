@@ -6,7 +6,7 @@ import App from './App.tsx'
 // PWA service worker — sirf production build me register karo.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => {
+    navigator.serviceWorker.register('./sw.js?v=4').catch(() => {
       // Offline support optional hai — fail ho to app normally chalegi.
     })
   })
