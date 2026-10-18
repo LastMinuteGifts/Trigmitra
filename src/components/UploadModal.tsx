@@ -7,7 +7,7 @@ import VoiceButton from './VoiceButton'
 const readingMessages = [
   'Photo backend ko bhej di...',
   'AI question padh raha hai...',
-  'Steps aur identities ban rahe hain...',
+  'Steps aur formulas ban rahe hain...',
   'Bas thoda aur, final answer aa raha hai...',
 ]
 
