@@ -179,6 +179,27 @@ const MATHS: Record<number, Pair[]> = {
 }
 
 const PHYSICS: Record<number, Pair[]> = {
+  6: [
+    ['Motion and Measurement of Distances', 'Motion'],
+    ['Light, Shadows and Reflections', 'Light'],
+    ['Electricity and Circuits', 'Electricity'],
+    ['Fun with Magnets', 'Force & Energy'],
+  ],
+  7: [
+    ['Heat', 'Force & Energy'],
+    ['Motion and Time', 'Motion'],
+    ['Electric Current and its Effects', 'Electricity'],
+    ['Light', 'Light'],
+  ],
+  8: [
+    ['Force and Pressure', 'Force & Energy'],
+    ['Friction', 'Force & Energy'],
+    ['Sound', 'Motion'],
+    ['Chemical Effects of Electric Current', 'Electricity'],
+    ['Some Natural Phenomena', 'Force & Energy'],
+    ['Light', 'Light'],
+    ['Stars and the Solar System', 'Motion'],
+  ],
   9: [
     ['Motion', 'Motion'],
     ['Force and Laws of Motion', 'Force & Energy'],
