@@ -18,7 +18,7 @@
   .section-heading > p { margin-top: 7px; }
   .steps-grid, .identity-grid { grid-template-columns: 1fr; margin-top: 31px; }
   .step-card { min-height: 181px; }
-  .practice-band { align-items: flex-start; flex-direction: column; margin: 0 0 28px; padding: 45px 22px; }
+  .notes-band, .quiz-band, .practice-band { align-items: flex-start; flex-direction: column; width: calc(100% - 32px); margin: 0 auto 28px; padding: 45px 22px; }
   .practice-cta { margin-top: 25px; }
   footer { flex-wrap: wrap; padding: 25px 22px 40px; gap: 10px 25px; }
   footer .brand { width: 100%; }
