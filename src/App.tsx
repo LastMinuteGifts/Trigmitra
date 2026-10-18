@@ -162,7 +162,7 @@ function App() {
       setAdminOpen(isAdmin)
       const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
       if (manifest) manifest.href = isAdmin ? './admin.webmanifest' : './manifest.webmanifest'
-      document.title = isAdmin ? 'AnkNawab Admin' : 'ANKNAWAB | Sawalon Ka Nawab'
+      document.title = isAdmin ? 'AnkNawab Admin' : 'ANKNAWAB | Jawabo Ka Nawab'
     }
     sync()
     window.addEventListener('hashchange', sync)
@@ -487,7 +487,7 @@ function App() {
 
   return <div className="app-shell">
     <header className="site-header">
-      <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg?v=2" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>sawalon ka nawab</small></span></a>
+      <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg?v=2" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>jawabo ka nawab</small></span></a>
       <nav className={mobileMenuOpen ? 'main-nav is-open' : 'main-nav'} aria-label="Main navigation"><a className="active" href="#top">Home</a><a href="#how-it-works">How it works</a><a href="#identities">Identities</a><a href="#practice">Practice</a></nav>
       <div className="header-actions"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</button><button className="icon-button theme-toggle" aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button><button className="history-button" onClick={() => setHistoryOpen(true)}><History size={16} /> Track progress</button>{userEmail ? <button className="user-chip" title={userName ?? userEmail} onClick={() => setHistoryOpen(true)}>{(userName?.[0] ?? userEmail[0]).toUpperCase()}</button> : <button className="user-chip login-chip" onClick={() => setAuthOpen(true)}>Login</button>}</div>
     </header>
