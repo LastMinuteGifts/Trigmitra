@@ -160,8 +160,8 @@ export async function solveMathsImage(
   }
 
   let taskText = studentClass
-    ? `Analyze this Class ${studentClass} maths question image and return the required JSON.${classHint(studentClass)}`
-    : 'Analyze this school maths question image (Class 1 to 10) and return the required JSON.'
+    ? `Analyze this Class ${studentClass} question image (Maths, Physics or Chemistry) and return the required JSON.${classHint(studentClass)}`
+    : 'Analyze this school question image (Class 1 to 10, Maths, Physics or Chemistry) and return the required JSON.'
   if (description) {
     taskText += ` Student's note about this photo: "${description}". Use it as a hint.`
   }
@@ -182,7 +182,7 @@ export async function solveMathsText(
     throw new Error('AI_PROVIDER_NOT_CONFIGURED')
   }
 
-  const taskText = `Solve this school maths question typed by the student (Class 1 to 10, Maths or Physics numerical) and return the required JSON.${classHint(studentClass)} Question: "${questionText}"`
+  const taskText = `Solve this school question typed by the student (Class 1 to 10, Maths, Physics numerical or Chemistry problem) and return the required JSON.${classHint(studentClass)} Question: "${questionText}"`
 
   return runWithRetry(config, () => [
     { role: 'system', content: mathsTutorSystemPrompt },
@@ -190,7 +190,7 @@ export async function solveMathsText(
   ], parseSolution)
 }
 
-const doubtSystemPrompt = `You are AnkNawab, a friendly Indian school teacher (Classes 1 to 10, Maths + Physics numericals). The student just saw a step-by-step solution and now has a DOUBT about it. Answer ONLY the doubt in simple Hinglish, under 80 words. Plain text only with Unicode math (θ ² √ × ÷ − °), never LaTeX ($, backslashes).`
+const doubtSystemPrompt = `You are AnkNawab, a friendly Indian school teacher (Classes 1 to 10, Maths + Physics numericals + Chemistry). The student just saw a step-by-step solution and now has a DOUBT about it. Answer ONLY the doubt in simple Hinglish, under 80 words. Plain text only with Unicode math (θ ² √ × ÷ − °), never LaTeX ($, backslashes).`
 
 export interface DoubtTurn {
   role: 'user' | 'assistant'

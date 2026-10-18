@@ -169,9 +169,11 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
     const toOption = (ch: { name: string; cat: string }): ChipOption => ({ key: ch.name, cats: [ch.cat] })
     const maths = list.filter((c) => c.subject === 'Maths').map(toOption)
     const physics = list.filter((c) => c.subject === 'Physics').map(toOption)
+    const chemistry = list.filter((c) => c.subject === 'Chemistry').map(toOption)
     const out: ChipGroup[] = []
     if (maths.length) out.push({ label: 'Maths', options: maths })
     if (physics.length) out.push({ label: 'Physics', options: physics })
+    if (chemistry.length) out.push({ label: 'Chemistry', options: chemistry })
     return out
   }, [quizClass])
 

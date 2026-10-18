@@ -114,7 +114,7 @@ function key(formula: string): string {
 }
 
 export function getFormulaExample(formula: string): FormulaExample | undefined {
-  return examples[key(formula)] ?? extraExamples[key(formula)] ?? physicsExamples[key(formula)]
+  return examples[key(formula)] ?? extraExamples[key(formula)] ?? physicsExamples[key(formula)] ?? chemistryExamples[key(formula)]
 }
 
 const physicsExamples: Record<string, FormulaExample> = {
@@ -151,6 +151,37 @@ const physicsExamples: Record<string, FormulaExample> = {
   'Q = It': { q: 'I = 2 A, t = 5 s — Q?', steps: ['= 2 × 5', '= 10 C'] },
   'Heat H = I²Rt': { q: 'I = 2, R = 5, t = 10 — H?', steps: ['= 4 × 5 × 10', '= 200 J'] },
   'Energy = Power × Time (kWh)': { q: '100 W bulb 5 hours — units?', steps: ['= 0.1 × 5', '= 0.5 kWh'] },
+}
+
+const chemistryExamples: Record<string, FormulaExample> = {
+  // ---------- MOLE CONCEPT ----------
+  'n = m / M': { q: '36 g glucose (M = 180 g/mol) me kitne mole?', steps: ['n = 36 / 180', '= 0.2 mol'] },
+  'Number of particles = n × 6.022 × 10²³': { q: '0.5 mol me kitne particles?', steps: ['= 0.5 × 6.022 × 10²³', '= 3.011 × 10²³'] },
+  'm = n × M': { q: '2 mol O₂ (M = 32 g/mol) ka mass?', steps: ['= 2 × 32', '= 64 g'] },
+  'Moles at STP = V / 22.4': { q: '44.8 L gas STP par — kitne mole?', steps: ['= 44.8 / 22.4', '= 2 mol'] },
+  'Molar mass = sum of atomic masses': { q: 'H₂O ka molar mass?', steps: ['H = 1, O = 16', '= 2 + 16 = 18 g/mol'] },
+  // ---------- SOLUTIONS ----------
+  'Mass % = (mass of solute / mass of solution) × 100': { q: '10 g NaCl, 90 g paani — mass %?', steps: ['= 10 / (10 + 90) × 100', '= 10%'] },
+  'Molarity = moles of solute / volume (L)': { q: '0.5 mol in 2 L — molarity?', steps: ['= 0.5 / 2', '= 0.25 M'] },
+  'Molality = moles of solute / mass of solvent (kg)': { q: '1 mol in 2 kg solvent — molality?', steps: ['= 1 / 2', '= 0.5 m'] },
+  'Solubility = (mass of solute / mass of solvent) × 100': { q: '20 g in 100 g paani — solubility?', steps: ['= 20 / 100 × 100', '= 20 g'] },
+  // ---------- GAS LAWS ----------
+  'Boyle: P₁V₁ = P₂V₂': { q: 'P₁=2 atm, V₁=4 L, P₂=4 atm — V₂?', steps: ['V₂ = P₁V₁/P₂ = 8/4', '= 2 L'] },
+  'Charles: V₁/T₁ = V₂/T₂': { q: 'V₁=2 L, T₁=300 K, T₂=600 K — V₂?', steps: ['V₂ = 2 × 600/300', '= 4 L'] },
+  'Combined: P₁V₁/T₁ = P₂V₂/T₂': { q: 'V₁=2 L, T₁=300 K, T₂=600 K, P same — V₂?', steps: ['V₂ = V₁ × T₂/T₁', '= 2 × 2 = 4 L'] },
+  'Ideal gas: PV = nRT': { q: 'n=1, R=0.0821, T=273 K, V=22.4 L — P?', steps: ['P = nRT/V', '≈ 1 atm'] },
+  // ---------- ATOMIC STRUCTURE ----------
+  'Mass number A = protons + neutrons': { q: 'protons 11, neutrons 12 — A?', steps: ['= 11 + 12', '= 23'] },
+  'Neutrons = A − Z': { q: 'A = 23, Z = 11 — neutrons?', steps: ['= 23 − 11', '= 12'] },
+  'Valency = 8 − valence electrons': { q: 'Valence electrons 6 — valency?', steps: ['= 8 − 6', '= 2'] },
+  'Atomic number Z = protons': { q: '12 protons — atomic number?', steps: ['Z = 12', 'Ye Mg hai'] },
+  'Electron config = 2, 8, 8, ...': { q: 'Na (11 electrons) ka config?', steps: ['2, 8, 1', '= 2, 8, 1'] },
+  // ---------- CHEMICAL REACTIONS ----------
+  'Conservation of mass: reactants = products': { q: 'Reactants ka mass 50 g — products?', steps: ['Mass conserve hota hai', '= 50 g'] },
+  'Neutralisation: Acid + Base → Salt + Water': { q: 'HCl + NaOH → ?', steps: ['Acid + Base react karte hain', '= NaCl + H₂O'] },
+  'Metal + Acid → Salt + Hydrogen': { q: 'Zn + HCl → ?', steps: ['Metal + Acid', '= ZnCl₂ + H₂'] },
+  'Oxidation = loss of electrons': { q: 'Zn → Zn²⁺ + 2e⁻ — kya hua?', steps: ['Electron nikla', '= Oxidation'] },
+  'Reduction = gain of electrons': { q: 'Cu²⁺ + 2e⁻ → Cu — kya hua?', steps: ['Electron mila', '= Reduction'] },
 }
 
 const extraExamples: Record<string, FormulaExample> = {

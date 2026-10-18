@@ -1,11 +1,11 @@
-// NCERT chapters (Class 1-10 Maths + Class 9-10 Physics).
+// NCERT chapters (Class 1-10 Maths + Class 6-10 Physics + Chemistry).
 // Har chapter apne topic-category se juda hai taaki quiz wahi formulas se ban sake.
 // Category names src/data/formulas.ts ke formulaCategories se match karte hain.
 
 export interface NcertChapter {
   name: string
   cat: string
-  subject: 'Maths' | 'Physics'
+  subject: 'Maths' | 'Physics' | 'Chemistry'
 }
 
 type Pair = [name: string, cat: string]
@@ -216,12 +216,46 @@ const PHYSICS: Record<number, Pair[]> = {
   ],
 }
 
+const CHEMISTRY: Record<number, Pair[]> = {
+  6: [
+    ['Sorting Materials into Groups', 'Atomic Structure'],
+    ['Separation of Substances', 'Solutions'],
+    ['Changes Around Us', 'Chemical Reactions'],
+    ['Water', 'Solutions'],
+    ['Air Around Us', 'Gas Laws'],
+  ],
+  7: [
+    ['Acids, Bases and Salts', 'Chemical Reactions'],
+    ['Physical and Chemical Changes', 'Chemical Reactions'],
+    ['Fibre to Fabric', 'Chemical Reactions'],
+  ],
+  8: [
+    ['Synthetic Fibres and Plastics', 'Chemical Reactions'],
+    ['Materials: Metals and Non-Metals', 'Atomic Structure'],
+    ['Coal and Petroleum', 'Chemical Reactions'],
+    ['Combustion and Flame', 'Chemical Reactions'],
+  ],
+  9: [
+    ['Matter in Our Surroundings', 'Gas Laws'],
+    ['Is Matter Around Us Pure', 'Solutions'],
+    ['Atoms and Molecules', 'Mole Concept'],
+    ['Structure of the Atom', 'Atomic Structure'],
+  ],
+  10: [
+    ['Chemical Reactions and Equations', 'Chemical Reactions'],
+    ['Acids, Bases and Salts', 'Chemical Reactions'],
+    ['Metals and Non-metals', 'Chemical Reactions'],
+    ['Carbon and its Compounds', 'Chemical Reactions'],
+  ],
+}
+
 export const ncertChapters: Record<number, NcertChapter[]> = Object.fromEntries(
   [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => [
     n,
     [
       ...(MATHS[n] ?? []).map(([name, cat]) => ({ name, cat, subject: 'Maths' as const })),
       ...(PHYSICS[n] ?? []).map(([name, cat]) => ({ name, cat, subject: 'Physics' as const })),
+      ...(CHEMISTRY[n] ?? []).map(([name, cat]) => ({ name, cat, subject: 'Chemistry' as const })),
     ],
   ]),
 )

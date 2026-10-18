@@ -264,6 +264,54 @@ export const formulaCategories: FormulaCategory[] = [
       { formula: 'Energy = Power × Time (kWh)', label: 'Electric energy' },
     ],
   },
+  {
+    name: 'Mole Concept',
+    formulas: [
+      { formula: 'n = m / M', label: 'Moles from mass (n = m/M)' },
+      { formula: 'Number of particles = n × 6.022 × 10²³', label: "Avogadro's number" },
+      { formula: 'm = n × M', label: 'Mass from moles' },
+      { formula: 'Moles at STP = V / 22.4', label: 'Molar volume (gas at STP)' },
+      { formula: 'Molar mass = sum of atomic masses', label: 'Molar mass' },
+    ],
+  },
+  {
+    name: 'Solutions',
+    formulas: [
+      { formula: 'Mass % = (mass of solute / mass of solution) × 100', label: 'Mass percent' },
+      { formula: 'Molarity = moles of solute / volume (L)', label: 'Molarity (M)' },
+      { formula: 'Molality = moles of solute / mass of solvent (kg)', label: 'Molality (m)' },
+      { formula: 'Solubility = (mass of solute / mass of solvent) × 100', label: 'Solubility' },
+    ],
+  },
+  {
+    name: 'Gas Laws',
+    formulas: [
+      { formula: 'Boyle: P₁V₁ = P₂V₂', label: "Boyle's law" },
+      { formula: 'Charles: V₁/T₁ = V₂/T₂', label: "Charles' law" },
+      { formula: 'Combined: P₁V₁/T₁ = P₂V₂/T₂', label: 'Combined gas law' },
+      { formula: 'Ideal gas: PV = nRT', label: 'Ideal gas equation' },
+    ],
+  },
+  {
+    name: 'Atomic Structure',
+    formulas: [
+      { formula: 'Mass number A = protons + neutrons', label: 'Mass number' },
+      { formula: 'Neutrons = A − Z', label: 'Neutron count' },
+      { formula: 'Valency = 8 − valence electrons', label: 'Valency (non-metal)' },
+      { formula: 'Atomic number Z = protons', label: 'Atomic number' },
+      { formula: 'Electron config = 2, 8, 8, ...', label: 'Shell distribution' },
+    ],
+  },
+  {
+    name: 'Chemical Reactions',
+    formulas: [
+      { formula: 'Conservation of mass: reactants = products', label: 'Law of conservation of mass' },
+      { formula: 'Neutralisation: Acid + Base → Salt + Water', label: 'Neutralisation' },
+      { formula: 'Metal + Acid → Salt + Hydrogen', label: 'Metal-acid reaction' },
+      { formula: 'Oxidation = loss of electrons', label: 'Oxidation' },
+      { formula: 'Reduction = gain of electrons', label: 'Reduction' },
+    ],
+  },
 ]
 
 export const featuredFormulas = [

@@ -1,7 +1,7 @@
 {
   "name": "ANKNAWAB | Sawalon Ka Nawab",
   "short_name": "ANKNAWAB",
-  "description": "Maths and physics learning platform for Class 1 to 10 - step-by-step explanations and image-based question solving.",
+  "description": "Maths, physics and chemistry learning platform for Class 1 to 10 - step-by-step explanations and image-based question solving.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
