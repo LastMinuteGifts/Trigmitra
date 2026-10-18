@@ -1,10 +1,7 @@
 @media (max-width: 760px) {
-  .site-header { height: 68px; padding: 0 20px; }  .main-nav { display: none; position: absolute; z-index: 10; top: 68px; left: 0; right: 0; margin: 0; padding: 10px 20px 15px; flex-direction: column; gap: 0; border: 0; border-radius: 0; box-shadow: none; background: #f7f5ef; border-bottom: 1px solid #e3e0d7; }
-  .main-nav.is-open { display: flex; }
-  .main-nav a { flex-direction: row; justify-content: flex-start; gap: 12px; width: 100%; min-width: 0; padding: 13px 4px; border-radius: 0; border-bottom: 1px solid #e3e0d7; font-size: 11px; }
-  .main-nav a::after { display: none; }
-  .main-nav a.active { color: #f05b45; }
-  .mobile-menu { display: grid; }
+  .site-header { height: 68px; padding: 0 20px; }
+  .main-nav { left: 10px; right: 10px; padding: 8px 4px 10px; }
+  .main-nav a { padding: 6px 2px 10px; font-size: 9px; }
   .history-button { display: none; }
   .hero-section { padding: 58px 22px 64px; display: block; }
   h1 { font-size: clamp(43px, 12vw, 58px); }
