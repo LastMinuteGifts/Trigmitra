@@ -97,6 +97,23 @@ async function hasActiveAccess(): Promise<boolean> {
   }
 }
 
+// Login hote hi backend se trial claim karo (1 month + 10/day). Idempotent.
+async function claimTrialAccess(): Promise<void> {
+  if (!supabase) return
+  try {
+    const { data } = await supabase.auth.getSession()
+    const token = data.session?.access_token
+    if (!token) return
+    const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+    await fetch(`${apiUrl}/access/claim`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+  } catch {
+    // Trial claim fail ho to bhi app chalti rahe.
+  }
+}
+
 async function getAccessExpiry(): Promise<string | null> {
   if (!supabase) return null
   try {
@@ -222,7 +239,8 @@ function App() {
       setAccessExpiry(null)
       return
     }
-    getAccessExpiry().then(setAccessExpiry)
+    // Pehle trial claim (naye user ko 1 month + 10/day), phir expiry padho.
+    claimTrialAccess().then(() => getAccessExpiry().then(setAccessExpiry))
   }, [userEmail])
   // Solved solution history me save karo (login ho tabhi).
   const saveSolution = async (sol: StructuredSolution, status?: string) => {

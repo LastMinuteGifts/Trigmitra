@@ -8,7 +8,7 @@ import multer from 'multer'
 import { z } from 'zod'
 import { solveMathsImage, solveMathsText, askDoubt } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
-import { getAdminClient, getAdminOverview, setUserAccess, checkSolveAllowed } from './admin.js'
+import { getAdminClient, getAdminOverview, setUserAccess, checkSolveAllowed, ensureTrialAccess } from './admin.js'
 
 const env = z.object({
   PORT: z.coerce.number().default(4000),
@@ -164,6 +164,33 @@ app.post('/api/solve', solveLimiter, upload.single('questionImage'), async (requ
     }
     console.error(error)
     response.status(502).json({ code: 'AI_ANALYSIS_FAILED', message: 'Question analyze nahi ho paya. Please try again.' })
+  }
+})
+
+// Login hote hi naye user ko ek baar trial access (1 month + 10/day) mile.
+// Idempotent: pehle se grant ho to kuch nahi hota, sirf status wapas aata hai.
+app.post('/api/access/claim', async (request, response) => {
+  const adminClient = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!adminClient) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  const authHeader = request.header('authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    response.status(401).json({ code: 'AUTH_REQUIRED', message: 'Login karke phir try karo.' })
+    return
+  }
+  const { data } = await adminClient.auth.getUser(authHeader.slice(7))
+  if (!data.user) {
+    response.status(401).json({ code: 'AUTH_REQUIRED', message: 'Login karke phir try karo.' })
+    return
+  }
+  try {
+    const result = await ensureTrialAccess(adminClient, data.user.id)
+    response.json({ status: 'ok', access: result })
+  } catch (error) {
+    console.error(error)
+    response.status(502).json({ code: 'ACCESS_CLAIM_FAILED', message: 'Access set nahi hua.' })
   }
 })
 

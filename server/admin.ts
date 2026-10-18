@@ -187,6 +187,40 @@ export async function setUserAccess(
   return { plan, expiresAt, dailyLimit: limit }
 }
 
+const TRIAL_PLAN = 'month'
+const TRIAL_DAILY_LIMIT = 10
+
+/**
+ * Naye user ke liye ek baar free trial: 1 month + 10 questions/day.
+ * Pehle se koi grant row ho (active ya expired) to kuch nahi badalta —
+ * isse logout/login se baar-baar trial milne wali galti nahi hoti.
+ */
+export async function ensureTrialAccess(
+  client: SupabaseClient,
+  userId: string,
+): Promise<{ granted: boolean; plan?: string; expiresAt?: string; dailyLimit?: number | null }> {
+  const { data: existing } = await client
+    .from('access_grants')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (existing) return { granted: false }
+  const expiresAt = new Date(Date.now() + PLAN_DAYS[TRIAL_PLAN] * 24 * 60 * 60 * 1000).toISOString()
+  const { error } = await client.from('access_grants').insert({
+    user_id: userId,
+    plan: TRIAL_PLAN,
+    granted_at: new Date().toISOString(),
+    expires_at: expiresAt,
+    daily_limit: TRIAL_DAILY_LIMIT,
+  })
+  if (error) {
+    // Race: do parallel login ne ek saath try kiya — ek insert jeet gaya, dusra ignore.
+    if (error.code === '23505') return { granted: false }
+    throw new Error(`ADMIN_DB_${error.code ?? 'ERROR'}`)
+  }
+  return { granted: true, plan: TRIAL_PLAN, expiresAt, dailyLimit: TRIAL_DAILY_LIMIT }
+}
+
 /** Solve se pehle: grant valid + aaj ka quota bacha? Returns {allowed, reason} */
 export async function checkSolveAllowed(
   client: SupabaseClient,
