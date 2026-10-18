@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Award, Check, RotateCcw, Search, Target, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
+import { Award, Check, FileText, RotateCcw, Search, Target, Upload, X } from 'lucide-react'
 import { formulaCategories } from '../data/formulas'
 import { ncertChapters } from '../data/ncertChapters'
 import { getFormulaExample } from '../data/formulaExamples'
+import { extractPdfText } from '../utils/pdfText'
+import { generateQuizFromText } from '../utils/quizApi'
 
 export interface QuizExplain {
   q: string
@@ -147,6 +149,11 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
   const [topicQuery, setTopicQuery] = useState('')
   const [count, setCount] = useState(10)
   const [setupError, setSetupError] = useState<string | null>(null)
+  // Quiz ka source: formulas/chapters se, ya student ki PDF se.
+  const [source, setSource] = useState<'topics' | 'pdf'>('topics')
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const [pdfName, setPdfName] = useState<string | null>(null)
+  const pdfInput = useRef<HTMLInputElement>(null)
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
   const [savedQuiz, setSavedQuiz] = useState<SavedQuiz | null>(() => loadSavedQuiz())
@@ -231,6 +238,49 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
     setSavedQuiz(null)
     clearProgress()
     setPhase('asking')
+  }
+
+  const startGeneratedQuiz = (quiz: QuizQuestion[], n: number) => {
+    setCount(n)
+    setQuestions(quiz)
+    setIdx(0)
+    setPicked(null)
+    setScore(0)
+    setAnswered(0)
+    setSavedQuiz(null)
+    clearProgress()
+    setPhase('asking')
+  }
+
+  // PDF upload → text extract → AI se MCQs → seedha quiz shuru.
+  const onPdfSelected = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ''
+    if (!file || pdfBusy) return
+    if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+      setSetupError('Sirf PDF file upload karo.')
+      return
+    }
+    if (file.size > 12 * 1024 * 1024) {
+      setSetupError('PDF 12 MB se choti honi chahiye.')
+      return
+    }
+    setSetupError(null)
+    setPdfName(file.name)
+    setPdfBusy(true)
+    try {
+      const text = await extractPdfText(file)
+      if (text.length < 80) {
+        throw new Error('Is PDF me text nahi mila — shayad scanned hai. Text wali PDF ya photo try karo.')
+      }
+      const n = Math.min(50, Math.max(10, Math.floor(Number(count) || 10)))
+      const quiz = await generateQuizFromText(text, n, quizClass === 'All' ? undefined : Number(quizClass))
+      startGeneratedQuiz(quiz, n)
+    } catch (error) {
+      setSetupError(error instanceof Error ? error.message : 'PDF se quiz nahi bana. Doosri PDF try karo.')
+    } finally {
+      setPdfBusy(false)
+    }
   }
 
   const resumeQuiz = () => {
@@ -340,6 +390,24 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
                 ))}
               </select>
             </label>
+            <div className="quiz-source">
+              <button
+                type="button"
+                className={source === 'topics' ? 'cat-chip active' : 'cat-chip'}
+                onClick={() => { setSource('topics'); setSetupError(null) }}
+              >
+                Topics / Chapters se
+              </button>
+              <button
+                type="button"
+                className={source === 'pdf' ? 'cat-chip active' : 'cat-chip'}
+                onClick={() => { setSource('pdf'); setSetupError(null) }}
+              >
+                PDF se MCQs
+              </button>
+            </div>
+            {source === 'topics' ? (
+              <>
             <div className="quiz-topics-head">
               <span className="section-kicker">
                 {quizClass === 'All' ? 'TOPICS' : `NCERT CHAPTERS · CLASS ${quizClass}`} · MAX 3 ({selectedCats.length} selected)
@@ -382,6 +450,8 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
               ))}
               {searchedGroups.length === 0 && <p className="example-label">Koi topic nahi mila.</p>}
             </div>
+              </>
+            ) : null}
             <div className="quiz-count-row">
               <span className="section-kicker">QUESTIONS (10–50)</span>
               <div className="quiz-count-chips">
@@ -409,10 +479,49 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
                 />
               </div>
             </div>
+            {source === 'pdf' && (
+              <div className="quiz-pdf">
+                <div className="quiz-pdf-icon">
+                  <FileText size={22} />
+                </div>
+                <h4>PDF se MCQs banao</h4>
+                <p>
+                  Apni book, notes ya question paper ki PDF upload karo. Us text se {count} MCQs banenge —
+                  phir wahin quiz khelo.
+                </p>
+                <input
+                  ref={pdfInput}
+                  type="file"
+                  accept="application/pdf,.pdf"
+                  hidden
+                  onChange={onPdfSelected}
+                />
+                <button
+                  className="analyze-button quiz-next"
+                  type="button"
+                  disabled={pdfBusy}
+                  onClick={() => pdfInput.current?.click()}
+                >
+                  {pdfBusy ? (
+                    <>
+                      <span className="spinner" /> PDF padh kar quiz ban raha hai…
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={16} /> PDF choose karo
+                    </>
+                  )}
+                </button>
+                {pdfName && <span className="upload-hint">Selected: {pdfName}</span>}
+                <span className="upload-hint">Text wali PDF best hai · max 12 MB</span>
+              </div>
+            )}
             {setupError && <div className="upload-error">{setupError}</div>}
-            <button className="analyze-button quiz-next" onClick={startQuiz}>
-              <Target size={16} /> Start quiz — {count} MCQs
-            </button>
+            {source === 'topics' ? (
+              <button className="analyze-button quiz-next" onClick={startQuiz}>
+                <Target size={16} /> Start quiz — {count} MCQs
+              </button>
+            ) : null}
           </div>
         ) : !done && current ? (
           <>

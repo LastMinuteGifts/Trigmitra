@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import multer from 'multer'
 import { z } from 'zod'
-import { solveMathsImage, solveMathsText, askDoubt } from './aiClient.js'
+import { solveMathsImage, solveMathsText, askDoubt, generateMcqsFromText } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
 import { getAdminClient, getAdminOverview, setUserAccess, checkSolveAllowed, ensureTrialAccess } from './admin.js'
 
@@ -247,6 +247,54 @@ app.post('/api/admin/access', adminAuth, async (request, response) => {
     }
     console.error(error)
     response.status(502).json({ code: 'ADMIN_SAVE_FAILED', message: 'Access save nahi hua.' })
+  }
+})
+
+// PDF text se quiz banane par halki limit (AI cost guard).
+const quizLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 10,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { code: 'RATE_LIMITED', message: 'Bahut zyada requests. Thodi der rukkar phir try karo.' },
+})
+
+// PDF (frontend me text extract hota hai) se MCQs banao.
+app.post('/api/quiz', quizLimiter, async (request, response) => {
+  try {
+    const body = z.object({
+      text: z.string().min(50).max(14000),
+      count: z.coerce.number().int().min(3).max(50).default(10),
+      studentClass: z.coerce.number().int().min(1).max(10).optional(),
+    }).parse(request.body)
+
+    if (!env.AI_API_KEY && env.DEMO_MODE === 'true') {
+      response.status(503).json({ code: 'AI_PROVIDER_NOT_CONFIGURED', message: 'AI abhi configured nahi hai.' })
+      return
+    }
+    if (!budgetLeft()) {
+      throw new Error('AI_BUDGET_OVER')
+    }
+
+    const questions = await generateMcqsFromText(
+      body.text,
+      body.count,
+      { apiKey: env.AI_API_KEY, apiUrl: env.AI_API_URL, model: env.AI_MODEL, models: aiModels },
+      body.studentClass,
+    )
+    budgetSpend()
+    response.json({ status: 'ok', questions })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'QUIZ_BAD_INPUT', message: 'PDF ka text sahi se nahi mila.' })
+      return
+    }
+    if (error instanceof Error && (error.message === 'AI_PROVIDER_NOT_CONFIGURED' || error.message === 'AI_BUDGET_OVER')) {
+      response.status(503).json({ code: error.message, message: 'AI abhi available nahi hai. Thodi der baad try karo.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'QUIZ_FAILED', message: 'Is PDF se quiz nahi bana. Doosri PDF try karo.' })
   }
 })
 

@@ -1,5 +1,6 @@
 import { mathsTutorSystemPrompt } from './aiPrompt.js'
 import { structuredSolutionSchema, type StructuredSolution } from './solutionSchema.js'
+import { quizResponseSchema, type QuizQuestionPayload } from './quizSchema.js'
 
 interface VisionConfig {
   apiKey?: string
@@ -225,4 +226,47 @@ export async function askDoubt(
     false,
     0.3,
   )
+}
+
+const quizSystemPrompt = `You are AnkNawab, a question-paper generator for Indian school students (Classes 1 to 10: Maths, Physics numericals, Chemistry). You receive raw text extracted from a student's book page or question paper PDF.
+
+Task: create multiple-choice questions STRICTLY from the given text.
+
+Rules:
+- Only use concepts, formulas, definitions, values and numericals that actually appear in the text. Never invent topics.
+- Exactly 4 options per question, exactly ONE correct, and 3 plausible but clearly wrong distractors.
+- Mix mostly direct recall with a few application/numerical questions.
+- "prompt" = the question (max 140 characters). "sub" = short topic or chapter tag (max 40 characters).
+- Keep maths in plain Unicode text (θ ² ³ √ × ÷ − ° π ½), NEVER LaTeX ($, backslashes, \\frac, ^).
+- Explanation in simple Hinglish, technical terms in English.
+- Every question gets "explain": {"q": one-line setup/example, "steps": [2 to 4 short lines]} showing how the correct option is reached.
+- Return ONLY valid JSON in this shape: {"questions":[{"prompt":"","sub":"","options":["","","",""],"answer":0,"explain":{"q":"","steps":[""]}}]}
+- "answer" is the 0-based index of the correct option.
+- Generate exactly the requested number of questions. No Markdown fences, no extra text.`
+
+/** Extract kiye gaye PDF text se MCQs banao. */
+export async function generateMcqsFromText(
+  text: string,
+  count: number,
+  config: VisionConfig,
+  studentClass?: number,
+): Promise<QuizQuestionPayload[]> {
+  if (!config.apiKey) {
+    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
+  }
+
+  const taskText = `Generate exactly ${count} MCQs from this study material.${classHint(studentClass)}\n\n---STUDY MATERIAL START---\n${text}\n---STUDY MATERIAL END---`
+
+  const parsed = await runWithRetry(
+    config,
+    () => [
+      { role: 'system', content: quizSystemPrompt },
+      { role: 'user', content: taskText },
+    ],
+    (content) => quizResponseSchema.parse(sanitizeSolutionText(extractJson(content))),
+    true,
+    0.4,
+  )
+
+  return parsed.questions.slice(0, count)
 }
