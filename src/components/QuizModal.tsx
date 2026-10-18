@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Award, Check, RotateCcw, Search, Target, X } from 'lucide-react'
 import { formulaCategories } from '../data/formulas'
+import { ncertChapters } from '../data/ncertChapters'
 import { getFormulaExample } from '../data/formulaExamples'
 
 export interface QuizExplain {
@@ -22,19 +23,12 @@ interface BankEntry {
   cat: string
 }
 
-// Har category kis class range ke liye hai (approx, NCERT pattern).
-const CAT_CLASSES: Record<string, [number, number]> = {
-  Arithmetic: [1, 8],
-  'Number System': [6, 9],
-  Geometry: [6, 10],
-  Mensuration: [6, 10],
-  Algebra: [7, 10],
-  Statistics: [7, 10],
-  Trigonometry: [9, 10],
-  Motion: [9, 10],
-  'Force & Energy': [8, 10],
-  Light: [10, 10],
-  Electricity: [10, 10],
+// Class chuni ho to us class ke NCERT chapters chips me dikhte hain (har chapter
+// apne topic-category se juda hai), warna generic topic chips.
+interface ChipOption {
+  key: string
+  cats: string[]
+  sub?: string
 }
 
 export const QUIZ_COUNTS = [10, 15, 20, 30, 50]
@@ -162,22 +156,26 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
     }
   }, [phase, questions, idx, score, picked, answered])
 
-  const visibleCats = useMemo(() => {
-    if (quizClass === 'All') return formulaCategories.map((c) => c.name)
+  // Class chuni ho to us class ke NCERT chapters, warna generic topics.
+  const options = useMemo<ChipOption[]>(() => {
+    if (quizClass === 'All') {
+      return formulaCategories.map((c) => ({ key: c.name, cats: [c.name] }))
+    }
     const n = Number(quizClass)
-    return formulaCategories
-      .filter((c) => {
-        const range = CAT_CLASSES[c.name]
-        return range ? n >= range[0] && n <= range[1] : true
-      })
-      .map((c) => c.name)
+    return (ncertChapters[n] ?? []).map((ch) => ({ key: ch.name, cats: [ch.cat], sub: ch.subject }))
   }, [quizClass])
 
-  const searchedCats = useMemo(() => {
+  // Class badalne par purani selection hatao (topics aur chapters alag hain).
+  useEffect(() => {
+    setSelectedCats([])
+    setSetupError(null)
+  }, [quizClass])
+
+  const searchedOptions = useMemo(() => {
     const q = topicQuery.trim().toLowerCase()
-    if (!q) return visibleCats
-    return visibleCats.filter((name) => name.toLowerCase().includes(q))
-  }, [visibleCats, topicQuery])
+    if (!q) return options
+    return options.filter((o) => o.key.toLowerCase().includes(q))
+  }, [options, topicQuery])
 
   const toggleCat = (name: string) => {
     setSetupError(null)
@@ -185,14 +183,16 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
   }
 
   const startQuiz = () => {
-    const valid = selectedCats.filter((c) => visibleCats.includes(c))
-    if (valid.length < 3) {
+    const optionMap = new Map(options.map((o) => [o.key, o.cats]))
+    const validKeys = selectedCats.filter((k) => optionMap.has(k))
+    if (validKeys.length < 3) {
       setSetupError('Kam se kam 3 topics chuno.')
       return
     }
+    const cats = [...new Set(validKeys.flatMap((k) => optionMap.get(k) ?? []))]
     const n = Math.min(50, Math.max(10, Math.floor(Number(count) || 10)))
     setCount(n)
-    setQuestions(buildQuiz(n, valid))
+    setQuestions(buildQuiz(n, cats))
     setIdx(0)
     setPicked(null)
     setScore(0)
@@ -309,7 +309,9 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
               </select>
             </label>
             <div className="quiz-topics-head">
-              <span className="section-kicker">TOPICS · MIN 3 ({selectedCats.length} selected)</span>
+              <span className="section-kicker">
+                {quizClass === 'All' ? 'TOPICS' : `NCERT CHAPTERS · CLASS ${quizClass}`} · MIN 3 ({selectedCats.length} selected)
+              </span>
             </div>
             <label className="auth-field">
               <div className="admin-search">
@@ -317,24 +319,25 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
                 <input
                   value={topicQuery}
                   onChange={(event) => setTopicQuery(event.target.value)}
-                  placeholder="Topic search karo..."
+                  placeholder={quizClass === 'All' ? 'Topic search karo...' : 'Chapter search karo...'}
                 />
               </div>
             </label>
             <div className="cat-chips quiz-cats">
-              {searchedCats.map((name) => (
+              {searchedOptions.map((opt) => (
                 <button
-                  key={name}
+                  key={opt.key}
                   type="button"
                   role="checkbox"
-                  aria-checked={selectedCats.includes(name)}
-                  className={selectedCats.includes(name) ? 'cat-chip active' : 'cat-chip'}
-                  onClick={() => toggleCat(name)}
+                  aria-checked={selectedCats.includes(opt.key)}
+                  className={selectedCats.includes(opt.key) ? 'cat-chip active' : 'cat-chip'}
+                  onClick={() => toggleCat(opt.key)}
                 >
-                  {selectedCats.includes(name) ? <Check size={13} /> : null} {name}
+                  {selectedCats.includes(opt.key) ? <Check size={13} /> : null} {opt.key}
+                  {opt.sub ? <span className="chip-sub">{opt.sub}</span> : null}
                 </button>
               ))}
-              {searchedCats.length === 0 && <p className="example-label">Koi topic nahi mila.</p>}
+              {searchedOptions.length === 0 && <p className="example-label">Koi topic nahi mila.</p>}
             </div>
             <div className="quiz-count-row">
               <span className="section-kicker">QUESTIONS (10–50)</span>
