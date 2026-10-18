@@ -4,11 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copy-pdf-worker.mjs",
     "dev": "vite",
     "api:dev": "tsx watch server/index.ts",
     "typecheck:server": "tsc -p tsconfig.server.json",
     "server:build": "tsc -p tsconfig.server.build.json",
     "server:start": "node dist-server/index.js",
+    "prebuild": "node scripts/copy-pdf-worker.mjs",
     "build": "tsc -b && vite build",
     "test": "node --import tsx --test tests/formulas.test.ts tests/ncertChapters.test.ts tests/notes.test.ts tests/quiz.test.ts tests/quizPayload.test.ts",
     "lint": "oxlint",

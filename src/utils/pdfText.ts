@@ -4,8 +4,9 @@
  */
 export async function extractPdfText(file: File): Promise<string> {
   const pdfjs = await import('pdfjs-dist')
-  const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url')
-  pdfjs.GlobalWorkerOptions.workerSrc = worker.default
+  // Worker public/ se aata hai (scripts/copy-pdf-worker.mjs build/dev se pehle copy karta hai).
+  // .mjs nahi use kar sakte kyunki host usse text/plain bhejta hai.
+  pdfjs.GlobalWorkerOptions.workerSrc = `${import.meta.env.BASE_URL}pdf.worker.min.js`
 
   const data = new Uint8Array(await file.arrayBuffer())
   const task = pdfjs.getDocument({ data })
