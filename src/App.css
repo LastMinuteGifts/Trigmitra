@@ -1479,6 +1479,17 @@ footer p {
   color: #fff;
 }
 
+/* Max 3 topics chun liye → baaki chips dim + non-clickable. */
+.cat-chip:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.cat-chip:disabled:hover {
+  border-color: rgba(33, 42, 54, 0.14);
+  color: #2c3643;
+}
+
 .all-identities-panel > div + div {
   margin-top: 34px;
 }

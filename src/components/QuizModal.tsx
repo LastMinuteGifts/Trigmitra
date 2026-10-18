@@ -195,14 +195,21 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
 
   const toggleCat = (name: string) => {
     setSetupError(null)
-    setSelectedCats((prev) => (prev.includes(name) ? prev.filter((c) => c !== name) : [...prev, name]))
+    setSelectedCats((prev) => {
+      if (prev.includes(name)) return prev.filter((c) => c !== name)
+      if (prev.length >= 3) {
+        setSetupError('Sirf 3 topics tak chun sakte ho.')
+        return prev
+      }
+      return [...prev, name]
+    })
   }
 
   const startQuiz = () => {
     const optionMap = new Map(allOptions.map((o) => [o.key, o.cats]))
     const validKeys = selectedCats.filter((k) => optionMap.has(k))
-    if (validKeys.length < 3) {
-      setSetupError('Kam se kam 3 topics chuno.')
+    if (validKeys.length < 1) {
+      setSetupError('Kam se kam 1 topic chuno.')
       return
     }
     const cats = [...new Set(validKeys.flatMap((k) => optionMap.get(k) ?? []))]
@@ -240,6 +247,7 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
   }
 
   const done = phase === 'done'
+  const atMax = selectedCats.length >= 3
   const current = questions[Math.min(idx, Math.max(questions.length - 1, 0))]
   const progress = questions.length > 0 ? Math.round((Math.min(idx, questions.length) / questions.length) * 100) : 0
 
@@ -326,7 +334,7 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
             </label>
             <div className="quiz-topics-head">
               <span className="section-kicker">
-                {quizClass === 'All' ? 'TOPICS' : `NCERT CHAPTERS · CLASS ${quizClass}`} · MIN 3 ({selectedCats.length} selected)
+                {quizClass === 'All' ? 'TOPICS' : `NCERT CHAPTERS · CLASS ${quizClass}`} · MAX 3 ({selectedCats.length} selected)
               </span>
             </div>
             <label className="auth-field">
@@ -354,6 +362,7 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
                         type="button"
                         role="checkbox"
                         aria-checked={selectedCats.includes(opt.key)}
+                        disabled={atMax && !selectedCats.includes(opt.key)}
                         className={selectedCats.includes(opt.key) ? 'cat-chip active' : 'cat-chip'}
                         onClick={() => toggleCat(opt.key)}
                       >
