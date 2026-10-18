@@ -23,12 +23,16 @@ interface BankEntry {
   cat: string
 }
 
-// Class chuni ho to us class ke NCERT chapters chips me dikhte hain (har chapter
-// apne topic-category se juda hai), warna generic topic chips.
+// Class chuni ho to us class ke NCERT chapters chips me dikhte hain (Maths aur
+// Physics alag groups me), warna generic topic chips.
 interface ChipOption {
   key: string
   cats: string[]
-  sub?: string
+}
+
+interface ChipGroup {
+  label: string
+  options: ChipOption[]
 }
 
 export const QUIZ_COUNTS = [10, 15, 20, 30, 50]
@@ -156,14 +160,22 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
     }
   }, [phase, questions, idx, score, picked, answered])
 
-  // Class chuni ho to us class ke NCERT chapters, warna generic topics.
-  const options = useMemo<ChipOption[]>(() => {
+  // Class chuni ho to us class ke NCERT chapters (Maths/Physics alag), warna generic topics.
+  const groups = useMemo<ChipGroup[]>(() => {
     if (quizClass === 'All') {
-      return formulaCategories.map((c) => ({ key: c.name, cats: [c.name] }))
+      return [{ label: '', options: formulaCategories.map((c) => ({ key: c.name, cats: [c.name] })) }]
     }
-    const n = Number(quizClass)
-    return (ncertChapters[n] ?? []).map((ch) => ({ key: ch.name, cats: [ch.cat], sub: ch.subject }))
+    const list = ncertChapters[Number(quizClass)] ?? []
+    const toOption = (ch: { name: string; cat: string }): ChipOption => ({ key: ch.name, cats: [ch.cat] })
+    const maths = list.filter((c) => c.subject === 'Maths').map(toOption)
+    const physics = list.filter((c) => c.subject === 'Physics').map(toOption)
+    const out: ChipGroup[] = []
+    if (maths.length) out.push({ label: 'Maths', options: maths })
+    if (physics.length) out.push({ label: 'Physics', options: physics })
+    return out
   }, [quizClass])
+
+  const allOptions = useMemo(() => groups.flatMap((g) => g.options), [groups])
 
   // Class badalne par purani selection hatao (topics aur chapters alag hain).
   useEffect(() => {
@@ -171,11 +183,15 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
     setSetupError(null)
   }, [quizClass])
 
-  const searchedOptions = useMemo(() => {
+  const searchedGroups = useMemo(() => {
     const q = topicQuery.trim().toLowerCase()
-    if (!q) return options
-    return options.filter((o) => o.key.toLowerCase().includes(q))
-  }, [options, topicQuery])
+    return groups
+      .map((g) => ({
+        label: g.label,
+        options: q ? g.options.filter((o) => o.key.toLowerCase().includes(q)) : g.options,
+      }))
+      .filter((g) => g.options.length > 0)
+  }, [groups, topicQuery])
 
   const toggleCat = (name: string) => {
     setSetupError(null)
@@ -183,7 +199,7 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
   }
 
   const startQuiz = () => {
-    const optionMap = new Map(options.map((o) => [o.key, o.cats]))
+    const optionMap = new Map(allOptions.map((o) => [o.key, o.cats]))
     const validKeys = selectedCats.filter((k) => optionMap.has(k))
     if (validKeys.length < 3) {
       setSetupError('Kam se kam 3 topics chuno.')
@@ -323,21 +339,31 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
                 />
               </div>
             </label>
-            <div className="cat-chips quiz-cats">
-              {searchedOptions.map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  role="checkbox"
-                  aria-checked={selectedCats.includes(opt.key)}
-                  className={selectedCats.includes(opt.key) ? 'cat-chip active' : 'cat-chip'}
-                  onClick={() => toggleCat(opt.key)}
-                >
-                  {selectedCats.includes(opt.key) ? <Check size={13} /> : null} {opt.key}
-                  {opt.sub ? <span className="chip-sub">{opt.sub}</span> : null}
-                </button>
+            <div className="chip-groups">
+              {searchedGroups.map((group, gi) => (
+                <div className="chip-group" key={group.label || `group-${gi}`}>
+                  {group.label ? (
+                    <span className="chip-group-head">
+                      {group.label} <i>{group.options.length}</i>
+                    </span>
+                  ) : null}
+                  <div className="cat-chips quiz-cats">
+                    {group.options.map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        role="checkbox"
+                        aria-checked={selectedCats.includes(opt.key)}
+                        className={selectedCats.includes(opt.key) ? 'cat-chip active' : 'cat-chip'}
+                        onClick={() => toggleCat(opt.key)}
+                      >
+                        {selectedCats.includes(opt.key) ? <Check size={13} /> : null} {opt.key}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
-              {searchedOptions.length === 0 && <p className="example-label">Koi topic nahi mila.</p>}
+              {searchedGroups.length === 0 && <p className="example-label">Koi topic nahi mila.</p>}
             </div>
             <div className="quiz-count-row">
               <span className="section-kicker">QUESTIONS (10–50)</span>

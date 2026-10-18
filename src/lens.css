@@ -990,6 +990,11 @@ button.admin-card:hover {
   border-color: transparent;
 }
 
+/* Search icon ke liye jagah (warna auth-field input padding icon ke upar aa jata hai). */
+.auth-field .admin-search input {
+  padding-left: 36px;
+}
+
 .password-wrap {
   position: relative;
 }
