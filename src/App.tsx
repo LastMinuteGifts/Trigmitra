@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Atom, BookOpen, Camera, Check, ChevronRight, CircleHelp, FileText, FlaskConical, History, Lightbulb, Menu, Moon, Sparkles, Sun, Upload, X } from 'lucide-react'
+import { ArrowRight, Atom, BookOpen, Camera, Check, ChevronRight, CircleHelp, FileText, FlaskConical, History, Home, Lightbulb, Menu, Moon, Sparkles, Sun, Upload, X } from 'lucide-react'
 import type { DiagramReference, DiagramSpec, StructuredSolution } from './types/solution'
 import { drawDiagram } from './utils/diagramDraw'
 import UploadModal from './components/UploadModal'
@@ -27,6 +27,14 @@ const steps = [
   { number: '02', icon: Sparkles, title: 'AI samjhega', copy: 'Hum question, topic aur given values ko carefully read karenge.' },
   { number: '03', icon: Lightbulb, title: 'Solution seekho', copy: 'Har step ka why samjho, phir similar question practice karo.' },
 ]
+
+// Header pill menu: icon + label wale 4 items (How it works ko menu me nahi rakha).
+const navItems = [
+  { id: 'top', label: 'Home', icon: Home },
+  { id: 'identities', label: 'Identities', icon: Sparkles },
+  { id: 'notes', label: 'Notes', icon: BookOpen },
+  { id: 'practice', label: 'Practice', icon: Upload },
+] as const
 
 // Hero headline me ghumta shabd: Maths / Physics / Chemistry.
 const sciWords = ['Maths', 'Physics', 'Chemistry']
@@ -157,6 +165,7 @@ function App() {
   const [quizPage, setQuizPage] = useState(false)
   const [notesOpen, setNotesOpen] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
+  const [activeNav, setActiveNav] = useState('top')
   // Admin alag link se: #/admin khule to panel kholo + admin manifest lagao
   // taaki "Install app" karne par alag Admin app install ho.
   useEffect(() => {
@@ -491,7 +500,7 @@ function App() {
   return <div className="app-shell">
     <header className="site-header">
       <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg?v=2" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>jawabo ka nawab</small></span></a>
-      <nav className={mobileMenuOpen ? 'main-nav is-open' : 'main-nav'} aria-label="Main navigation"><a className="active" href="#top">Home</a><a href="#how-it-works">How it works</a><a href="#identities">Identities</a><a href="#notes">Notes</a><a href="#practice">Practice</a></nav>
+      <nav className={mobileMenuOpen ? 'main-nav is-open' : 'main-nav'} aria-label="Main navigation">{navItems.map((item) => { const Icon = item.icon; return <a key={item.id} className={activeNav === item.id ? 'active' : undefined} href={`#${item.id}`} onClick={() => { setActiveNav(item.id); setMobileMenuOpen(false) }}><Icon size={20} aria-hidden="true" /><span>{item.label}</span></a> })}</nav>
       <div className="header-actions"><button className="icon-button mobile-menu" aria-label="Open menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>{mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}</button><button className="icon-button theme-toggle" aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button><button className="history-button" onClick={() => setHistoryOpen(true)}><History size={16} /> Track progress</button>{userEmail ? <button className="user-chip" title={userName ?? userEmail} onClick={() => setHistoryOpen(true)}>{(userName?.[0] ?? userEmail[0]).toUpperCase()}</button> : <button className="user-chip login-chip" onClick={() => setAuthOpen(true)}>Login</button>}</div>
     </header>
     <main id="top">

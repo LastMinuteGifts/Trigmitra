@@ -1,7 +1,9 @@
 @media (max-width: 760px) {
-  .site-header { height: 68px; padding: 0 20px; }  .main-nav { display: none; position: absolute; z-index: 10; top: 68px; left: 0; right: 0; margin: 0; padding: 8px 20px 15px; flex-direction: column; gap: 0; background: #f7f5ef; border-bottom: 1px solid #e3e0d7; }
+  .site-header { height: 68px; padding: 0 20px; }  .main-nav { display: none; position: absolute; z-index: 10; top: 68px; left: 0; right: 0; margin: 0; padding: 10px 20px 15px; flex-direction: column; gap: 0; border: 0; border-radius: 0; box-shadow: none; background: #f7f5ef; border-bottom: 1px solid #e3e0d7; }
   .main-nav.is-open { display: flex; }
-  .main-nav a { padding: 13px 0; border-bottom: 1px solid #e3e0d7; }
+  .main-nav a { flex-direction: row; justify-content: flex-start; gap: 12px; width: 100%; min-width: 0; padding: 13px 4px; border-radius: 0; border-bottom: 1px solid #e3e0d7; font-size: 11px; }
+  .main-nav a::after { display: none; }
+  .main-nav a.active { color: #f05b45; }
   .mobile-menu { display: grid; }
   .history-button { display: none; }
   .hero-section { padding: 58px 22px 64px; display: block; }
