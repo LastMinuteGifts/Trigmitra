@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { HelpCircle, Send } from 'lucide-react'
 import type { StructuredSolution } from '../types/solution'
+import VoiceButton from './VoiceButton'
 
 interface ChatMsg {
   role: 'user' | 'ai'
@@ -85,6 +86,7 @@ export default function DoubtBox({ solution }: { solution: StructuredSolution })
             if (event.key === 'Enter') send()
           }}
         />
+        <VoiceButton onText={(text) => setInput((prev) => (prev ? `${prev} ${text}` : text))} />
         <button className="doubt-send" type="button" onClick={send} disabled={busy} aria-label="Send doubt">
           <Send size={17} />
         </button>

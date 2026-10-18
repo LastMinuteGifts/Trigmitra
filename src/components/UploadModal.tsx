@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, Camera, Check, CircleHelp, Clipboard, Crop, ImagePlus, PenLine, Sparkles, X } from 'lucide-react'
 import CropEditor from './CropEditor'
 import MathKeyboard from './MathKeyboard'
+import VoiceButton from './VoiceButton'
 
 const readingMessages = [
   'Photo backend ko bhej di...',
@@ -135,6 +136,10 @@ export default function UploadModal(props: UploadModalProps) {
                     placeholder="Jaise: If tan A = 3/4, find sin A + cos A"
                   />
                 </label>
+                <VoiceButton
+                  className="voice-input-block"
+                  onText={(text) => setQuestionText((questionText ? `${questionText} ` : '') + text)}
+                />
                 <MathKeyboard
                   onInsert={insertSymbol}
                   onBackspace={keyboardBackspace}

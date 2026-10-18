@@ -2419,3 +2419,99 @@ footer p {
   border-color: rgba(255, 255, 255, 0.14);
   color: #eef2f7;
 }
+
+/* ---- Solution share / copy / PDF ---- */
+.solution-heading-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.solution-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.solution-action { display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; border: 1px solid rgba(29, 41, 56, 0.14); border-radius: 999px; background: rgba(255, 255, 255, 0.6); color: inherit; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.18s ease, border-color 0.18s ease; }
+.solution-action:hover { background: #fff; border-color: rgba(29, 41, 56, 0.28); }
+.solution-action-note { font-size: 12px; font-weight: 600; color: #2f8f5b; }
+
+/* ---- Voice input ---- */
+.voice-input { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.voice-input-block { margin: 2px 0 6px; }
+.voice-button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border: 1px dashed rgba(29, 41, 56, 0.28); border-radius: 999px; background: transparent; color: inherit; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
+.voice-button:hover { border-color: rgba(29, 41, 56, 0.5); }
+.voice-button.is-listening { border-style: solid; border-color: #f05b45; color: #f05b45; animation: voice-pulse 1.4s ease-in-out infinite; }
+.voice-interim { font-size: 12px; font-style: italic; opacity: 0.65; }
+@keyframes voice-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(240, 91, 69, 0.35); } 50% { box-shadow: 0 0 0 6px rgba(240, 91, 69, 0); } }
+
+/* ---- Chapter notes band ---- */
+.notes-band { display: flex; align-items: center; justify-content: space-between; gap: 28px; flex-wrap: wrap; max-width: 1180px; margin: 0 auto; padding: 46px 24px; border-top: 1px solid rgba(29, 41, 56, 0.08); }
+.notes-band h2 { font-size: clamp(28px, 4vw, 44px); line-height: 1.05; margin: 10px 0 0; }
+.notes-cta { max-width: 430px; }
+.notes-cta p { margin: 0 0 14px; line-height: 1.55; opacity: 0.75; }
+
+/* ---- Chapter notes modal ---- */
+.notes-workspace { width: min(1040px, 94vw); max-height: 90vh; display: flex; flex-direction: column; padding: 26px; border-radius: 24px; background: rgba(255, 253, 248, 0.99); box-shadow: 0 30px 70px rgba(18, 25, 33, 0.2); }
+.notes-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 14px 0 16px; }
+.notes-classes { display: flex; gap: 6px; flex-wrap: wrap; }
+.notes-class { width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(29, 41, 56, 0.14); background: transparent; color: inherit; font: inherit; font-weight: 600; cursor: pointer; }
+.notes-class.is-active { background: #1d2938; color: #fff; border-color: #1d2938; }
+.notes-search { flex: 1; min-width: 200px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 1px solid rgba(29, 41, 56, 0.14); border-radius: 999px; }
+.notes-search input { flex: 1; min-width: 0; border: 0; background: transparent; padding: 10px 0; font: inherit; color: inherit; outline: none; }
+.notes-body { display: grid; grid-template-columns: 260px 1fr; gap: 20px; flex: 1; min-height: 0; }
+.notes-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; padding-right: 4px; }
+.notes-item { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; border: 1px solid transparent; border-radius: 12px; background: rgba(29, 41, 56, 0.04); color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.notes-item:hover { background: rgba(29, 41, 56, 0.08); }
+.notes-item.is-active { border-color: #f05b45; background: rgba(240, 91, 69, 0.08); }
+.notes-item-name { font-size: 14px; font-weight: 600; }
+.notes-subject { font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 7px; border-radius: 999px; background: rgba(29, 41, 56, 0.1); }
+.notes-subject.subject-maths { background: rgba(79, 140, 255, 0.16); color: #2f6bd8; }
+.notes-subject.subject-physics { background: rgba(240, 91, 69, 0.16); color: #d1462f; }
+.notes-subject.subject-chemistry { background: rgba(63, 175, 110, 0.18); color: #2f8f5b; }
+.notes-detail { overflow-y: auto; padding-right: 6px; }
+.notes-detail-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.notes-detail-head h3 { margin: 0; font-size: 22px; }
+.notes-tags { display: flex; gap: 6px; }
+.notes-cat { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(29, 41, 56, 0.16); }
+.notes-summary { margin: 14px 0; line-height: 1.6; opacity: 0.85; }
+.notes-block { margin-top: 18px; }
+.notes-block h4 { display: flex; align-items: center; gap: 7px; margin: 0 0 10px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
+.notes-block ul { margin: 0; padding-left: 18px; }
+.notes-block li { margin-bottom: 6px; line-height: 1.5; }
+.notes-formulas { display: flex; flex-direction: column; gap: 8px; list-style: none; padding-left: 0; }
+.notes-formulas li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(29, 41, 56, 0.05); }
+.notes-formulas code { font-weight: 700; }
+.notes-formulas span { font-size: 12px; opacity: 0.65; }
+.notes-quiz { margin-top: 20px; }
+.notes-empty { opacity: 0.6; }
+
+[data-theme="dark"] .solution-action { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); }
+[data-theme="dark"] .solution-action:hover { background: rgba(255, 255, 255, 0.14); }
+[data-theme="dark"] .solution-action-note { color: #63d69a; }
+[data-theme="dark"] .voice-button { border-color: rgba(255, 255, 255, 0.24); }
+[data-theme="dark"] .voice-button:hover { border-color: rgba(255, 255, 255, 0.45); }
+[data-theme="dark"] .notes-band { border-top-color: rgba(255, 255, 255, 0.08); }
+[data-theme="dark"] .notes-workspace { background: #131a24; }
+[data-theme="dark"] .notes-item { background: rgba(255, 255, 255, 0.05); }
+[data-theme="dark"] .notes-item:hover { background: rgba(255, 255, 255, 0.1); }
+[data-theme="dark"] .notes-search,
+[data-theme="dark"] .notes-class,
+[data-theme="dark"] .notes-cat { border-color: rgba(255, 255, 255, 0.16); }
+[data-theme="dark"] .notes-class.is-active { background: #eef2f7; color: #10161f; border-color: #eef2f7; }
+[data-theme="dark"] .notes-formulas li { background: rgba(255, 255, 255, 0.06); }
+
+@media (max-width: 760px) {
+  .notes-body { grid-template-columns: 1fr; }
+  .notes-list { max-height: 190px; }
+  .notes-band { padding: 34px 20px; }
+  .solution-heading-actions { width: 100%; }
+}
+
+/* ---- Print: sirf solution panel (Save as PDF) ---- */
+@media print {
+  html,
+  body { background: #fff !important; }
+  body * { visibility: hidden !important; }
+  .solution-panel,
+  .solution-panel * { visibility: visible !important; }
+  .solution-panel { position: absolute !important; inset: 0 auto auto 0 !important; width: 100% !important; max-height: none !important; margin: 0 !important; padding: 20px !important; border: 0 !important; border-radius: 0 !important; background: #fff !important; box-shadow: none !important; overflow: visible !important; }
+  .solution-panel * { color: #111827 !important; background: transparent !important; }
+  .solution-heading-actions,
+  .close-solution,
+  .doubt-box,
+  .upload-overlay,
+  .header-actions,
+  .main-nav { display: none !important; }
+}

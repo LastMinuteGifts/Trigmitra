@@ -46,6 +46,10 @@ function shuffle<T>(arr: T[]): T[] {
   return a
 }
 
+function unique(values: string[]): string[] {
+  return [...new Set(values)]
+}
+
 export function buildQuiz(count: number, cats: string[] = []): QuizQuestion[] {
   const all: BankEntry[] = formulaCategories.flatMap((c) => c.formulas.map((f) => ({ ...f, cat: c.name })))
   const pool = cats.length > 0 ? all.filter((p) => cats.includes(p.cat)) : all
@@ -59,30 +63,32 @@ export function buildQuiz(count: number, cats: string[] = []): QuizQuestion[] {
       const right = entry.formula.slice(eq + 1).trim()
       const sameCat = pool.filter((p) => p.cat === entry.cat && p.formula !== entry.formula)
       const distractPool = sameCat.length >= 3 ? sameCat : pool.filter((p) => p.formula !== entry.formula)
-      const distractors = shuffle(distractPool)
-        .slice(0, 3)
-        .map((d) => {
+      const correct = right.slice(0, 60)
+      const distractors = unique(
+        shuffle(distractPool).map((d) => {
           const i = d.formula.indexOf('=')
           return (i > 0 ? d.formula.slice(i + 1).trim() : d.formula).slice(0, 60)
-        })
-      const options = shuffle([right.slice(0, 60), ...distractors])
+        }),
+      ).filter((value) => value !== correct)
+      const options = shuffle([correct, ...distractors.slice(0, 3)])
       return {
         prompt: `Complete: ${left} = ?`,
         sub: `${entry.cat} · ${entry.label}`,
         options,
-        answer: options.indexOf(right.slice(0, 60)),
+        answer: options.indexOf(correct),
         explain,
       }
     }
-    const distractors = shuffle(pool.filter((p) => p.formula !== entry.formula))
-      .slice(0, 3)
-      .map((d) => d.formula.slice(0, 60))
-    const options = shuffle([entry.formula.slice(0, 60), ...distractors])
+    const correct = entry.formula.slice(0, 60)
+    const distractors = unique(
+      shuffle(pool.filter((p) => p.formula !== entry.formula)).map((d) => d.formula.slice(0, 60)),
+    ).filter((value) => value !== correct)
+    const options = shuffle([correct, ...distractors.slice(0, 3)])
     return {
       prompt: `Which one is "${entry.label}"?`,
       sub: entry.cat,
       options,
-      answer: options.indexOf(entry.formula.slice(0, 60)),
+      answer: options.indexOf(correct),
       explain,
     }
   })
