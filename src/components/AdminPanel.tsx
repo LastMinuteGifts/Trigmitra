@@ -1,5 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Bell, Check, FileText, FlaskConical, KeyRound, ListChecks, RotateCw, Search, Tags, Users } from 'lucide-react'
+import { useEffect, useRef, useState, Fragment } from 'react'
+import {
+  ArrowLeft,
+  Bell,
+  Check,
+  Copy,
+  Download,
+  FileText,
+  FlaskConical,
+  KeyRound,
+  ListChecks,
+  RotateCw,
+  Search,
+  Tags,
+  Users,
+  X,
+} from 'lucide-react'
 
 interface AdminSolution {
   id: string
@@ -60,6 +75,11 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [drafts, setDrafts] = useState<Record<string, { plan: string; limit: string }>>({})
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
   const [userActivity, setUserActivityState] = useState<AdminUserActivity | null>(null)
+  const [expandedSolId, setExpandedSolId] = useState<string | null>(null)
+  const [solSort, setSolSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'createdAt', dir: 'desc' })
+  const [usrSort, setUsrSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'createdAt', dir: 'desc' })
+  const [accessBusy, setAccessBusy] = useState(false)
+  const [copyMsg, setCopyMsg] = useState<string | null>(null)
   const [seenAt, setSeenAt] = useState(() => {
     try {
       return Number(localStorage.getItem(SEEN_KEY) ?? 0) || 0
@@ -80,8 +100,82 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view])
+  // Copy toast hatayein.
+  useEffect(() => {
+    if (!copyMsg) return
+    const t = window.setTimeout(() => setCopyMsg(null), 1800)
+    return () => window.clearTimeout(t)
+  }, [copyMsg])
+
   const draftOf = (u: AdminUser) =>
     drafts[u.id] ?? { plan: u.accessActive ? u.plan : '', limit: u.dailyLimit?.toString() ?? '' }
+
+  const sortRows = (rows: any[], key: string, dir: 'asc' | 'desc') =>
+    [...rows].sort((a, b) => {
+      const av = (a as any)[key]
+      const bv = (b as any)[key]
+      if (av === bv) return 0
+      const c = av < bv ? -1 : 1
+      return dir === 'asc' ? c : -c
+    })
+
+  const fmtDate = (iso: string | null) => {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    })
+  }
+
+  const fmtTime = (iso: string | null) => {
+    if (!iso) return '—'
+    return new Date(iso).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const dailyCounts = (solutions: AdminSolution[]) => {
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today)
+      d.setUTCDate(d.getUTCDate() - 6 + i)
+      return String(d).slice(0, 10)
+    })
+    const counts: Record<string, number> = {}
+    days.forEach((d) => (counts[d] = 0))
+    solutions.forEach((s) => {
+      const day = String(s.createdAt).slice(0, 10)
+      if (counts[day] !== undefined) counts[day]++
+    })
+    return days.map((day) => ({ day, count: counts[day] ?? 0 }))
+  }
+
+  const exportCSV = (title: string, cols: { key: string; label: string }[], rows: any[]) => {
+    const esc = (v: unknown) => {
+      let s = String(v ?? '')
+      if (s.includes(',') || s.includes('"') || s.includes('\n')) s = '"' + s.replace(/"/g, '""') + '"'
+      return s
+    }
+    const header = cols.map((c) => `"${c.label}"`).join(',')
+    const lines = rows.map((r) => cols.map((c) => esc(r[c.key])).join(','))
+    const csv = [header, ...lines].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${title}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  const copyEmail = async (email: string) => {
+    try {
+      await navigator.clipboard.writeText(email)
+      setCopyMsg('Email copy kar liya')
+    } catch {
+      setCopyMsg('Copy nahi hua')
+    }
+  }
 
   const load = async () => {
     if (!adminKey.trim()) {
@@ -108,7 +202,6 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
-  // Ek alag user ka pura solve history load karo.
   const loadUserActivity = async (userId: string) => {
     if (!adminKey.trim()) {
       setError('Pehle admin key likho.')
@@ -133,18 +226,49 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const openUserDetail = (userId: string) => {
-    setSelectedUserId(userId)
-    setView('user-detail')
-    loadUserActivity(userId)
+  const revokeAccess = async (userId: string) => {
+    setAccessBusy(true)
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${apiUrl}/admin/access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey.trim() },
+        body: JSON.stringify({ userId, plan: 'none' }),
+      })
+      const payload = (await response.json()) as { message?: string }
+      if (!response.ok) throw new Error(payload.message ?? 'Access wapas nahi liya gaya.')
+      setError(null)
+      setAccessBusy(false)
+      await load()
+      if (userActivity) await loadUserActivity(userId)
+    } catch (e) {
+      setAccessBusy(false)
+      setError(e instanceof Error ? e.message : 'Access wapas nahi liya gaya.')
+    }
   }
 
-  // Access + daily limit save karo.
-  const setAccess = async (userId: string, plan: string, limitStr: string) => {
-    if (!adminKey.trim()) {
-      setError('Pehle admin key likho.')
-      return
+  const grantTrial = async (userId: string) => {
+    setAccessBusy(true)
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${apiUrl}/admin/access`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey.trim() },
+        body: JSON.stringify({ userId, plan: 'month', dailyLimit: 10 }),
+      })
+      const payload = (await response.json()) as { message?: string }
+      if (!response.ok) throw new Error(payload.message ?? 'Trial nahi diya gaya.')
+      setError(null)
+      setAccessBusy(false)
+      await load()
+      if (userActivity) await loadUserActivity(userId)
+    } catch (e) {
+      setAccessBusy(false)
+      setError(e instanceof Error ? e.message : 'Trial nahi diya gaya.')
     }
+  }
+
+  const setAccess = async (userId: string, plan: string, limitStr: string) => {
     let dailyLimit: number | null = null
     if (limitStr.trim() !== '') {
       dailyLimit = Number(limitStr)
@@ -153,8 +277,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         return
       }
     }
-    setBusy(true)
-    setError(null)
+    setAccessBusy(true)
     try {
       const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
       const response = await fetch(`${apiUrl}/admin/access`, {
@@ -163,23 +286,28 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         body: JSON.stringify({ userId, plan, dailyLimit }),
       })
       const payload = (await response.json()) as { message?: string }
-      if (!response.ok) {
-        throw new Error(payload.message ?? 'Save nahi hua.')
-      }
+      if (!response.ok) throw new Error(payload.message ?? 'Save nahi hua.')
       setDrafts((prev) => {
         const next = { ...prev }
         delete next[userId]
         return next
       })
+      setAccessBusy(false)
       await load()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Kuch gadbad hui.')
-      setBusy(false)
+      setAccessBusy(false)
+      setError(e instanceof Error ? e.message : 'Access save nahi hua.')
     }
   }
 
+  const openUserDetail = (userId: string) => {
+    setSelectedUserId(userId)
+    setView('user-detail')
+    loadUserActivity(userId)
+  }
+
   const q = query.trim().toLowerCase()
-  const rows = (overview?.solutions ?? []).filter(
+  const baseSolutions = (overview?.solutions ?? []).filter(
     (s) =>
       (!topicFilter || s.topic === topicFilter) &&
       (!demoOnly || s.isDemo) &&
@@ -188,14 +316,19 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         s.question.toLowerCase().includes(q) ||
         s.topic.toLowerCase().includes(q)),
   )
+  const rows = sortRows(baseSolutions, solSort.key, solSort.dir)
   const clearFilters = () => {
     setTopicFilter(null)
     setDemoOnly(false)
     setQuery('')
   }
-  const userRows = (overview?.users ?? [])
-    .filter((u) => !q || u.email.toLowerCase().includes(q))
-    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+  const userRows = sortRows(
+    (overview?.users ?? [])
+      .filter((u) => !q || u.email.toLowerCase().includes(q))
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
+    usrSort.key,
+    usrSort.dir,
+  )
   const unread = (overview?.users ?? []).filter(
     (u) => u.createdAt && new Date(u.createdAt).getTime() > seenAt,
   ).length
@@ -203,6 +336,36 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     !!iso && Date.now() - new Date(iso).getTime() < 7 * 24 * 60 * 60 * 1000
   const maxTopic = Math.max(1, ...(overview?.topics.map((t) => t.count) ?? [1]))
   const maxDay = Math.max(1, ...(overview?.last7Days.map((d) => d.count) ?? [1]))
+  const avgSolves =
+    overview && overview.totalUsers
+      ? Math.round((overview.totalSolutions / overview.totalUsers) * 10) / 10
+    : 0
+
+  const sortHeader = (
+    key: string,
+    label: string,
+    cfg: { key: string; dir: 'asc' | 'desc' },
+    setCfg: (v: { key: string; dir: 'asc' | 'desc' }) => void,
+  ) => {
+    const active = cfg.key === key
+    const nextDir = active && cfg.dir === 'asc' ? 'desc' : 'asc'
+    return (
+      <th
+        key={key}
+        onClick={() => setCfg({ key, dir: nextDir })}
+        className="sort-head"
+        title="Sort karne ke liye click karein"
+      >
+        {label} {active ? (cfg.dir === 'asc' ? '↑' : '↓') : ''}
+      </th>
+    )
+  }
+
+  const accessBadge = (u: AdminUser) => {
+    if (!u.accessActive) return <span className="access-badge expired">No access</span>
+    if (!u.plan) return <span className="access-badge none">None</span>
+    return <span className="access-badge active">{u.plan}</span>
+  }
 
   return (
     <div className="admin-dash">
@@ -230,6 +393,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
             </button>
           </nav>
         )}
+        {copyMsg && <span className="copy-toast">{copyMsg}</span>}
         <div className="admin-side-foot">
           <button type="button" onClick={onClose}>
             <ArrowLeft size={16} /> Back to site
@@ -263,8 +427,20 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
           <>
             <header className="admin-topbar">
               <div>
-                <span className="section-kicker">{view === 'users' ? 'USERS' : 'OVERVIEW'}</span>
-                <h2>{view === 'users' ? 'All users' : 'Dashboard'}</h2>
+                <span className="section-kicker">
+                  {view === 'users'
+                    ? 'USERS'
+                    : view === 'user-detail'
+                      ? 'USER ACTIVITY'
+                      : 'OVERVIEW'}
+                </span>
+                <h2>
+                  {view === 'users'
+                    ? 'All users'
+                    : view === 'user-detail'
+                      ? userActivity?.email ?? 'User'
+                      : 'Dashboard'}
+                </h2>
               </div>
               <div className="admin-top-actions">
                 <button className="tool-btn bell-btn" type="button" onClick={() => setView('users')} title="New user alerts">
@@ -312,6 +488,10 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
               >
                 <div className="admin-card-icon green"><Tags size={18} /></div>
                 <div><b>{overview.topics.length}</b><span>topics</span></div>
+              </button>
+              <button type="button" className="admin-card">
+                <div className="admin-card-icon blue"><ListChecks size={18} /></div>
+                <div><b>{avgSolves}</b><span>avg solves / user</span></div>
               </button>
             </div>
             <div className="admin-cols">
@@ -372,6 +552,63 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                   />
                 </div>
               </label>
+              {view === 'users' ? (
+                <button className="analyze-button" type="button" onClick={() => exportCSV('anknawab-users', [
+                  { key: 'email', label: 'User' },
+                  { key: 'joined', label: 'Joined' },
+                  { key: 'lastActive', label: 'Last active' },
+                  { key: 'solves', label: 'Total solves' },
+                  { key: 'todaySolves', label: "Today's solves" },
+                  { key: 'plan', label: 'Plan' },
+                  { key: 'access', label: 'Access' },
+                  { key: 'limit', label: 'Daily limit' },
+                ], userRows.map((u) => ({
+                  email: u.email,
+                  joined: fmtDate(u.createdAt),
+                  lastActive: fmtDate(u.lastSignIn),
+                  solves: u.solves,
+                  todaySolves: u.solvesToday,
+                  plan: u.plan || '—',
+                  access: u.accessActive ? 'Active' : 'No access',
+                  limit: u.dailyLimit ?? '∞',
+                })))}>
+                  <Download size={16} /> Export users CSV
+                </button>
+              ) : view === 'user-detail' && userActivity ? (
+                <button className="analyze-button" type="button" onClick={() => exportCSV(`anknawab-${userActivity.email.replace(/[^a-z0-9]/gi,'_')}`, [
+                  { key: 'date', label: 'Date' },
+                  { key: 'question', label: 'Question' },
+                  { key: 'type', label: 'Type' },
+                  { key: 'topic', label: 'Topic' },
+                  { key: 'answer', label: 'Answer preview' },
+                ], userActivity.solutions.map((s) => ({
+                  date: fmtDate(s.createdAt),
+                  question: s.question,
+                  type: s.questionType || 'General',
+                  topic: s.topic,
+                  answer: s.finalAnswer,
+                })))}>
+                  <Download size={16} /> Export this user CSV
+                </button>
+              ) : (
+                <button className="analyze-button" type="button" onClick={() => exportCSV('anknawab-solutions', [
+                  { key: 'date', label: 'Date' },
+                  { key: 'user', label: 'User' },
+                  { key: 'question', label: 'Question' },
+                  { key: 'topic', label: 'Topic' },
+                  { key: 'type', label: 'Type' },
+                  { key: 'demo', label: 'Demo' },
+                ], rows.map((s) => ({
+                  date: fmtDate(s.createdAt),
+                  user: s.userEmail,
+                  question: s.question,
+                  topic: s.topic,
+                  type: s.questionType || 'General',
+                  demo: s.isDemo ? 'Yes' : 'No',
+                })))}>
+                  <Download size={16} /> Export solutions CSV
+                </button>
+              )}
             </div>
             {error && <div className="upload-error">{error}</div>}
             {(topicFilter || demoOnly) && view === 'solutions' && (
@@ -397,52 +634,57 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>User</th>
-                      <th>Solves</th>
+                      {sortHeader('email', 'User', usrSort, setUsrSort)}
+                      {sortHeader('solves', 'Solves', usrSort, setUsrSort)}
+                      {sortHeader('solvesToday', 'Today', usrSort, setUsrSort)}
                       <th>Access</th>
-                      <th>Joined</th>
-                      <th>Last active</th>
+                      {sortHeader('createdAt', 'Joined', usrSort, setUsrSort)}
+                      {sortHeader('lastSignIn', 'Last active', usrSort, setUsrSort)}
                     </tr>
                   </thead>
                   <tbody>
                     {userRows.map((u) => (
                       <tr key={u.id}>
-                      <td data-label="User">
-                        <button
-                          type="button"
-                          className="admin-user-link"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openUserDetail(u.id)
-                          }}
-                        >
-                          {u.email}
-                        </button>
-                        {isNewUser(u.createdAt) && <span className="pill-new">new</span>}
-                      </td>
+                        <td data-label="User">
+                          <button
+                            type="button"
+                            className="admin-user-link"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              openUserDetail(u.id)
+                            }}
+                            title="View user activity"
+                          >
+                            {u.email}
+                            <Copy size={13} style={{ marginLeft: 6, verticalAlign: 'middle' }} />
+                          </button>
+                          {isNewUser(u.createdAt) && <span className="pill-new">new</span>}
+                        </td>
                         <td data-label="Solves">
                           <b>{u.solves}</b>
                           <small className="access-until">{u.solvesToday} today</small>
                         </td>
+                        <td data-label="Today">{u.solvesToday}</td>
                         <td data-label="Access">
-                          <select
-                            className="access-select"
-                            value={draftOf(u).plan}
-                            onChange={(event) =>
-                              setDrafts((prev) => ({
-                                ...prev,
-                                [u.id]: { ...draftOf(u), plan: event.target.value },
-                              }))
-                            }
-                            disabled={busy}
-                            aria-label={`Access for ${u.email}`}
-                          >
-                            <option value="">No access</option>
-                            <option value="week">1 week</option>
-                            <option value="month">1 month</option>
-                            <option value="year">1 year</option>
-                          </select>
+                          {accessBadge(u)}
                           <div className="access-row">
+                            <select
+                              className="access-select"
+                              value={draftOf(u).plan}
+                              onChange={(event) =>
+                                setDrafts((prev) => ({
+                                  ...prev,
+                                  [u.id]: { ...draftOf(u), plan: event.target.value },
+                                }))
+                              }
+                              disabled={busy}
+                              aria-label={`Access for ${u.email}`}
+                            >
+                              <option value="">No access</option>
+                              <option value="week">1 week</option>
+                              <option value="month">1 month</option>
+                              <option value="year">1 year</option>
+                            </select>
                             <input
                               className="limit-input"
                               type="number"
@@ -484,92 +726,90 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                         </td>
                         <td data-label="Last active">
                           {u.lastSignIn ? new Date(u.lastSignIn).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—'}
+                          {u.lastSignIn ? ' ' + fmtTime(u.lastSignIn) : ''}
                         </td>
                       </tr>
                     ))}
+                    {userRows.length === 0 && <tr><td colSpan={6} className="example-label">Koi user nahi mila.</td></tr>}
                   </tbody>
                 </table>
-                {userRows.length === 0 && <p className="example-label">Koi user nahi mila.</p>}
               </div>
-            ) : (
-              <div className="admin-table-wrap">
-                <table className="admin-table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Question</th>
-                      <th>Topic</th>
-                      <th>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((s) => (
-                      <tr key={s.id}>
-                        <td data-label="User">
-                          <span className="admin-user">{s.userEmail}</span>
-                          {s.isDemo && <span className="pill-demo">demo</span>}
-                        </td>
-                        <td data-label="Question" title={s.question}>
-                          {s.question.length > 90 ? `${s.question.slice(0, 90)}…` : s.question}
-                        </td>
-                        <td data-label="Topic">
-                          <span className="history-topic">{s.topic}</span>
-                        </td>
-                        <td data-label="Date">
-                          {new Date(s.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-                {rows.length === 0 && <p className="example-label">Kuch nahi mila.</p>}
-              </div>
-            )}
-            {view === 'user-detail' && userActivity && (
+            ) : view === 'user-detail' && userActivity ? (
               <div className="admin-detail-wrap">
                 <header className="admin-topbar">
-                  <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button type="button" className="tool-btn" onClick={() => setView('users')}>
                       <ArrowLeft size={15} /> Users wapas
                     </button>
                     <div>
                       <span className="section-kicker">USER ACTIVITY</span>
-                      <h2>{userActivity.email}</h2>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <h2>{userActivity.email}</h2>
+                        <button
+                          type="button"
+                          className="tool-btn"
+                          onClick={() => copyEmail(userActivity.email)}
+                          title="Copy email"
+                        >
+                          <Copy size={15} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                   <div className="admin-top-actions">
-                    <button
-                      className="tool-btn"
-                      type="button"
-                      onClick={() => loadUserActivity(selectedUserId!)}
-                      disabled={busy}
-                    >
-                      <RotateCw size={15} /> Refresh
-                    </button>
+                    {accessBusy ? (
+                      <button className="tool-btn" disabled>Updating...</button>
+                    ) : (
+                      <>
+                        <button
+                          className="tool-btn"
+                          type="button"
+                          onClick={() => revokeAccess(selectedUserId!)}
+                        >
+                          <X size={15} /> Revoke access
+                        </button>
+                        <button
+                          className="tool-btn"
+                          type="button"
+                          onClick={() => grantTrial(selectedUserId!)}
+                        >
+                          <KeyRound size={15} /> Grant 1-month trial
+                        </button>
+                        <button className="tool-btn" type="button" onClick={() => loadUserActivity(selectedUserId!)}>
+                          <RotateCw size={15} /> Refresh
+                        </button>
+                      </>
+                    )}
                   </div>
                 </header>
                 <div className="admin-cards">
                   <button type="button" className="admin-card">
                     <div className="admin-card-icon blue"><FileText size={18} /></div>
-                    <div>
-                      <b>{userActivity.totalSolves}</b>
-                      <span>total solves</span>
-                    </div>
+                    <div><b>{userActivity.totalSolves}</b><span>total solves</span></div>
                   </button>
                   <button type="button" className="admin-card">
                     <div className="admin-card-icon green"><RotateCw size={18} /></div>
-                    <div>
-                      <b>{userActivity.solvesToday}</b>
-                      <span>today's solves</span>
-                    </div>
+                    <div><b>{userActivity.solvesToday}</b><span>today's solves</span></div>
                   </button>
                   <button type="button" className="admin-card">
                     <div className="admin-card-icon yellow"><ListChecks size={18} /></div>
-                    <div>
-                      <b>{userActivity.solutions.length}</b>
-                      <span>in history</span>
-                    </div>
+                    <div><b>{userActivity.solutions.length}</b><span>in history</span></div>
                   </button>
+                </div>
+                <div className="admin-section">
+                  <span className="section-kicker">SOLVES PER DAY (LAST 7 DAYS)</span>
+                  <div className="daily-chart">
+                    {dailyCounts(userActivity.solutions).map((d) => (
+                      <div key={d.day} className="daily-bar" title={`${d.day}: ${d.count} solves`}>
+                        <span className="daily-bar-label">{d.day.slice(5)}</span>
+                        <span
+                          className="daily-bar-fill"
+                          style={{ height: `${d.count === 0 ? 0 : Math.max(30, Math.round((d.count / 20) * 100))}%` }}
+                        />
+                        <span className="daily-bar-count">{d.count}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
@@ -586,11 +826,10 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                       {userActivity.solutions.map((s) => (
                         <tr key={s.id}>
                           <td data-label="Date">
-                            {new Date(s.createdAt).toLocaleDateString('en-IN', {
-                              day: 'numeric',
-                              month: 'short',
-                              year: 'numeric',
-                            })}
+                            {fmtDate(s.createdAt)}
+                            <div style={{ fontSize: '11px', color: '#667587', marginTop: 2 }}>
+                              {fmtTime(s.createdAt)}
+                            </div>
                           </td>
                           <td data-label="Question" title={s.question}>
                             {s.question.length > 100 ? `${s.question.slice(0, 100)}…` : s.question}
@@ -614,6 +853,73 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            ) : (
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      {sortHeader('createdAt', 'Date', solSort, setSolSort)}
+                      {sortHeader('userEmail', 'User', solSort, setSolSort)}
+                      <th>Question</th>
+                      {sortHeader('topic', 'Topic', solSort, setSolSort)}
+                      {sortHeader('questionType', 'Type', solSort, setSolSort)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((s) => (
+                      <Fragment key={s.id}>
+                        <tr
+                          key={`row-${s.id}`}
+                          className={expandedSolId === s.id ? 'expanded-row' : ''}
+                          onClick={() => setExpandedSolId(expandedSolId === s.id ? null : s.id)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <td data-label="Date">
+                            {fmtDate(s.createdAt)}
+                            <div style={{ fontSize: '11px', color: '#667587', marginTop: 2 }}>
+                              {fmtTime(s.createdAt)}
+                            </div>
+                          </td>
+                          <td data-label="User">
+                            <span className="admin-user">{s.userEmail}</span>
+                            {s.isDemo && <span className="pill-demo">demo</span>}
+                          </td>
+                          <td data-label="Question" title={s.question}>
+                            {s.question.length > 110 ? `${s.question.slice(0, 110)}…` : s.question}
+                          </td>
+                          <td data-label="Topic">
+                            <span className="history-topic">{s.topic}</span>
+                          </td>
+                          <td data-label="Type">
+                            <span className="history-topic">{s.questionType || 'General'}</span>
+                          </td>
+                        </tr>
+                        {expandedSolId === s.id && (
+                          <tr key={`exp-${s.id}`}>
+                            <td colSpan={5}>
+                              <div className="sol-expand">
+                                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+                                  <span className="history-topic" style={{ marginRight: 8 }}>{s.difficulty}</span>
+                                  <span className="history-topic" style={{ background: 'rgba(240, 91, 69, 0.12)', color: '#c24a38' }}>
+                                    {s.isDemo ? 'Demo' : 'Real'}
+                                  </span>
+                                </div>
+                                <div style={{ marginBottom: 8 }}>
+                                  <b style={{ color: '#1d2938' }}>Question:</b> <span style={{ whiteSpace: 'pre-wrap', display: 'block', marginTop: 4 }}>{s.question}</span>
+                                </div>
+                                <div style={{ marginBottom: 8 }}>
+                                  <b style={{ color: '#1d2938' }}>Answer:</b> <span style={{ whiteSpace: 'pre-wrap', display: 'block', marginTop: 4 }}>{s.finalAnswer}</span>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    ))}
+                    {rows.length === 0 && <tr><td colSpan={5} className="example-label">Kuch nahi mila.</td></tr>}
+                  </tbody>
+                </table>
               </div>
             )}
           </>
