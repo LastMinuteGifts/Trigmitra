@@ -451,8 +451,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                   <RotateCw size={15} /> Refresh
                 </button>
               </div>
-            </header>
-            <div className="admin-cards">
+              </header>
+              {view !== 'user-detail' && (
+                <div className="admin-cards">
               <button type="button" className="admin-card" onClick={() => setView('users')} title="See all users">
                 <div className="admin-card-icon blue"><Users size={18} /></div>
                 <div><b>{overview.totalUsers}</b><span>total users</span></div>
@@ -489,11 +490,12 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 <div className="admin-card-icon green"><Tags size={18} /></div>
                 <div><b>{overview.topics.length}</b><span>topics</span></div>
               </button>
-              <button type="button" className="admin-card">
-                <div className="admin-card-icon blue"><ListChecks size={18} /></div>
-                <div><b>{avgSolves}</b><span>avg solves / user</span></div>
-              </button>
-            </div>
+                <button type="button" className="admin-card">
+                  <div className="admin-card-icon blue"><ListChecks size={18} /></div>
+                  <div><b>{avgSolves}</b><span>avg solves / user</span></div>
+                </button>
+              </div>
+              )}
             <div className="admin-cols">
             {overview.topics.length > 0 && (
               <div className="admin-section" ref={topicsRef}>
