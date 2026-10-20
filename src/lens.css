@@ -787,6 +787,23 @@ button.admin-card:hover {
   font-weight: 600;
 }
 
+.admin-user-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: #f05b45;
+  cursor: pointer;
+  text-decoration: underline;
+  font: inherit;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.admin-user-link:hover {
+  color: #c24a38;
+  text-decoration: none;
+}
+
 .pill-demo {
   display: inline-block;
   margin-top: 4px;

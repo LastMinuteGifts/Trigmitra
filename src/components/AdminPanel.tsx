@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Bell, Check, FileText, FlaskConical, KeyRound, RotateCw, Search, Tags, Users } from 'lucide-react'
+import { ArrowLeft, Bell, Check, FileText, FlaskConical, KeyRound, ListChecks, RotateCw, Search, Tags, Users } from 'lucide-react'
 
 interface AdminSolution {
   id: string
   userEmail: string
   question: string
   topic: string
+  questionType: string
   difficulty: string
   finalAnswer: string
   isDemo: boolean
@@ -35,6 +36,14 @@ interface AdminOverview {
   users: AdminUser[]
 }
 
+interface AdminUserActivity {
+  userId: string
+  email: string
+  totalSolves: number
+  solvesToday: number
+  solutions: AdminSolution[]
+}
+
 const STORAGE_KEY = 'anknawab_admin_key'
 const SEEN_KEY = 'anknawab_admin_seen'
 
@@ -44,11 +53,13 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<'solutions' | 'users'>('solutions')
+  const [view, setView] = useState<'solutions' | 'users' | 'user-detail'>('solutions')
   const [topicFilter, setTopicFilter] = useState<string | null>(null)
   const [demoOnly, setDemoOnly] = useState(false)
   const topicsRef = useRef<HTMLDivElement>(null)
   const [drafts, setDrafts] = useState<Record<string, { plan: string; limit: string }>>({})
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null)
+  const [userActivity, setUserActivityState] = useState<AdminUserActivity | null>(null)
   const [seenAt, setSeenAt] = useState(() => {
     try {
       return Number(localStorage.getItem(SEEN_KEY) ?? 0) || 0
@@ -95,6 +106,37 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     } finally {
       setBusy(false)
     }
+  }
+
+  // Ek alag user ka pura solve history load karo.
+  const loadUserActivity = async (userId: string) => {
+    if (!adminKey.trim()) {
+      setError('Pehle admin key likho.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    try {
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const response = await fetch(`${apiUrl}/admin/user/${encodeURIComponent(userId)}`, {
+        headers: { 'x-admin-key': adminKey.trim() },
+      })
+      const payload = (await response.json()) as { activity?: AdminUserActivity; message?: string }
+      if (!response.ok || !payload.activity) {
+        throw new Error(payload.message ?? 'Load nahi hua.')
+      }
+      setUserActivityState(payload.activity)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Kuch gadbad hui.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const openUserDetail = (userId: string) => {
+    setSelectedUserId(userId)
+    setView('user-detail')
+    loadUserActivity(userId)
   }
 
   // Access + daily limit save karo.
@@ -366,7 +408,16 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                     {userRows.map((u) => (
                       <tr key={u.id}>
                       <td data-label="User">
-                        <span className="admin-user">{u.email}</span>
+                        <button
+                          type="button"
+                          className="admin-user-link"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openUserDetail(u.id)
+                          }}
+                        >
+                          {u.email}
+                        </button>
                         {isNewUser(u.createdAt) && <span className="pill-new">new</span>}
                       </td>
                         <td data-label="Solves">
@@ -472,6 +523,97 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                   </tbody>
                 </table>
                 {rows.length === 0 && <p className="example-label">Kuch nahi mila.</p>}
+              </div>
+            )}
+            {view === 'user-detail' && userActivity && (
+              <div className="admin-detail-wrap">
+                <header className="admin-topbar">
+                  <div>
+                    <button type="button" className="tool-btn" onClick={() => setView('users')}>
+                      <ArrowLeft size={15} /> Users wapas
+                    </button>
+                    <div>
+                      <span className="section-kicker">USER ACTIVITY</span>
+                      <h2>{userActivity.email}</h2>
+                    </div>
+                  </div>
+                  <div className="admin-top-actions">
+                    <button
+                      className="tool-btn"
+                      type="button"
+                      onClick={() => loadUserActivity(selectedUserId!)}
+                      disabled={busy}
+                    >
+                      <RotateCw size={15} /> Refresh
+                    </button>
+                  </div>
+                </header>
+                <div className="admin-cards">
+                  <button type="button" className="admin-card">
+                    <div className="admin-card-icon blue"><FileText size={18} /></div>
+                    <div>
+                      <b>{userActivity.totalSolves}</b>
+                      <span>total solves</span>
+                    </div>
+                  </button>
+                  <button type="button" className="admin-card">
+                    <div className="admin-card-icon green"><RotateCw size={18} /></div>
+                    <div>
+                      <b>{userActivity.solvesToday}</b>
+                      <span>today's solves</span>
+                    </div>
+                  </button>
+                  <button type="button" className="admin-card">
+                    <div className="admin-card-icon yellow"><ListChecks size={18} /></div>
+                    <div>
+                      <b>{userActivity.solutions.length}</b>
+                      <span>in history</span>
+                    </div>
+                  </button>
+                </div>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Question</th>
+                        <th>Type</th>
+                        <th>Topic</th>
+                        <th>Answer preview</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userActivity.solutions.map((s) => (
+                        <tr key={s.id}>
+                          <td data-label="Date">
+                            {new Date(s.createdAt).toLocaleDateString('en-IN', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
+                          </td>
+                          <td data-label="Question" title={s.question}>
+                            {s.question.length > 100 ? `${s.question.slice(0, 100)}…` : s.question}
+                          </td>
+                          <td data-label="Type">
+                            <span className="history-topic">{s.questionType || 'General'}</span>
+                          </td>
+                          <td data-label="Topic">{s.topic}</td>
+                          <td data-label="Answer preview">
+                            {s.finalAnswer.length > 80 ? `${s.finalAnswer.slice(0, 80)}…` : s.finalAnswer}
+                          </td>
+                        </tr>
+                      ))}
+                      {userActivity.solutions.length === 0 && (
+                        <tr>
+                          <td colSpan={5} className="example-label">
+                            Is user ne abhi kuch solve nahi kiya.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </>

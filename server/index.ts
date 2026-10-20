@@ -8,7 +8,14 @@ import multer from 'multer'
 import { z } from 'zod'
 import { solveMathsImage, solveMathsText, askDoubt, generateMcqsFromText } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
-import { getAdminClient, getAdminOverview, setUserAccess, checkSolveAllowed, ensureTrialAccess } from './admin.js'
+import {
+  getAdminClient,
+  getAdminOverview,
+  getUserActivity,
+  setUserAccess,
+  checkSolveAllowed,
+  ensureTrialAccess,
+} from './admin.js'
 
 const env = z.object({
   PORT: z.coerce.number().default(4000),
@@ -247,6 +254,22 @@ app.post('/api/admin/access', adminAuth, async (request, response) => {
     }
     console.error(error)
     response.status(502).json({ code: 'ADMIN_SAVE_FAILED', message: 'Access save nahi hua.' })
+  }
+})
+
+app.get('/api/admin/user/:userId', adminAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  try {
+    const { userId } = z.object({ userId: z.string().uuid() }).parse(request.params)
+    const activity = await getUserActivity(client, userId, 300)
+    response.json({ status: 'ok', activity })
+  } catch (error) {
+    console.error(error)
+    response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'User data load nahi hua.' })
   }
 })
 

@@ -221,6 +221,63 @@ export async function ensureTrialAccess(
   return { granted: true, plan: TRIAL_PLAN, expiresAt, dailyLimit: TRIAL_DAILY_LIMIT }
 }
 
+export interface AdminUserActivity {
+  userId: string
+  email: string
+  totalSolves: number
+  solvesToday: number
+  solutions: AdminSolutionRow[]
+}
+
+/** Ek specific user ka solve history — kaunsa question, kab, kis topic par, type kya tha. */
+export async function getUserActivity(
+  client: SupabaseClient,
+  userId: string,
+  limit: number,
+): Promise<AdminUserActivity> {
+  const { data: usersData } = await client.auth.admin.listUsers({ page: 1, perPage: 200 })
+  const email = usersData?.users?.find((u) => u.id === userId)?.email ?? '(no email)'
+
+  const { data: rows } = await client
+    .from('solutions')
+    .select('id, question, topic, question_type, difficulty, final_answer, is_demo, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 300))
+
+  const { count: totalCount } = await client
+    .from('solutions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+
+  const todayStart = new Date()
+  todayStart.setUTCHours(0, 0, 0, 0)
+  const { count: todayCount } = await client
+    .from('solutions')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .gte('created_at', todayStart.toISOString())
+
+  return {
+    userId,
+    email,
+    totalSolves: totalCount ?? (rows?.length ?? 0),
+    solvesToday: todayCount ?? 0,
+    solutions: (rows ?? []).map((row) => ({
+      id: row.id as string,
+      userId,
+      userEmail: email,
+      question: row.question as string,
+      topic: (row.topic as string) || 'General',
+      questionType: (row.question_type as string) || '',
+      difficulty: (row.difficulty as string) || '',
+      finalAnswer: (row.final_answer as string) || '',
+      isDemo: Boolean(row.is_demo),
+      createdAt: row.created_at as string,
+    })),
+  }
+}
+
 /** Solve se pehle: grant valid + aaj ka quota bacha? Returns {allowed, reason} */
 export async function checkSolveAllowed(
   client: SupabaseClient,
