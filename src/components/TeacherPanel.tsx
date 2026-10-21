@@ -5,6 +5,7 @@ import {
   Check,
   Eye,
   EyeOff,
+  KeyRound,
   Lock,
   LogIn,
   LogOut,
@@ -279,6 +280,9 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
               <span>{teacher.email}</span>
             </div>
           )}
+          <button type="button" onClick={() => { window.location.hash = '#/admin' }}>
+            <KeyRound size={16} /> Back to admin
+          </button>
           <button type="button" onClick={onClose}>
             <ArrowLeft size={16} /> Back to site
           </button>
