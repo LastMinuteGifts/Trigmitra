@@ -17,6 +17,14 @@ import {
   ensureTrialAccess,
 } from './admin.js'
 import { listOverrides, upsertOverride, deleteOverride } from './notesStore.js'
+import {
+  addTeacher,
+  authenticateTeacher,
+  createTeacherToken,
+  listTeachers,
+  removeTeacher,
+  verifyTeacherToken,
+} from './teachers.js'
 
 const env = z.object({
   PORT: z.coerce.number().default(4000),
@@ -30,6 +38,7 @@ const env = z.object({
   SUPABASE_SERVICE_KEY: z.string().trim().optional().transform((v) => (v ? v : undefined)),
   ADMIN_SECRET: z.string().trim().optional().transform((v) => (v ? v : undefined)),
   TEACHER_SECRET: z.string().trim().optional().transform((v) => (v ? v : undefined)),
+  TEACHER_SESSION_SECRET: z.string().trim().optional().transform((v) => (v ? v : undefined)),
   AI_DAILY_BUDGET: z.coerce.number().int().min(1).default(500),
 }).parse(process.env)
 
@@ -278,8 +287,20 @@ app.get('/api/admin/user/:userId', adminAuth, async (request, response) => {
   }
 })
 
-// Teacher panel: alag key (TEACHER_SECRET), na ho to ADMIN_SECRET fallback.
+// Teacher auth: naya email/password login Bearer token bhejta hai. Purani
+// `x-teacher-key` (TEACHER_SECRET / ADMIN_SECRET) bhi chalti rehti hai.
 const teacherAuth: express.RequestHandler = (request, response, next) => {
+  const header = request.header('authorization') ?? ''
+  if (header.toLowerCase().startsWith('bearer ')) {
+    const session = verifyTeacherToken(header.slice(7).trim())
+    if (!session) {
+      response.status(401).json({ code: 'TEACHER_SESSION_INVALID', message: 'Session expire ho gaya, dobara login karo.' })
+      return
+    }
+    response.locals.teacher = session
+    next()
+    return
+  }
   if (!teacherSecret) {
     response.status(503).json({ code: 'TEACHER_NOT_CONFIGURED', message: 'Teacher panel server par configured nahi hai.' })
     return
@@ -293,6 +314,119 @@ const teacherAuth: express.RequestHandler = (request, response, next) => {
   }
   next()
 }
+
+// Admin: teacher accounts (email + password) manage karna.
+app.get('/api/admin/teachers', adminAuth, async (_request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  try {
+    const teachers = await listTeachers(client)
+    response.json({ status: 'ok', teachers })
+  } catch (error) {
+    console.error(error)
+    response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'Teachers load nahi hue.' })
+  }
+})
+
+app.post('/api/admin/teachers', adminAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  try {
+    const body = z.object({
+      email: z.string().trim().email().max(160),
+      name: z.string().trim().max(80).optional(),
+      password: z.string().min(8).max(200),
+    }).parse(request.body)
+    const teacher = await addTeacher(client, body, 'admin')
+    response.status(201).json({ status: 'ok', teacher })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'ADMIN_BAD_INPUT', message: 'Email sahi do aur password kam se kam 8 characters ka rakho.' })
+      return
+    }
+    if (error instanceof Error && error.message === 'TEACHER_EXISTS') {
+      response.status(409).json({ code: 'TEACHER_EXISTS', message: 'Is email ka teacher account pehle se hai.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'ADMIN_SAVE_FAILED', message: 'Teacher account nahi bana.' })
+  }
+})
+
+app.delete('/api/admin/teachers', adminAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  try {
+    const body = z.object({ email: z.string().trim().email().max(160) }).parse(request.body)
+    const removed = await removeTeacher(client, body.email)
+    response.json({ status: 'ok', removed })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'ADMIN_BAD_INPUT', message: 'Galat email.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'ADMIN_SAVE_FAILED', message: 'Teacher account nahi hata.' })
+  }
+})
+
+// Login par sakht limit: 10 min me max 12 attempts per IP.
+const teacherLoginLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 12,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { code: 'TEACHER_LOGIN_RATE', message: 'Bahut zyada login attempts. Thodi der baad try karo.' },
+})
+
+app.post('/api/teacher/login', teacherLoginLimiter, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'TEACHER_DB_MISSING', message: 'Teacher login server par configured nahi hai.' })
+    return
+  }
+  if (!env.ADMIN_SECRET && !env.TEACHER_SESSION_SECRET) {
+    response.status(503).json({ code: 'TEACHER_NOT_CONFIGURED', message: 'Teacher login server par configured nahi hai.' })
+    return
+  }
+  try {
+    const body = z.object({
+      email: z.string().trim().email().max(160),
+      password: z.string().min(1).max(200),
+    }).parse(request.body)
+    const teacher = await authenticateTeacher(client, body.email, body.password)
+    if (!teacher) {
+      response.status(401).json({ code: 'TEACHER_LOGIN_FAILED', message: 'Email ya password galat hai.' })
+      return
+    }
+    const token = createTeacherToken({ email: teacher.email, name: teacher.name })
+    response.json({ status: 'ok', token, teacher })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'TEACHER_BAD_INPUT', message: 'Email aur password sahi bharo.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'TEACHER_LOGIN_FAILED', message: 'Login nahi ho paya. Thodi der baad try karo.' })
+  }
+})
+
+app.get('/api/teacher/me', teacherAuth, (_request, response) => {
+  const session = response.locals.teacher as { email: string; name: string } | undefined
+  response.json({
+    status: 'ok',
+    teacher: session ?? { email: 'access-key', name: 'Access key' },
+  })
+})
 
 // Public: teacher ne jo notes edit kiye, woh chapter page par dikhein.
 app.get('/api/notes', async (request, response) => {
@@ -342,7 +476,11 @@ app.put('/api/teacher/notes', teacherAuth, async (request, response) => {
       points: z.array(z.string().trim().max(500)).max(40).default([]),
       updatedBy: z.string().trim().max(80).optional(),
     }).parse(request.body)
-    const saved = await upsertOverride(client, body)
+    const session = response.locals.teacher as { email?: string } | undefined
+    const saved = await upsertOverride(client, {
+      ...body,
+      updatedBy: session?.email ?? body.updatedBy,
+    })
     response.json({ status: 'ok', note: saved })
   } catch (error) {
     if (error instanceof z.ZodError) {

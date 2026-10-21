@@ -7,6 +7,7 @@ import {
   Download,
   FileText,
   FlaskConical,
+  GraduationCap,
   KeyRound,
   ListChecks,
   RotateCw,
@@ -15,6 +16,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
+import TeacherAccountsModal from './TeacherAccountsModal'
 
 interface AdminSolution {
   id: string
@@ -80,6 +82,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [usrSort, setUsrSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'createdAt', dir: 'desc' })
   const [accessBusy, setAccessBusy] = useState(false)
   const [copyMsg, setCopyMsg] = useState<string | null>(null)
+  const [teachersOpen, setTeachersOpen] = useState(false)
   const [seenAt, setSeenAt] = useState(() => {
     try {
       return Number(localStorage.getItem(SEEN_KEY) ?? 0) || 0
@@ -368,6 +371,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
+    <>
     <div className="admin-dash">
       <aside className="admin-side">
         <div className="admin-brand">
@@ -395,6 +399,11 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
         {copyMsg && <span className="copy-toast">{copyMsg}</span>}
         <div className="admin-side-foot">
+          {overview && (
+            <button type="button" onClick={() => setTeachersOpen(true)}>
+              <GraduationCap size={16} /> Teacher accounts
+            </button>
+          )}
           <button type="button" onClick={() => { window.location.hash = '#/teacher' }}>
             <FileText size={16} /> Notes editor
           </button>
@@ -931,5 +940,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
       </main>
     </div>
+    {teachersOpen && (
+      <TeacherAccountsModal adminKey={adminKey} onClose={() => setTeachersOpen(false)} />
+    )}
+    </>
   )
 }

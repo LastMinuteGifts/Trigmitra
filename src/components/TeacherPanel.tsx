@@ -3,14 +3,27 @@ import {
   ArrowLeft,
   BookOpen,
   Check,
-  KeyRound,
+  Eye,
+  EyeOff,
+  Lock,
+  LogIn,
+  LogOut,
+  Mail,
   Plus,
   RefreshCw,
   RotateCcw,
   Search,
+  ShieldCheck,
   Trash2,
 } from 'lucide-react'
 import { chaptersForClass, resolveChapterNote } from '../data/notes'
+import {
+  fetchTeacherSession,
+  teacherAuthHeaders,
+  teacherLogin,
+  TEACHER_TOKEN_KEY,
+  type TeacherSession,
+} from '../utils/teacherAuthApi'
 
 interface NoteOverrideRow {
   class: number
@@ -21,7 +34,6 @@ interface NoteOverrideRow {
   updatedBy: string
 }
 
-const STORAGE_KEY = 'anknawab_teacher_key'
 const CLASS_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 const SUBJECTS = ['All', 'Maths', 'Physics', 'Chemistry'] as const
 
@@ -29,8 +41,13 @@ const apiBase = () => import.meta.env.VITE_API_BASE_URL || 'http://localhost:400
 
 /** Teacher panel: chapter ke notes + key points add / edit / remove. */
 export default function TeacherPanel({ onClose }: { onClose: () => void }) {
-  const [teacherKey, setTeacherKey] = useState(() => sessionStorage.getItem(STORAGE_KEY) ?? '')
-  const [authed, setAuthed] = useState(false)
+  const [token, setToken] = useState(() => sessionStorage.getItem(TEACHER_TOKEN_KEY) ?? '')
+  const [teacher, setTeacher] = useState<TeacherSession | null>(null)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [authBusy, setAuthBusy] = useState(() => Boolean(sessionStorage.getItem(TEACHER_TOKEN_KEY)))
+  const [authError, setAuthError] = useState<string | null>(null)
   const [overrides, setOverrides] = useState<NoteOverrideRow[]>([])
   const [classNum, setClassNum] = useState(10)
   const [subject, setSubject] = useState<(typeof SUBJECTS)[number]>('All')
@@ -42,6 +59,17 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+
+  const authed = Boolean(token && teacher)
+
+  const endSession = (message?: string) => {
+    sessionStorage.removeItem(TEACHER_TOKEN_KEY)
+    setToken('')
+    setTeacher(null)
+    setOverrides([])
+    setPassword('')
+    if (message) setAuthError(message)
+  }
 
   const overrideMap = useMemo(() => {
     const map = new Map<string, NoteOverrideRow>()
@@ -86,22 +114,24 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [classNum, selected?.name, overrides])
 
-  const loadNotes = async () => {
-    if (!teacherKey.trim()) {
-      setError('Pehle teacher key likho.')
-      return
-    }
+  const loadNotes = async (authToken: string = token) => {
+    if (!authToken) return
     setBusy(true)
     setError(null)
     try {
       const response = await fetch(`${apiBase()}/teacher/notes`, {
-        headers: { 'x-teacher-key': teacherKey.trim() },
+        headers: teacherAuthHeaders(authToken),
       })
-      const payload = (await response.json()) as { notes?: NoteOverrideRow[]; message?: string }
+      const payload = (await response.json().catch(() => ({}))) as {
+        notes?: NoteOverrideRow[]
+        message?: string
+      }
+      if (response.status === 401) {
+        endSession('Session expire ho gaya — dobara login karo.')
+        return
+      }
       if (!response.ok) throw new Error(payload.message ?? 'Notes load nahi hue.')
-      sessionStorage.setItem(STORAGE_KEY, teacherKey.trim())
       setOverrides(payload.notes ?? [])
-      setAuthed(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Kuch gadbad hui.')
     } finally {
@@ -109,8 +139,46 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
     }
   }
 
+  const submitLogin = async () => {
+    if (!email.trim() || !password) {
+      setAuthError('Email aur password dono bharo.')
+      return
+    }
+    setAuthBusy(true)
+    setAuthError(null)
+    try {
+      const result = await teacherLogin(email.trim(), password)
+      sessionStorage.setItem(TEACHER_TOKEN_KEY, result.token)
+      setToken(result.token)
+      setTeacher(result.teacher)
+      setPassword('')
+      await loadNotes(result.token)
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : 'Login nahi ho paya.')
+    } finally {
+      setAuthBusy(false)
+    }
+  }
+
   useEffect(() => {
-    if (sessionStorage.getItem(STORAGE_KEY)) void loadNotes()
+    if (!token) return
+    let active = true
+    setAuthBusy(true)
+    void (async () => {
+      const session = await fetchTeacherSession(token)
+      if (!active) return
+      if (!session) {
+        endSession('Session expire ho gaya — dobara login karo.')
+        setAuthBusy(false)
+        return
+      }
+      setTeacher(session)
+      await loadNotes(token)
+      if (active) setAuthBusy(false)
+    })()
+    return () => {
+      active = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -122,7 +190,7 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
     try {
       const response = await fetch(`${apiBase()}/teacher/notes`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'x-teacher-key': teacherKey.trim() },
+        headers: { 'Content-Type': 'application/json', ...teacherAuthHeaders(token) },
         body: JSON.stringify({
           class: classNum,
           chapter: selected.name,
@@ -130,6 +198,10 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
           points: points.filter((point) => point.trim()),
         }),
       })
+      if (response.status === 401) {
+        endSession('Session expire ho gaya — dobara login karo.')
+        return
+      }
       const payload = (await response.json()) as { note?: NoteOverrideRow; message?: string }
       if (!response.ok || !payload.note) throw new Error(payload.message ?? 'Notes save nahi hue.')
       const saved = payload.note
@@ -153,9 +225,13 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
     try {
       const response = await fetch(`${apiBase()}/teacher/notes`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'x-teacher-key': teacherKey.trim() },
+        headers: { 'Content-Type': 'application/json', ...teacherAuthHeaders(token) },
         body: JSON.stringify({ class: classNum, chapter: selected.name }),
       })
+      if (response.status === 401) {
+        endSession('Session expire ho gaya — dobara login karo.')
+        return
+      }
       const payload = (await response.json()) as { removed?: boolean; message?: string }
       if (!response.ok) throw new Error(payload.message ?? 'Reset nahi hua.')
       setOverrides((prev) => prev.filter((row) => !(row.class === classNum && row.chapter === selected.name)))
@@ -168,10 +244,9 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
   }
 
   const logout = () => {
-    sessionStorage.removeItem(STORAGE_KEY)
-    setAuthed(false)
-    setOverrides([])
-    setTeacherKey('')
+    endSession()
+    setEmail('')
+    setAuthError(null)
     setNotice(null)
     setError(null)
   }
@@ -198,41 +273,92 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
           </button>
         </nav>
         <div className="admin-side-foot">
+          {authed && teacher && (
+            <div className="teacher-who">
+              <b>{teacher.name}</b>
+              <span>{teacher.email}</span>
+            </div>
+          )}
           <button type="button" onClick={onClose}>
             <ArrowLeft size={16} /> Back to site
           </button>
           {authed && (
             <button type="button" onClick={logout}>
-              <KeyRound size={16} /> Log out
+              <LogOut size={16} /> Log out
             </button>
           )}
         </div>
       </aside>
       <main className="admin-main">
         {!authed ? (
-          <div className="admin-login-card">
-            <span className="section-kicker">TEACHERS ONLY</span>
-            <h2>Teacher panel</h2>
-            <p className="example-label">
-              Chapter ke notes aur key points add / edit / remove karne ke liye teacher key dalo.
-            </p>
-            <label className="auth-field">
-              Teacher key
-              <input
-                type="password"
-                value={teacherKey}
-                onChange={(event) => setTeacherKey(event.target.value)}
-                placeholder="TEACHER_SECRET"
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') void loadNotes()
-                }}
-              />
-            </label>
-            {error && <div className="upload-error">{error}</div>}
-            <button className="analyze-button auth-submit" onClick={loadNotes} disabled={busy}>
-              {busy ? 'Ruko...' : (<><KeyRound size={16} /> Open panel</>)}
-            </button>
+          token && authBusy ? (
+            <div className="teacher-login-wrap">
+              <div className="admin-login-card teacher-login-card teacher-login-loading">
+                <RefreshCw size={20} className="teacher-spin" />
+                <p className="example-label">Session check ho raha hai...</p>
+              </div>
+            </div>
+          ) : (
+          <div className="teacher-login-wrap">
+            <div className="admin-login-card teacher-login-card">
+              <div className="teacher-login-badge">
+                <ShieldCheck size={14} /> Teachers only
+              </div>
+              <h2>Teacher sign in</h2>
+              <p className="example-label">
+                Chapter notes aur key points edit karne ke liye apne teacher account se login karo.
+              </p>
+              <label className="auth-field">
+                Email
+                <div className="teacher-input">
+                  <Mail size={16} />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(event) => setEmail(event.target.value)}
+                    placeholder="teacher@school.com"
+                    autoComplete="username"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') void submitLogin()
+                    }}
+                  />
+                </div>
+              </label>
+              <label className="auth-field">
+                Password
+                <div className="teacher-input">
+                  <Lock size={16} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Password"
+                    autoComplete="current-password"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') void submitLogin()
+                    }}
+                  />
+                  <button
+                    className="teacher-eye"
+                    type="button"
+                    onClick={() => setShowPassword((value) => !value)}
+                    aria-label={showPassword ? 'Password hide karo' : 'Password dikhao'}
+                  >
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </label>
+              {authError && <div className="upload-error">{authError}</div>}
+              <button className="analyze-button auth-submit" type="button" onClick={submitLogin} disabled={authBusy}>
+                {authBusy ? 'Signing in...' : (<><LogIn size={16} /> Sign in</>)}
+              </button>
+              <p className="teacher-login-foot">Account nahi hai? Admin panel → Teacher accounts se banao.</p>
+              <button className="teacher-back-link" type="button" onClick={onClose}>
+                <ArrowLeft size={14} /> Wapas site par
+              </button>
+            </div>
           </div>
+          )
         ) : (
           <>
             <header className="admin-topbar">
@@ -241,7 +367,7 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
                 <h2>Notes &amp; key points</h2>
               </div>
               <div className="admin-top-actions">
-                <button className="tool-btn" type="button" onClick={loadNotes} disabled={busy}>
+                <button className="tool-btn" type="button" onClick={() => void loadNotes()} disabled={busy}>
                   <RefreshCw size={15} /> Refresh
                 </button>
               </div>
