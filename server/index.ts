@@ -323,11 +323,55 @@ app.get('/api/admin/teachers', adminAuth, async (_request, response) => {
     return
   }
   try {
-    const teachers = await listTeachers(client)
-    response.json({ status: 'ok', teachers })
+    const [teachers, overrides] = await Promise.all([listTeachers(client), listOverrides(client)])
+    // Har teacher ke edits gino (notes updatedBy se).
+    const stats = new Map<string, { edits: number; lastEditedAt: string | null }>()
+    for (const note of overrides) {
+      const key = note.updatedBy.trim().toLowerCase()
+      if (!key) continue
+      const current = stats.get(key) ?? { edits: 0, lastEditedAt: null }
+      current.edits += 1
+      if (!current.lastEditedAt || note.updatedAt > current.lastEditedAt) current.lastEditedAt = note.updatedAt
+      stats.set(key, current)
+    }
+    const rows = teachers.map((teacher) => {
+      const stat = stats.get(teacher.email.toLowerCase())
+      return { ...teacher, edits: stat?.edits ?? 0, lastEditedAt: stat?.lastEditedAt ?? null }
+    })
+    response.json({ status: 'ok', teachers: rows })
   } catch (error) {
     console.error(error)
     response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'Teachers load nahi hue.' })
+  }
+})
+
+// Admin: ek teacher ne kaun se notes edit kiye.
+app.get('/api/admin/teachers/:email/notes', adminAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'ADMIN_DB_MISSING', message: 'Supabase admin is not configured.' })
+    return
+  }
+  try {
+    const { email } = z.object({ email: z.string().trim().toLowerCase().min(3).max(160) }).parse(request.params)
+    const notes = (await listOverrides(client))
+      .filter((note) => note.updatedBy.trim().toLowerCase() === email)
+      .map((note) => ({
+        class: note.class,
+        chapter: note.chapter,
+        summary: note.summary,
+        points: note.points,
+        updatedAt: note.updatedAt,
+      }))
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    response.json({ status: 'ok', notes })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'ADMIN_BAD_INPUT', message: 'Galat email.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'Teacher edits load nahi hue.' })
   }
 })
 

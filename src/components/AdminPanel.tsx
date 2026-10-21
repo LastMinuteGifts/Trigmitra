@@ -16,7 +16,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import TeacherAccountsModal from './TeacherAccountsModal'
+import TeachersAdmin from './TeachersAdmin'
 
 interface AdminSolution {
   id: string
@@ -70,7 +70,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [query, setQuery] = useState('')
-  const [view, setView] = useState<'solutions' | 'users' | 'user-detail'>('solutions')
+  const [view, setView] = useState<'solutions' | 'users' | 'user-detail' | 'teachers'>('solutions')
   const [topicFilter, setTopicFilter] = useState<string | null>(null)
   const [demoOnly, setDemoOnly] = useState(false)
   const topicsRef = useRef<HTMLDivElement>(null)
@@ -82,7 +82,6 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   const [usrSort, setUsrSort] = useState<{ key: string; dir: 'asc' | 'desc' }>({ key: 'createdAt', dir: 'desc' })
   const [accessBusy, setAccessBusy] = useState(false)
   const [copyMsg, setCopyMsg] = useState<string | null>(null)
-  const [teachersOpen, setTeachersOpen] = useState(false)
   const [seenAt, setSeenAt] = useState(() => {
     try {
       return Number(localStorage.getItem(SEEN_KEY) ?? 0) || 0
@@ -371,7 +370,6 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <>
     <div className="admin-dash">
       <aside className="admin-side">
         <div className="admin-brand">
@@ -395,15 +393,16 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
             >
               <Users size={17} /> Users ({overview.totalUsers})
             </button>
+            <button
+              className={view === 'teachers' ? 'active' : ''}
+              onClick={() => setView('teachers')}
+            >
+              <GraduationCap size={17} /> Teachers
+            </button>
           </nav>
         )}
         {copyMsg && <span className="copy-toast">{copyMsg}</span>}
         <div className="admin-side-foot">
-          {overview && (
-            <button type="button" onClick={() => setTeachersOpen(true)}>
-              <GraduationCap size={16} /> Teacher accounts
-            </button>
-          )}
           <button type="button" onClick={() => { window.location.hash = '#/teacher' }}>
             <FileText size={16} /> Notes editor
           </button>
@@ -442,29 +441,37 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 <span className="section-kicker">
                   {view === 'users'
                     ? 'USERS'
-                    : view === 'user-detail'
-                      ? 'USER ACTIVITY'
-                      : 'OVERVIEW'}
+                    : view === 'teachers'
+                      ? 'TEACHERS'
+                      : view === 'user-detail'
+                        ? 'USER ACTIVITY'
+                        : 'OVERVIEW'}
                 </span>
                 <h2>
                   {view === 'users'
                     ? 'All users'
-                    : view === 'user-detail'
-                      ? userActivity?.email ?? 'User'
-                      : 'Dashboard'}
+                    : view === 'teachers'
+                      ? 'Teachers'
+                      : view === 'user-detail'
+                        ? userActivity?.email ?? 'User'
+                        : 'Dashboard'}
                 </h2>
               </div>
               <div className="admin-top-actions">
-                <button className="tool-btn bell-btn" type="button" onClick={() => setView('users')} title="New user alerts">
-                  <Bell size={15} /> Alerts
-                  {unread > 0 && <span className="bell-count">{unread}</span>}
-                </button>
-                <button className="tool-btn" type="button" onClick={load} disabled={busy}>
-                  <RotateCw size={15} /> Refresh
-                </button>
+                {view !== 'teachers' && (
+                  <>
+                    <button className="tool-btn bell-btn" type="button" onClick={() => setView('users')} title="New user alerts">
+                      <Bell size={15} /> Alerts
+                      {unread > 0 && <span className="bell-count">{unread}</span>}
+                    </button>
+                    <button className="tool-btn" type="button" onClick={load} disabled={busy}>
+                      <RotateCw size={15} /> Refresh
+                    </button>
+                  </>
+                )}
               </div>
               </header>
-              {view !== 'user-detail' && (
+              {view !== 'user-detail' && view !== 'teachers' && (
                 <div className="admin-cards">
               <button type="button" className="admin-card" onClick={() => setView('users')} title="See all users">
                 <div className="admin-card-icon blue"><Users size={18} /></div>
@@ -508,6 +515,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 </button>
               </div>
               )}
+            {view !== 'teachers' && (
             <div className="admin-cols">
             {overview.topics.length > 0 && (
               <div className="admin-section" ref={topicsRef}>
@@ -555,6 +563,8 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 </div>
               )}
             </div>
+            )}
+            {view !== 'teachers' && (
             <div className="admin-toolbar">
               <label className="auth-field admin-search-field">
                 <div className="admin-search">
@@ -624,6 +634,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 </button>
               )}
             </div>
+            )}
             {error && <div className="upload-error">{error}</div>}
             {(topicFilter || demoOnly) && view === 'solutions' && (
               <div className="filter-bar">
@@ -643,7 +654,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
                 </button>
               </div>
             )}
-            {view === 'users' ? (
+            {view === 'teachers' ? (
+              <TeachersAdmin adminKey={adminKey} />
+            ) : view === 'users' ? (
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
@@ -940,9 +953,5 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
       </main>
     </div>
-    {teachersOpen && (
-      <TeacherAccountsModal adminKey={adminKey} onClose={() => setTeachersOpen(false)} />
-    )}
-    </>
   )
 }
