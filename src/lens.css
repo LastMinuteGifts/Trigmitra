@@ -2049,6 +2049,8 @@ button.admin-card:hover {
   color: #b9c4d2;
   font-size: 12.5px;
   line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .teacher-edit-points {
   margin: 8px 0 0;
@@ -2056,6 +2058,8 @@ button.admin-card:hover {
   color: #aab6c5;
   font-size: 12.5px;
   line-height: 1.7;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .teacher-recent {
   display: grid;

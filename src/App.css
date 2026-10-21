@@ -2688,11 +2688,11 @@ footer p {
 .notes-detail-head h3 { margin: 0; font-size: 22px; }
 .notes-tags { display: flex; gap: 6px; }
 .notes-cat { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; border: 1px solid rgba(29, 41, 56, 0.16); }
-.notes-summary { margin: 14px 0; line-height: 1.6; opacity: 0.85; }
+.notes-summary { margin: 14px 0; line-height: 1.6; opacity: 0.85; white-space: pre-wrap; overflow-wrap: anywhere; }
 .notes-block { margin-top: 18px; }
 .notes-block h4 { display: flex; align-items: center; gap: 7px; margin: 0 0 10px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; opacity: 0.7; }
 .notes-block ul { margin: 0; padding-left: 18px; }
-.notes-block li { margin-bottom: 6px; line-height: 1.5; }
+.notes-block li { margin-bottom: 6px; line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
 .notes-formulas { display: flex; flex-direction: column; gap: 8px; list-style: none; padding-left: 0; }
 .notes-formulas li { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(29, 41, 56, 0.05); }
 .notes-formulas code { font-weight: 700; }
