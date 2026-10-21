@@ -186,6 +186,11 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
 
   const totalEdits = teachers.reduce((sum, teacher) => sum + teacher.edits, 0)
 
+  const nameFor = (email: string) => {
+    const match = teachers.find((row) => row.email.toLowerCase() === email.trim().toLowerCase())
+    return match?.name || email
+  }
+
   return (
     <div className="teachers-admin">
       <div className="teacher-stats">
@@ -225,7 +230,7 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
               >
                 <span className="teacher-class-chip">Class {edit.class}</span>
                 <b>{edit.chapter}</b>
-                <span className="teacher-recent-by">{edit.updatedBy}</span>
+                <span className="teacher-recent-by">{nameFor(edit.updatedBy)}</span>
                 <span className="teacher-edit-time">{fmtDateTime(edit.updatedAt)}</span>
               </button>
             ))}
@@ -401,8 +406,8 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
             <p className="example-label">Is teacher ne abhi koi note edit nahi kiya.</p>
           ) : (
             <div className="teacher-edit-list">
-              {edits.map((edit) => (
-                <details className="teacher-edit-item" key={`${edit.class}-${edit.chapter}`}>
+              {edits.map((edit, index) => (
+                <details className="teacher-edit-item" key={`${edit.class}-${edit.chapter}`} open={index === 0}>
                   <summary>
                     <span className="teacher-class-chip">Class {edit.class}</span>
                     <b>{edit.chapter}</b>
