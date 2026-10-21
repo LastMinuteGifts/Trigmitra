@@ -325,20 +325,43 @@ app.get('/api/admin/teachers', adminAuth, async (_request, response) => {
   try {
     const [teachers, overrides] = await Promise.all([listTeachers(client), listOverrides(client)])
     // Har teacher ke edits gino (notes updatedBy se).
-    const stats = new Map<string, { edits: number; lastEditedAt: string | null }>()
+    const stats = new Map<
+      string,
+      { edits: number; lastEditedAt: string | null; lastClass: number | null; lastChapter: string | null }
+    >()
     for (const note of overrides) {
       const key = note.updatedBy.trim().toLowerCase()
       if (!key) continue
-      const current = stats.get(key) ?? { edits: 0, lastEditedAt: null }
+      const current = stats.get(key) ?? { edits: 0, lastEditedAt: null, lastClass: null, lastChapter: null }
       current.edits += 1
-      if (!current.lastEditedAt || note.updatedAt > current.lastEditedAt) current.lastEditedAt = note.updatedAt
+      if (!current.lastEditedAt || note.updatedAt > current.lastEditedAt) {
+        current.lastEditedAt = note.updatedAt
+        current.lastClass = note.class
+        current.lastChapter = note.chapter
+      }
       stats.set(key, current)
     }
     const rows = teachers.map((teacher) => {
       const stat = stats.get(teacher.email.toLowerCase())
-      return { ...teacher, edits: stat?.edits ?? 0, lastEditedAt: stat?.lastEditedAt ?? null }
+      return {
+        ...teacher,
+        edits: stat?.edits ?? 0,
+        lastEditedAt: stat?.lastEditedAt ?? null,
+        lastClass: stat?.lastClass ?? null,
+        lastChapter: stat?.lastChapter ?? null,
+      }
     })
-    response.json({ status: 'ok', teachers: rows })
+    const recent = overrides
+      .slice()
+      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+      .slice(0, 8)
+      .map((note) => ({
+        class: note.class,
+        chapter: note.chapter,
+        updatedBy: note.updatedBy,
+        updatedAt: note.updatedAt,
+      }))
+    response.json({ status: 'ok', teachers: rows, recent })
   } catch (error) {
     console.error(error)
     response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'Teachers load nahi hue.' })

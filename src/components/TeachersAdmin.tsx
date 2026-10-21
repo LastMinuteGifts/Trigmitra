@@ -8,6 +8,15 @@ interface TeacherRow {
   createdBy: string
   edits: number
   lastEditedAt: string | null
+  lastClass: number | null
+  lastChapter: string | null
+}
+
+interface RecentEdit {
+  class: number
+  chapter: string
+  updatedBy: string
+  updatedAt: string
 }
 
 interface TeacherEdit {
@@ -41,6 +50,7 @@ const initials = (row: TeacherRow) => {
 
 export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
   const [teachers, setTeachers] = useState<TeacherRow[]>([])
+  const [recent, setRecent] = useState<RecentEdit[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
@@ -62,10 +72,12 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
       })
       const payload = (await response.json().catch(() => ({}))) as {
         teachers?: TeacherRow[]
+        recent?: RecentEdit[]
         message?: string
       }
       if (!response.ok) throw new Error(payload.message ?? 'Teachers load nahi hue.')
       setTeachers(payload.teachers ?? [])
+      setRecent(payload.recent ?? [])
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Teachers load nahi hue.')
     } finally {
@@ -192,6 +204,35 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
         </button>
       </div>
 
+      {recent.length > 0 && (
+        <div className="teacher-recent">
+          <div className="teacher-recent-head">
+            <span className="section-kicker">RECENT EDITS</span>
+            <span>Kis teacher ne kya edit kiya — latest 8.</span>
+          </div>
+          <div className="teacher-recent-list">
+            {recent.map((edit) => (
+              <button
+                key={`${edit.updatedBy}-${edit.class}-${edit.chapter}`}
+                type="button"
+                className="teacher-recent-item"
+                onClick={() => {
+                  const teacher = teachers.find(
+                    (row) => row.email.toLowerCase() === edit.updatedBy.trim().toLowerCase(),
+                  )
+                  setSelected(teacher ? teacher.email : null)
+                }}
+              >
+                <span className="teacher-class-chip">Class {edit.class}</span>
+                <b>{edit.chapter}</b>
+                <span className="teacher-recent-by">{edit.updatedBy}</span>
+                <span className="teacher-edit-time">{fmtDateTime(edit.updatedAt)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <form className="teacher-add-card" onSubmit={add}>
         <div className="teacher-add-head">
           <span className="section-kicker">ADD TEACHER</span>
@@ -282,7 +323,17 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
                 <td data-label="Notes edited">
                   <b>{teacher.edits}</b>
                 </td>
-                <td data-label="Last edit">{fmtDate(teacher.lastEditedAt)}</td>
+                <td data-label="Last edit">
+                  {teacher.lastChapter ? (
+                    <span className="teacher-last-edit">
+                      <span className="teacher-class-chip">Class {teacher.lastClass}</span>
+                      <span className="teacher-last-chapter">{teacher.lastChapter}</span>
+                      <span className="teacher-last-date">{fmtDate(teacher.lastEditedAt)}</span>
+                    </span>
+                  ) : (
+                    '—'
+                  )}
+                </td>
                 <td data-label="Joined">{fmtDate(teacher.createdAt)}</td>
                 <td className="teacher-row-actions" onClick={(event) => event.stopPropagation()}>
                   {confirmEmail === teacher.email ? (

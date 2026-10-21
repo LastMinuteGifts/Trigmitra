@@ -2057,6 +2057,78 @@ button.admin-card:hover {
   font-size: 12.5px;
   line-height: 1.7;
 }
+.teacher-recent {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(247, 198, 97, 0.18);
+  background: rgba(247, 198, 97, 0.05);
+}
+.teacher-recent-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.teacher-recent-head > span:last-child {
+  color: #8b98a9;
+  font-size: 11.5px;
+}
+.teacher-recent-list {
+  display: grid;
+  gap: 6px;
+}
+.teacher-recent-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.03);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.teacher-recent-item:hover {
+  border-color: rgba(247, 198, 97, 0.35);
+  background: rgba(247, 198, 97, 0.08);
+}
+.teacher-recent-item b {
+  color: #e8edf3;
+  font-size: 12.5px;
+}
+.teacher-recent-by {
+  color: #93a1b8;
+  font-size: 11.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.teacher-recent-item .teacher-edit-time {
+  margin-left: auto;
+}
+.teacher-last-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.teacher-last-chapter {
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #dfe6ee;
+  font-size: 12px;
+  font-weight: 600;
+}
+.teacher-last-date {
+  color: #7d8ba0;
+  font-size: 11px;
+}
 @media (max-width: 900px) {
   .teacher-add-grid {
     grid-template-columns: 1fr;
@@ -2066,5 +2138,11 @@ button.admin-card:hover {
   }
   .teacher-edit-time {
     margin-left: 0;
+  }
+  .teacher-recent-item .teacher-edit-time {
+    margin-left: 0;
+  }
+  .teacher-last-chapter {
+    max-width: 120px;
   }
 }
