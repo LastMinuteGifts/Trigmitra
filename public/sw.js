@@ -1,6 +1,6 @@
 /* ANKNAWAB service worker — no hardcoded hashes, survives redeploys.
    Navigations: network-first (fresh index.html). Same-origin GET: cache-first. */
-const CACHE = 'anknawab-v5'
+const CACHE = 'anknawab-v6'
 
 self.addEventListener('install', (event) => {
   event.waitUntil(self.skipWaiting())

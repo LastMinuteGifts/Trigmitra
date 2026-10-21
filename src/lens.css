@@ -179,7 +179,11 @@
 .admin-brand img {
   width: 40px;
   height: 40px;
+  padding: 4px;
   border-radius: 12px;
+  background: #fff;
+  object-fit: contain;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
 .admin-brand b {

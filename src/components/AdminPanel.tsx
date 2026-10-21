@@ -375,7 +375,7 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
     <div className="admin-dash">
       <aside className="admin-side">
         <div className="admin-brand">
-          <img src="./logo-icon.svg" alt="AnkNawab" />
+          <img src="./logo-icon.svg?v=3" alt="AnkNawab" />
           <div>
             <b>ANKNAWAB</b>
             <span>admin console</span>

@@ -262,7 +262,7 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
     <div className="admin-dash teacher-dash">
       <aside className="admin-side">
         <div className="admin-brand">
-          <img src="./logo-icon.svg" alt="AnkNawab" />
+          <img src="./logo-icon.svg?v=3" alt="AnkNawab" />
           <div>
             <b>ANKNAWAB</b>
             <span>teacher panel</span>
