@@ -1912,6 +1912,11 @@ button.admin-card:hover {
   font-size: 11px;
   font-weight: 500;
 }
+.teacher-label-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
 .teacher-account-list {
   display: grid;
   gap: 8px;

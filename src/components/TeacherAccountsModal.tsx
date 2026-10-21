@@ -143,7 +143,9 @@ export default function TeacherAccountsModal({
             />
           </label>
           <label className="auth-field">
-            Name <span className="teacher-optional">(optional)</span>
+            <span className="teacher-label-row">
+              Name <span className="teacher-optional">(optional)</span>
+            </span>
             <input
               value={draft.name}
               onChange={(event) => setDraft((prev) => ({ ...prev, name: event.target.value }))}
