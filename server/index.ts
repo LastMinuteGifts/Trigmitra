@@ -16,6 +16,7 @@ import {
   checkSolveAllowed,
   ensureTrialAccess,
 } from './admin.js'
+import { listOverrides, upsertOverride, deleteOverride } from './notesStore.js'
 
 const env = z.object({
   PORT: z.coerce.number().default(4000),
@@ -28,8 +29,12 @@ const env = z.object({
   SUPABASE_URL: z.string().url().optional(),
   SUPABASE_SERVICE_KEY: z.string().trim().optional().transform((v) => (v ? v : undefined)),
   ADMIN_SECRET: z.string().trim().optional().transform((v) => (v ? v : undefined)),
+  TEACHER_SECRET: z.string().trim().optional().transform((v) => (v ? v : undefined)),
   AI_DAILY_BUDGET: z.coerce.number().int().min(1).default(500),
 }).parse(process.env)
+
+// Teachers ke liye alag key; agar set na ho to admin key hi chalti hai.
+const teacherSecret = env.TEACHER_SECRET ?? env.ADMIN_SECRET
 
 const aiModels = (env.AI_MODELS ?? env.AI_MODEL).split(',').map((s) => s.trim()).filter(Boolean)
 
@@ -270,6 +275,105 @@ app.get('/api/admin/user/:userId', adminAuth, async (request, response) => {
   } catch (error) {
     console.error(error)
     response.status(502).json({ code: 'ADMIN_QUERY_FAILED', message: 'User data load nahi hua.' })
+  }
+})
+
+// Teacher panel: alag key (TEACHER_SECRET), na ho to ADMIN_SECRET fallback.
+const teacherAuth: express.RequestHandler = (request, response, next) => {
+  if (!teacherSecret) {
+    response.status(503).json({ code: 'TEACHER_NOT_CONFIGURED', message: 'Teacher panel server par configured nahi hai.' })
+    return
+  }
+  const key = request.header('x-teacher-key')
+  const expected = Buffer.from(teacherSecret)
+  const actual = Buffer.from(key ?? '')
+  if (actual.length !== expected.length || !crypto.timingSafeEqual(actual, expected)) {
+    response.status(403).json({ code: 'TEACHER_FORBIDDEN', message: 'Galat teacher key.' })
+    return
+  }
+  next()
+}
+
+// Public: teacher ne jo notes edit kiye, woh chapter page par dikhein.
+app.get('/api/notes', async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.json({ status: 'ok', notes: [] })
+    return
+  }
+  try {
+    const classNum = z.coerce.number().int().min(1).max(10).optional().parse(request.query.class ?? undefined)
+    const notes = await listOverrides(client, classNum)
+    response.json({ status: 'ok', notes })
+  } catch (error) {
+    // Public page kabhi break na ho — bas default notes dikhein.
+    console.error('notes list failed:', error)
+    response.json({ status: 'ok', notes: [] })
+  }
+})
+
+app.get('/api/teacher/notes', teacherAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'TEACHER_DB_MISSING', message: 'Supabase configured nahi hai.' })
+    return
+  }
+  try {
+    const classNum = z.coerce.number().int().min(1).max(10).optional().parse(request.query.class ?? undefined)
+    const notes = await listOverrides(client, classNum)
+    response.json({ status: 'ok', notes })
+  } catch (error) {
+    console.error(error)
+    response.status(502).json({ code: 'TEACHER_QUERY_FAILED', message: 'Notes load nahi hue.' })
+  }
+})
+
+app.put('/api/teacher/notes', teacherAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'TEACHER_DB_MISSING', message: 'Supabase configured nahi hai.' })
+    return
+  }
+  try {
+    const body = z.object({
+      class: z.coerce.number().int().min(1).max(10),
+      chapter: z.string().trim().min(1).max(160),
+      summary: z.string().trim().min(1).max(2000),
+      points: z.array(z.string().trim().max(500)).max(40).default([]),
+      updatedBy: z.string().trim().max(80).optional(),
+    }).parse(request.body)
+    const saved = await upsertOverride(client, body)
+    response.json({ status: 'ok', note: saved })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'TEACHER_BAD_INPUT', message: 'Summary aur key points sahi bharo.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'TEACHER_SAVE_FAILED', message: 'Notes save nahi hue.' })
+  }
+})
+
+app.delete('/api/teacher/notes', teacherAuth, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'TEACHER_DB_MISSING', message: 'Supabase configured nahi hai.' })
+    return
+  }
+  try {
+    const body = z.object({
+      class: z.coerce.number().int().min(1).max(10),
+      chapter: z.string().trim().min(1).max(160),
+    }).parse(request.body)
+    const removed = await deleteOverride(client, body.class, body.chapter)
+    response.json({ status: 'ok', removed })
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      response.status(400).json({ code: 'TEACHER_BAD_INPUT', message: 'Galat input.' })
+      return
+    }
+    console.error(error)
+    response.status(502).json({ code: 'TEACHER_DELETE_FAILED', message: 'Notes reset nahi hue.' })
   }
 })
 

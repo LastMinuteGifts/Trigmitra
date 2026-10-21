@@ -395,6 +395,9 @@ export default function AdminPanel({ onClose }: { onClose: () => void }) {
         )}
         {copyMsg && <span className="copy-toast">{copyMsg}</span>}
         <div className="admin-side-foot">
+          <button type="button" onClick={() => { window.location.hash = '#/teacher' }}>
+            <FileText size={16} /> Notes editor
+          </button>
           <button type="button" onClick={onClose}>
             <ArrowLeft size={16} /> Back to site
           </button>

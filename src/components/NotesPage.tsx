@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ArrowLeft, ArrowRight, BookOpen, Lightbulb, Search, Sigma } from 'lucide-react'
 import { chaptersForClass, formulasForChapter, resolveChapterNote } from '../data/notes'
+import { fetchNoteOverrides, mergeNote, type NoteOverrideContent } from '../utils/notesApi'
 
 const CLASS_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
@@ -9,6 +10,16 @@ export default function NotesPage({ onBack }: { onBack?: () => void }) {
   const [classNum, setClassNum] = useState(10)
   const [query, setQuery] = useState('')
   const [selectedName, setSelectedName] = useState<string | null>(null)
+  const [overrides, setOverrides] = useState<Record<string, NoteOverrideContent>>({})
+
+  useEffect(() => {
+    const controller = new AbortController()
+    setOverrides({})
+    fetchNoteOverrides(classNum, controller.signal)
+      .then((map) => setOverrides(map))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [classNum])
 
   const chapters = useMemo(() => chaptersForClass(classNum), [classNum])
   const filtered = useMemo(() => {
@@ -25,7 +36,9 @@ export default function NotesPage({ onBack }: { onBack?: () => void }) {
     return filtered[0] ?? null
   }, [filtered, selectedName])
 
-  const note = selected ? resolveChapterNote(selected) : null
+  const baseNote = selected ? resolveChapterNote(selected) : null
+  const override = selected ? overrides[selected.name] : undefined
+  const note = baseNote ? mergeNote(baseNote, override) : null
   const formulas = selected ? formulasForChapter(selected.cat) : []
 
   const pickClass = (value: number) => {
@@ -104,6 +117,7 @@ export default function NotesPage({ onBack }: { onBack?: () => void }) {
               <div className="notes-detail-head">
                 <h3>{selected.name}</h3>
                 <div className="notes-tags">
+                  {override && <span className="notes-edited">Teacher edited</span>}
                   <span className={`notes-subject subject-${selected.subject.toLowerCase()}`}>{selected.subject}</span>
                   <span className="notes-cat">{selected.cat}</span>
                 </div>

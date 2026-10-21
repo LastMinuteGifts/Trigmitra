@@ -3,6 +3,7 @@ import { test } from 'node:test'
 import { formulaCategories } from '../src/data/formulas'
 import { ncertChapters } from '../src/data/ncertChapters'
 import { categoryNotes, formulasForChapter, resolveChapterNote } from '../src/data/notes'
+import { mergeNote } from '../src/utils/notesApi'
 
 test('har formula-category ke liye notes hain', () => {
   for (const category of formulaCategories) {
@@ -29,4 +30,18 @@ test('har chapter ki category me formulas hon', () => {
       )
     }
   }
+})
+
+test('teacher override base note ko replace karta hai', () => {
+  const base = { summary: 'base summary', points: ['a', 'b'] }
+  assert.deepEqual(mergeNote(base, { summary: 'custom summary', points: ['x'] }), {
+    summary: 'custom summary',
+    points: ['x'],
+  })
+})
+
+test('override khaali ho to base note hi rehta hai', () => {
+  const base = { summary: 'base summary', points: ['a'] }
+  assert.deepEqual(mergeNote(base, null), base)
+  assert.deepEqual(mergeNote(base, { summary: '   ', points: [] }), base)
 })

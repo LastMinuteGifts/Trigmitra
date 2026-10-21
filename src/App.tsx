@@ -12,6 +12,7 @@ import NotesPage from './components/NotesPage'
 import AuthModal from './components/AuthModal'
 import HistoryModal from './components/HistoryModal'
 import AdminPanel from './components/AdminPanel'
+import TeacherPanel from './components/TeacherPanel'
 import { supabase } from './lib/supabase'
 import { demoSolution } from './data/demoSolution'
 import { getFormulaExample } from './data/formulaExamples'
@@ -165,16 +166,24 @@ function App() {
   const [quizPage, setQuizPage] = useState(false)
   const [notesPage, setNotesPage] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
+  const [teacherOpen, setTeacherOpen] = useState(false)
   const [activeNav, setActiveNav] = useState('top')
-  // Admin alag link se: #/admin khule to panel kholo + admin manifest lagao
-  // taaki "Install app" karne par alag Admin app install ho.
+  // Admin/Teacher alag link se: #/admin ya #/teacher khule to panel kholo + admin
+  // manifest lagao taaki "Install app" karne par alag panel app install ho.
   useEffect(() => {
     const sync = () => {
-      const isAdmin = window.location.hash === '#/admin'
+      const hash = window.location.hash
+      const isAdmin = hash === '#/admin'
+      const isTeacher = hash === '#/teacher'
       setAdminOpen(isAdmin)
+      setTeacherOpen(isTeacher)
       const manifest = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
-      if (manifest) manifest.href = isAdmin ? './admin.webmanifest' : './manifest.webmanifest'
-      document.title = isAdmin ? 'AnkNawab Admin' : 'ANKNAWAB | Jawabo Ka Nawab'
+      if (manifest) manifest.href = isAdmin || isTeacher ? './admin.webmanifest' : './manifest.webmanifest'
+      document.title = isAdmin
+        ? 'AnkNawab Admin'
+        : isTeacher
+          ? 'AnkNawab Teacher'
+          : 'ANKNAWAB | Jawabo Ka Nawab'
     }
     sync()
     window.addEventListener('hashchange', sync)
@@ -183,6 +192,12 @@ function App() {
   const closeAdmin = () => {
     setAdminOpen(false)
     if (window.location.hash === '#/admin') {
+      history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }
+  const closeTeacher = () => {
+    setTeacherOpen(false)
+    if (window.location.hash === '#/teacher') {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
   }
@@ -508,6 +523,9 @@ function App() {
   // Admin alag full page par: public site bilkul nahi dikhegi.
   if (adminOpen) {
     return <AdminPanel onClose={closeAdmin} />
+  }
+  if (teacherOpen) {
+    return <TeacherPanel onClose={closeTeacher} />
   }
   if (quizPage) {
     return <QuizPage onExit={closeQuizPage} />
