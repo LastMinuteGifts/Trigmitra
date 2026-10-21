@@ -356,7 +356,7 @@ export default function TeacherPanel({ onClose }: { onClose: () => void }) {
               <button className="analyze-button auth-submit" type="button" onClick={submitLogin} disabled={authBusy}>
                 {authBusy ? 'Signing in...' : (<><LogIn size={16} /> Sign in</>)}
               </button>
-              <p className="teacher-login-foot">Account nahi hai? Admin panel → Teacher accounts se banao.</p>
+                  <p className="teacher-login-foot">Account nahi hai? Admin panel → Teachers se banao.</p>
               <button className="teacher-back-link" type="button" onClick={onClose}>
                 <ArrowLeft size={14} /> Wapas site par
               </button>

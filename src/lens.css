@@ -1076,6 +1076,24 @@ button.admin-card:hover {
   font-size: 12px;
 }
 
+.auth-teacher {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(29, 41, 56, 0.09);
+  color: #7d8794;
+  font-size: 12px;
+}
+.auth-teacher .text-button {
+  color: #1f2d3f;
+  padding: 0;
+}
+.auth-teacher .text-button:hover {
+  color: #f05b45;
+}
+
 /* History modal */
 .history-box {
   display: grid;

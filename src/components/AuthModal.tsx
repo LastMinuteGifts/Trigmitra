@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Eye, EyeOff, LogIn, UserPlus, X } from 'lucide-react'
+import { Eye, EyeOff, GraduationCap, LogIn, UserPlus, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface AuthModalProps {
@@ -157,6 +157,19 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         <button className="text-button resend-link" type="button" onClick={resendLink} disabled={busy}>
           Link nahi aaya ya expire ho gaya? Dobara bhejo
         </button>
+        <div className="auth-teacher">
+          <span>Teacher ho?</span>
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => {
+              onClose()
+              window.location.hash = '#/teacher'
+            }}
+          >
+            <GraduationCap size={15} /> Teacher login
+          </button>
+        </div>
       </div>
     </div>
   )
