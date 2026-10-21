@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowRight, Atom, BookOpen, Camera, Check, ChevronRight, CircleHelp, FileText, FlaskConical, History, Home, Lightbulb, Moon, NotebookText, Pencil, Sigma, Sparkles, Sun, Upload, X } from 'lucide-react'
+import { ArrowRight, Atom, BookOpen, Camera, Check, ChevronRight, CircleHelp, FileText, FlaskConical, History, Home, Lightbulb, Moon, NotebookText, Sigma, Sparkles, Sun, Upload, WandSparkles, X } from 'lucide-react'
 import type { DiagramReference, DiagramSpec, StructuredSolution } from './types/solution'
 import { drawDiagram } from './utils/diagramDraw'
 import UploadModal from './components/UploadModal'
@@ -8,7 +8,7 @@ import FigureView from './components/FigureView'
 import QuizPage from './components/QuizModal'
 import DoubtBox from './components/DoubtBox'
 import SolutionActions from './components/SolutionActions'
-import NotesModal from './components/NotesModal'
+import NotesPage from './components/NotesPage'
 import AuthModal from './components/AuthModal'
 import HistoryModal from './components/HistoryModal'
 import AdminPanel from './components/AdminPanel'
@@ -20,7 +20,7 @@ import './App.css'
 import './mobile.css'
 import './lens.css'
 
-import { featuredFormulas, formulaCategories, tones } from './data/formulas'
+import { featuredFormulas, formulaCategories, formulaSubjectGroups, tones } from './data/formulas'
 
 const steps = [
   { number: '01', icon: Camera, title: 'Photo upload karo', copy: 'Question ki clear photo lo ya gallery se select karo.' },
@@ -29,11 +29,12 @@ const steps = [
 ]
 
 // Header pill menu: icon + label wale 4 items (How it works ko menu me nahi rakha).
+// Solve item highlighted CTA hai — user ka main kaam yahi hai.
 const navItems = [
-  { id: 'top', label: 'Home', icon: Home },
-  { id: 'identities', label: 'Formula', icon: Sigma },
-  { id: 'notes', label: 'Notes', icon: NotebookText },
-  { id: 'practice', label: 'Practice', icon: Pencil },
+  { id: 'top', label: 'Home', icon: Home, cta: false },
+  { id: 'identities', label: 'Formula', icon: Sigma, cta: false },
+  { id: 'notes', label: 'Revise', icon: NotebookText, cta: false },
+  { id: 'practice', label: 'Solve', icon: WandSparkles, cta: true },
 ] as const
 
 // Hero headline me ghumta shabd: Maths / Physics / Chemistry.
@@ -162,7 +163,7 @@ function App() {
   const [authOpen, setAuthOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [quizPage, setQuizPage] = useState(false)
-  const [notesOpen, setNotesOpen] = useState(false)
+  const [notesPage, setNotesPage] = useState(false)
   const [adminOpen, setAdminOpen] = useState(false)
   const [activeNav, setActiveNav] = useState('top')
   // Admin alag link se: #/admin khule to panel kholo + admin manifest lagao
@@ -473,8 +474,14 @@ function App() {
   }
 
   // Quiz dedicated page: #/quiz khule to full page, warna homepage.
+  // Notes dedicated page: #/notes khule to full page, warna homepage.
   useEffect(() => {
-    const sync = () => setQuizPage(window.location.hash === '#/quiz')
+    const sync = () => {
+      const hash = window.location.hash
+      setQuizPage(hash === '#/quiz')
+      setNotesPage(hash === '#/notes')
+      if (hash === '#/notes') setActiveNav('notes')
+    }
     sync()
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
@@ -482,6 +489,12 @@ function App() {
   const closeQuizPage = () => {
     setQuizPage(false)
     if (window.location.hash === '#/quiz') {
+      history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+  }
+  const closeNotesPage = () => {
+    setNotesPage(false)
+    if (window.location.hash === '#/notes') {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
   }
@@ -501,7 +514,7 @@ function App() {
       <a className="brand" href="#top" aria-label="AnkNawab home"><span className="brand-mark"><img src="./logo-icon.svg?v=2" alt="AnkNawab logo" /></span><span>ANKNAWAB<small>jawabo ka nawab</small></span></a>
       <div className="header-actions"><button className="icon-button theme-toggle" aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button><button className="history-button" onClick={() => setHistoryOpen(true)}><History size={16} /> Track progress</button>{userEmail ? <button className="user-chip" title={userName ?? userEmail} onClick={() => setHistoryOpen(true)}>{(userName?.[0] ?? userEmail[0]).toUpperCase()}</button> : <button className="user-chip login-chip" onClick={() => setAuthOpen(true)}>Login</button>}</div>
     </header>
-    <nav className="main-nav" aria-label="Main navigation">{navItems.map((item) => { const Icon = item.icon; return <a key={item.id} className={activeNav === item.id ? 'active' : undefined} href={`#${item.id}`} onClick={() => setActiveNav(item.id)}><Icon size={20} aria-hidden="true" /><span>{item.label}</span></a> })}</nav>
+    <nav className="main-nav" aria-label="Main navigation">{navItems.map((item) => { const Icon = item.icon; const navClass = [item.cta ? 'nav-cta' : '', activeNav === item.id ? 'active' : ''].filter(Boolean).join(' '); return <a key={item.id} className={navClass || undefined} href={item.id === 'notes' ? '#/notes' : `#${item.id}`} onClick={() => setActiveNav(item.id)}><Icon size={20} aria-hidden="true" /><span>{item.label}</span></a> })}</nav>
     <main id="top">
       <section className="hero-section"><div className="hero-copy"><motion.div className="eyebrow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><span className="eyebrow-dot" /><AnimatePresence mode="wait"><motion.span key={topicIdx} className="eyebrow-text" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}>{classTopics[topicIdx]}</motion.span></AnimatePresence></motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Photo upload karo.<br /><em><AnimatePresence mode="wait"><motion.span key={topicIdx % sciWords.length} className="sci-word" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.35 }}>{sciWords[topicIdx % sciWords.length]} samjho.</motion.span></AnimatePresence></em><br />Confident bano.</motion.h1><motion.p className="hero-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>Maths, Physics ya Chemistry — difficult question ka sirf answer nahi, <strong>har step ka why</strong> samjho, simple Hinglish mein.</motion.p><motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFileSelected} /><input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onFileSelected} /><button className="primary-button" onClick={openUploader}><Upload size={18} /> {selectedFile ? 'Photo selected' : 'Solve my question'} <ArrowRight size={17} /></button><a className="text-button" href="#identities"><Sigma size={17} /> Explore formulas</a></motion.div><div className="trust-line"><span className="avatar-stack"><i>R</i><i>S</i><i>K</i></span><span>Made for curious Class 1–10 minds</span><span className="trust-star">✦</span></div></div>
         <motion.div className="hero-visual" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: .12 }}><div className="visual-grid" /><div className="doodle doodle-left">sin² θ<br /><span>+ cos² θ</span></div><div className="doodle doodle-right">∠</div><div className="question-paper"><div className="paper-top"><span className="paper-tag">QUESTION 04</span><span className="paper-dots">•••</span></div><p className="paper-question">If <b>tan A = 3/4</b>,<br />find the value of<br /><b>sin A + cos A.</b></p><div className="triangle"><span className="tri-height">3</span><span className="tri-base">4</span><span className="tri-hyp">5</span></div><div className="paper-rule" /><div className="paper-answer"><span>hint</span><b>Right triangle ratios</b></div></div><div className="ai-badge"><span className="ai-spark">✦</span><span><b>AI tutor</b><small>ready to explain</small></span><Check size={17} /></div><div className="science-chip"><Atom size={14} /><span>F = ma · Class 9</span></div><div className="floating-note"><Lightbulb size={15} /><span>Why this step?</span></div></motion.div>
@@ -509,8 +522,8 @@ function App() {
       <section className="marquee-strip" aria-label="AnkNawab features"><div className="marquee-track"><div className="marquee-group"><span>LEARN THE WHY</span><i>✦</i><span>MATHS + SCIENCE</span><i>✦</i><span>NOT JUST THE ANSWER</span><i>✦</i><span>EXAM READY, ALWAYS</span><i>✦</i></div><div className="marquee-group" aria-hidden="true"><span>LEARN THE WHY</span><i>✦</i><span>MATHS + SCIENCE</span><i>✦</i><span>NOT JUST THE ANSWER</span><i>✦</i><span>EXAM READY, ALWAYS</span><i>✦</i></div></div></section>
       <section className="section-block how-section" id="how-it-works"><div className="section-heading"><div><span className="section-kicker">THE ANKNAWAB METHOD</span><h2>From stuck to<br /><em>sorted.</em></h2></div><p>Three simple steps between you<br />and that “ohhh, samajh gaya!” moment.</p></div><div className="steps-grid">{steps.map((step, index) => { const Icon = step.icon; return <motion.article className="step-card" key={step.number} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * .08 }}><div className="step-top"><span className="step-number">{step.number}</span><div className="step-icon"><Icon size={20} /></div></div><h3>{step.title}</h3><p>{step.copy}</p><ChevronRight className="step-arrow" size={18} /></motion.article> })}</div></section>
       <section className="section-block subjects-section" id="subjects"><div className="section-heading"><div><span className="section-kicker">MATHS + SCIENCE</span><h2>Three subjects.<br /><em>One Nawab.</em></h2></div><p>Photo bhejo — solve pao.<br />Teeno me expert.</p></div><div className="steps-grid"><motion.article className="step-card" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}><div className="step-top"><span className="step-number">M</span><div className="step-icon"><BookOpen size={20} /></div></div><h3>Mathematics · Class 1–10</h3><p>Arithmetic, Algebra, Geometry, Trig — 160+ formulas ke saath step-by-step.</p><div className="subject-tags"><span>Algebra</span><span>Geometry</span><span>Trig</span></div></motion.article><motion.article className="step-card" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.08 }}><div className="step-top"><span className="step-number">P</span><div className="step-icon"><Atom size={20} /></div></div><h3>Physics · Class 6–10</h3><p>Motion, Force, Light, Electricity ke numericals — kahani samjho, phir solve.</p><div className="subject-tags"><span>Motion</span><span>Light</span><span>Current</span></div></motion.article><motion.article className="step-card" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.16 }}><div className="step-top"><span className="step-number">C</span><div className="step-icon"><FlaskConical size={20} /></div></div><h3>Chemistry · Class 6–10</h3><p>Mole concept, gas laws, acids-bases aur reactions — numericals aur balancing.</p><div className="subject-tags"><span>Mole</span><span>Gas Laws</span><span>Reactions</span></div></motion.article></div></section>
-      <section className="section-block identities-section" id="identities"><div className="section-heading"><div><span className="section-kicker">QUICK REFERENCE</span><h2>Formulas worth<br /><em>knowing.</em></h2></div><button className="outline-button" type="button" onClick={() => setShowAllIdentities((value) => !value)}>{showAllIdentities ? 'Hide formulas' : 'View all formulas'} <ArrowRight size={16} /></button></div><div className="cat-chips" role="tablist" aria-label="Formula categories">{['All', ...formulaCategories.map((c) => c.name)].map((name) => <button key={name} role="tab" aria-selected={activeCategory === name} className={activeCategory === name ? 'cat-chip active' : 'cat-chip'} onClick={() => setActiveCategory(name)}>{name}</button>)}</div>{activeCategory === 'All' && !showAllIdentities ? <div className="identity-grid">{featuredFormulas.map((identity) => <article className={`identity-card ${identity.tone}`} key={identity.formula} onClick={() => openExample(identity.formula, identity.label)}><div className="identity-icon"><FileText size={18} /></div><span>{identity.label}</span><h3>{identity.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${identity.label}`}><CircleHelp size={16} /></button></article>)}</div> : <div className="all-identities-panel">{(activeCategory === 'All' ? formulaCategories : formulaCategories.filter((c) => c.name === activeCategory)).map((cat, gi) => <div key={cat.name}><div className="all-identities-header"><span className="section-kicker">{cat.name.toUpperCase()}</span><h3>{cat.name} formulas</h3></div><div className="identity-grid full-grid">{cat.formulas.map((entry, fi) => { const tone = tones[(gi + fi) % tones.length]; return <article className={`identity-card ${tone}`} key={`${cat.name}-${entry.formula}`} onClick={() => openExample(entry.formula, entry.label)}><div className="identity-icon"><FileText size={18} /></div><span>{entry.label}</span><h3>{entry.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${entry.label}`}><CircleHelp size={16} /></button></article> })}</div></div>)}</div>}</section>
-      <section className="notes-band" id="notes"><div><span className="section-kicker">REVISE SMARTER</span><h2>Chapter notes,<br /><em>ek nazar me.</em></h2></div><div className="practice-cta"><p>Class 6–10 ke chapters ka quick summary, key points aur formulas — revision se pehle do minute ka look.</p><button className="quiz-button" type="button" onClick={() => setNotesOpen(true)}><BookOpen size={17} /> Revise chapter</button></div></section>
+      <section className="section-block identities-section" id="identities"><div className="section-heading"><div><span className="section-kicker">QUICK REFERENCE</span><h2>Formulas worth<br /><em>knowing.</em></h2></div><button className="outline-button" type="button" onClick={() => setShowAllIdentities((value) => !value)}>{showAllIdentities ? 'Hide formulas' : 'View all formulas'} <ArrowRight size={16} /></button></div><div className="chip-groups formula-chips"><div className="chip-group"><div className="cat-chips" aria-label="Formula categories">{['All'].map((name) => <button key={name} type="button" aria-pressed={activeCategory === name} className={activeCategory === name ? 'cat-chip active' : 'cat-chip'} onClick={() => setActiveCategory(name)}>{name}</button>)}</div></div>{formulaSubjectGroups.map((group) => <div className="chip-group" key={group.subject}><span className="chip-group-head">{group.subject} <i>{group.categories.reduce((count, category) => count + category.formulas.length, 0)}</i></span><div className="cat-chips">{group.categories.map((category) => <button key={category.name} type="button" aria-pressed={activeCategory === category.name} className={activeCategory === category.name ? 'cat-chip active' : 'cat-chip'} onClick={() => setActiveCategory(category.name)}>{category.name}</button>)}</div></div>)}</div>{activeCategory === 'All' && !showAllIdentities ? <div className="identity-grid">{featuredFormulas.map((identity) => <article className={`identity-card ${identity.tone}`} key={identity.formula} onClick={() => openExample(identity.formula, identity.label)}><div className="identity-icon"><FileText size={18} /></div><span>{identity.label}</span><h3>{identity.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${identity.label}`}><CircleHelp size={16} /></button></article>)}</div> : <div className="all-identities-panel">{formulaSubjectGroups.map((group) => { const cats = group.categories.filter((c) => activeCategory === 'All' || c.name === activeCategory); if (cats.length === 0) return null; return <div className="formula-subject-group" key={group.subject}><div className="formula-subject-head"><span className="section-kicker">{group.subject.toUpperCase()}</span><span className="formula-subject-count">{cats.reduce((count, category) => count + category.formulas.length, 0)} formulas</span></div>{cats.map((cat, gi) => <div key={cat.name}><div className="all-identities-header"><h3>{cat.name} formulas</h3></div><div className="identity-grid full-grid">{cat.formulas.map((entry, fi) => { const tone = tones[(gi + fi) % tones.length]; return <article className={`identity-card ${tone}`} key={`${cat.name}-${entry.formula}`} onClick={() => openExample(entry.formula, entry.label)}><div className="identity-icon"><FileText size={18} /></div><span>{entry.label}</span><h3>{entry.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${entry.label}`}><CircleHelp size={16} /></button></article> })}</div></div>)}</div>})}</div>}</section>
+      <section className="notes-band" id="notes"><div><span className="section-kicker">REVISE SMARTER</span><h2>Chapter notes,<br /><em>ek nazar me.</em></h2></div><div className="practice-cta"><p>Class 6–10 ke chapters ka quick summary, key points aur formulas — revision se pehle do minute ka look.</p><button className="quiz-button" type="button" onClick={() => { window.location.hash = '#/notes' }}><BookOpen size={17} /> Revise chapter</button></div></section>
       <section className="quiz-band" id="quiz"><div><span className="section-kicker">TEST YOURSELF</span><h2>Quiz khelo,<br /><em>topper bano.</em></h2></div><div className="practice-cta"><p>Class, topics (max 3) aur questions (10–50) chuno. Har MCQ ke saath galat hote hi turant explanation.</p><button className="quiz-button" onClick={openQuizPage}>Take a Quiz <ArrowRight size={17} /></button></div></section>
       <section className="practice-band" id="practice"><div><span className="section-kicker">READY WHEN YOU ARE</span><h2>One question can<br /><em>change everything.</em></h2></div><div className="practice-cta"><p>Bring your toughest maths, physics or chemistry problem, Class 1 to 10. We’ll bring the patience.</p><button className="quiz-button" onClick={openUploader}>Start solving <ArrowRight size={17} /></button></div></section>
     </main>
@@ -543,7 +556,7 @@ function App() {
         analyzeSolution={analyzeSolution}
         freeLeft={userEmail ? null : Math.max(0, FREE_LIMIT - freeUsed)}
       />}
-    {notesOpen && <NotesModal onClose={() => setNotesOpen(false)} />}
+    {notesPage && <NotesPage onBack={closeNotesPage} />}
     {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
     {historyOpen && <HistoryModal
       userEmail={userEmail}

@@ -1,4 +1,5 @@
 export type Tone = 'coral' | 'blue' | 'yellow'
+export type FormulaSubject = 'Maths' | 'Physics' | 'Chemistry'
 export const tones: Tone[] = ['coral', 'blue', 'yellow']
 
 export interface FormulaEntry {
@@ -8,12 +9,14 @@ export interface FormulaEntry {
 
 export interface FormulaCategory {
   name: string
+  subject: FormulaSubject
   formulas: FormulaEntry[]
 }
 
 export const formulaCategories: FormulaCategory[] = [
   {
     name: 'Trigonometry',
+    subject: 'Maths',
     formulas: [
       { formula: 'sin²θ + cos²θ = 1', label: 'Fundamental identity' },
       { formula: '1 + tan²θ = sec²θ', label: 'Pythagorean identity' },
@@ -42,6 +45,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Algebra',
+    subject: 'Maths',
     formulas: [
       { formula: '(a + b)² = a² + 2ab + b²', label: 'Square identity' },
       { formula: '(a − b)² = a² − 2ab + b²', label: 'Square identity' },
@@ -81,6 +85,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Mensuration',
+    subject: 'Maths',
     formulas: [
       { formula: 'Area of circle = πr²', label: 'Circle area' },
       { formula: 'Circumference = 2πr', label: 'Circle perimeter' },
@@ -117,6 +122,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Arithmetic',
+    subject: 'Maths',
     formulas: [
       { formula: 'BODMAS: ( ) → ÷ × → + −', label: 'Order of operations' },
       { formula: 'SI = P × R × T / 100', label: 'Simple interest' },
@@ -151,6 +157,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Geometry',
+    subject: 'Maths',
     formulas: [
       { formula: 'a² + b² = c²', label: 'Pythagoras theorem' },
       { formula: 'Sum of triangle angles = 180°', label: 'Angle sum' },
@@ -184,6 +191,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Statistics',
+    subject: 'Maths',
     formulas: [
       { formula: 'Mean = Σx / n', label: 'Mean' },
       { formula: 'Median = middle value of ordered data', label: 'Median' },
@@ -203,6 +211,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Number System',
+    subject: 'Maths',
     formulas: [
       { formula: 'Rational number = p/q, q ≠ 0', label: 'Rational form' },
       { formula: '√2 ≈ 1.414, √3 ≈ 1.732', label: 'Irrational values' },
@@ -217,6 +226,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Motion',
+    subject: 'Physics',
     formulas: [
       { formula: 'v = u + at', label: 'First equation' },
       { formula: 's = ut + ½at²', label: 'Second equation' },
@@ -226,6 +236,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Force & Energy',
+    subject: 'Physics',
     formulas: [
       { formula: 'F = ma', label: "Newton's 2nd law" },
       { formula: 'Weight W = mg (g = 9.8 m/s²)', label: 'Weight' },
@@ -242,6 +253,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Light',
+    subject: 'Physics',
     formulas: [
       { formula: 'Mirror: 1/v + 1/u = 1/f', label: 'Mirror formula' },
       { formula: 'Lens: 1/v − 1/u = 1/f', label: 'Lens formula' },
@@ -253,6 +265,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Electricity',
+    subject: 'Physics',
     formulas: [
       { formula: 'V = IR', label: "Ohm's law" },
       { formula: 'R = ρL/A', label: 'Resistance' },
@@ -266,6 +279,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Mole Concept',
+    subject: 'Chemistry',
     formulas: [
       { formula: 'n = m / M', label: 'Moles from mass (n = m/M)' },
       { formula: 'Number of particles = n × 6.022 × 10²³', label: "Avogadro's number" },
@@ -276,6 +290,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Solutions',
+    subject: 'Chemistry',
     formulas: [
       { formula: 'Mass % = (mass of solute / mass of solution) × 100', label: 'Mass percent' },
       { formula: 'Molarity = moles of solute / volume (L)', label: 'Molarity (M)' },
@@ -285,6 +300,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Gas Laws',
+    subject: 'Chemistry',
     formulas: [
       { formula: 'Boyle: P₁V₁ = P₂V₂', label: "Boyle's law" },
       { formula: 'Charles: V₁/T₁ = V₂/T₂', label: "Charles' law" },
@@ -294,6 +310,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Atomic Structure',
+    subject: 'Chemistry',
     formulas: [
       { formula: 'Mass number A = protons + neutrons', label: 'Mass number' },
       { formula: 'Neutrons = A − Z', label: 'Neutron count' },
@@ -304,6 +321,7 @@ export const formulaCategories: FormulaCategory[] = [
   },
   {
     name: 'Chemical Reactions',
+    subject: 'Chemistry',
     formulas: [
       { formula: 'Conservation of mass: reactants = products', label: 'Law of conservation of mass' },
       { formula: 'Neutralisation: Acid + Base → Salt + Water', label: 'Neutralisation' },
@@ -313,6 +331,19 @@ export const formulaCategories: FormulaCategory[] = [
     ],
   },
 ]
+
+export interface FormulaSubjectGroup {
+  subject: FormulaSubject
+  categories: FormulaCategory[]
+}
+
+// Subject-wise grouping (Maths / Physics / Chemistry) — chips aur library panels ke liye.
+export const formulaSubjectGroups: FormulaSubjectGroup[] = (
+  ['Maths', 'Physics', 'Chemistry'] as FormulaSubject[]
+).map((subject) => ({
+  subject,
+  categories: formulaCategories.filter((category) => category.subject === subject),
+}))
 
 export const featuredFormulas = [
   { ...formulaCategories[0].formulas[0], tone: tones[0] },

@@ -2705,6 +2705,42 @@ footer p {
 .notes-quiz { margin-top: 20px; }
 .notes-empty { opacity: 0.6; }
 
+/* Standalone notes page (alag page par khulta hai). */
+.notes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 70vh;
+}
+.notes-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: #f05b45;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+}
+.back-button:hover {
+  text-decoration: none;
+  color: #c24a38;
+}
+[data-theme="dark"] .back-button { color: #ff8d76; }
+[data-theme="dark"] .back-button:hover { color: #ffb3a5; }
+
 [data-theme="dark"] .solution-action { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); }
 [data-theme="dark"] .solution-action:hover { background: rgba(255, 255, 255, 0.14); }
 [data-theme="dark"] .solution-action-note { color: #63d69a; }
