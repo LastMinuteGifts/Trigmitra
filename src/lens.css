@@ -998,6 +998,21 @@ button.admin-card:hover {
   gap: 8px;
 }
 
+.auth-tab-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.auth-teacher-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 .auth-field {
   display: grid;
   gap: 6px;
@@ -1074,24 +1089,6 @@ button.admin-card:hover {
   justify-content: center;
   width: 100%;
   font-size: 12px;
-}
-
-.auth-teacher {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(29, 41, 56, 0.09);
-  color: #7d8794;
-  font-size: 12px;
-}
-.auth-teacher .text-button {
-  color: #1f2d3f;
-  padding: 0;
-}
-.auth-teacher .text-button:hover {
-  color: #f05b45;
 }
 
 /* History modal */

@@ -89,22 +89,34 @@ export default function AuthModal({ onClose }: AuthModalProps) {
           </button>
         </div>
         <p className="example-label">Login karoge to tumhare solved questions save rahenge — har device par.</p>
-        <div className="auth-tabs" role="tablist">
+        <div className="auth-tab-row">
+          <div className="auth-tabs" role="tablist">
+            <button
+              role="tab"
+              aria-selected={mode === 'login'}
+              className={mode === 'login' ? 'cat-chip active' : 'cat-chip'}
+              onClick={() => setMode('login')}
+            >
+              Login
+            </button>
+            <button
+              role="tab"
+              aria-selected={mode === 'signup'}
+              className={mode === 'signup' ? 'cat-chip active' : 'cat-chip'}
+              onClick={() => setMode('signup')}
+            >
+              Signup
+            </button>
+          </div>
           <button
-            role="tab"
-            aria-selected={mode === 'login'}
-            className={mode === 'login' ? 'cat-chip active' : 'cat-chip'}
-            onClick={() => setMode('login')}
+            type="button"
+            className="cat-chip auth-teacher-chip"
+            onClick={() => {
+              onClose()
+              window.location.hash = '#/teacher'
+            }}
           >
-            Login
-          </button>
-          <button
-            role="tab"
-            aria-selected={mode === 'signup'}
-            className={mode === 'signup' ? 'cat-chip active' : 'cat-chip'}
-            onClick={() => setMode('signup')}
-          >
-            Signup
+            <GraduationCap size={14} /> Teacher login
           </button>
         </div>
         <label className="auth-field">
@@ -157,19 +169,6 @@ export default function AuthModal({ onClose }: AuthModalProps) {
         <button className="text-button resend-link" type="button" onClick={resendLink} disabled={busy}>
           Link nahi aaya ya expire ho gaya? Dobara bhejo
         </button>
-        <div className="auth-teacher">
-          <span>Teacher ho?</span>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => {
-              onClose()
-              window.location.hash = '#/teacher'
-            }}
-          >
-            <GraduationCap size={15} /> Teacher login
-          </button>
-        </div>
       </div>
     </div>
   )
