@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { ArrowRight, BookOpen, Lightbulb, Search, Sigma, X } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Lightbulb, Search, Sigma } from 'lucide-react'
 import { chaptersForClass, formulasForChapter, resolveChapterNote } from '../data/notes'
 
 const CLASS_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -44,13 +44,14 @@ export default function NotesPage({ onBack }: { onBack?: () => void }) {
 
   return (
     <section className="section-block notes-page" aria-labelledby="notes-page-title">
-      <div className="notes-page-header">
-        <div>
-          <button className="back-button" type="button" onClick={backHome}>
-            <X size={16} /> Wapas home par
-          </button>
+      <div className="notes-hero">
+        <button className="back-button" type="button" onClick={backHome}>
+          <ArrowLeft size={16} /> Wapas home
+        </button>
+        <div className="notes-hero-text">
           <span className="section-kicker">REVISION · CHAPTER NOTES</span>
-          <h2 id="notes-page-title">Chapter ka concept, ek nazar me.</h2>
+          <h2 id="notes-page-title">Chapter ka concept,<br /><em>ek nazar me.</em></h2>
+          <p>Class 1–10 ke chapters ka quick summary, key points aur formulas — exam se pehle ek minute ka revision.</p>
         </div>
       </div>
 
