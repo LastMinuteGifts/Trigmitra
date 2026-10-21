@@ -1699,3 +1699,26 @@ button.admin-card:hover {
     max-height: 240px;
   }
 }
+/* Teacher panel dark surfaces: admin shell hamesha dark hoti hai. */
+.teacher-dash .teacher-chapters { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); }
+.teacher-dash .teacher-chapter { background: rgba(255, 255, 255, 0.05); color: #dbe3ec; }
+.teacher-dash .teacher-chapter:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.teacher-dash .teacher-chapter.is-active { border-color: rgba(240, 91, 69, 0.6); background: rgba(240, 91, 69, 0.14); color: #fff; }
+.teacher-dash .teacher-editor { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); }
+.teacher-dash .teacher-editor-head h3 { color: #f2f5f9; }
+.teacher-dash .teacher-label { color: #aab6c5; }
+.teacher-dash .teacher-textarea,
+.teacher-dash .teacher-point-input { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.14); color: #e8edf3; }
+.teacher-dash .teacher-textarea::placeholder,
+.teacher-dash .teacher-point-input::placeholder { color: #74808f; }
+.teacher-dash .teacher-default { background: rgba(255, 255, 255, 0.1); color: #aab6c4; }
+.teacher-dash .teacher-meta { color: #8b98a9; }
+.teacher-dash .teacher-notice { background: rgba(63, 175, 110, 0.18); color: #7ee2a8; }
+.teacher-dash .teacher-custom { background: rgba(63, 175, 110, 0.18); color: #7ee2a8; }
+.teacher-dash .teacher-point-num { background: rgba(240, 91, 69, 0.18); color: #ff9a86; }
+.teacher-dash .teacher-remove { color: #ff8d76; }
+.teacher-dash .notes-class { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.16); color: #dbe3ec; }
+.teacher-dash .notes-class.is-active { background: linear-gradient(135deg, #f05b45, #ef604a); border-color: transparent; color: #fff; }
+.teacher-dash .notes-subject.subject-maths { color: #8fb8ff; }
+.teacher-dash .notes-subject.subject-physics { color: #ff9a86; }
+.teacher-dash .notes-subject.subject-chemistry { color: #7ee2a8; }
