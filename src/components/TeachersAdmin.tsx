@@ -180,12 +180,12 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
         <div className="teacher-stat">
           <GraduationCap size={18} />
           <b>{teachers.length}</b>
-          <span>teachers</span>
+          <span>{teachers.length === 1 ? 'teacher' : 'teachers'}</span>
         </div>
         <div className="teacher-stat">
           <BookOpen size={18} />
           <b>{totalEdits}</b>
-          <span>notes edited</span>
+          <span>{totalEdits === 1 ? 'note edited' : 'notes edited'}</span>
         </div>
         <button className="tool-btn teacher-refresh" type="button" onClick={() => void load()} disabled={loading}>
           <RefreshCw size={15} /> Refresh
@@ -340,7 +340,9 @@ export default function TeachersAdmin({ adminKey }: { adminKey: string }) {
               <span className="section-kicker">TEACHER EDITS</span>
               <h3>{selected}</h3>
             </div>
-            <span className="teacher-edit-count">{edits.length} notes edited</span>
+            <span className="teacher-edit-count">
+              {edits.length} {edits.length === 1 ? 'note' : 'notes'} edited
+            </span>
           </div>
           {editsLoading ? (
             <p className="example-label">Edits load ho rahe hain...</p>

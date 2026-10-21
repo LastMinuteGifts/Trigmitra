@@ -342,12 +342,13 @@
 
 @media (max-width: 900px) {
   .admin-dash {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .admin-side {
     position: static;
     height: auto;
     flex-direction: row;
+    flex-wrap: nowrap;
     align-items: center;
     gap: 12px;
     padding: 14px 16px;
@@ -360,6 +361,13 @@
   .admin-nav {
     grid-auto-flow: column;
     gap: 6px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .admin-nav::-webkit-scrollbar {
+    display: none;
   }
   .admin-nav button {
     padding: 9px 12px;
@@ -368,6 +376,7 @@
   .admin-side-foot {
     margin-top: 0;
     margin-left: auto;
+    flex: 0 0 auto;
   }
   .admin-side-foot button span,
   .admin-side-foot button {
@@ -376,6 +385,7 @@
   }
   .admin-main {
     padding: 20px 14px 50px;
+    min-width: 0;
   }
   .admin-cols {
     grid-template-columns: 1fr;
@@ -1854,6 +1864,7 @@ button.admin-card:hover {
 /* Admin: teachers section */
 .teachers-admin {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
 }
 .teacher-stats {
