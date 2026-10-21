@@ -175,6 +175,99 @@ footer {
   transform: translateX(-50%) scaleX(1);
 }
 
+/* Highlighted nav CTA (Solve) — baaki items se alag dikhe. */
+.main-nav a.nav-cta {
+  background: linear-gradient(135deg, #f7c661, #f0a13c);
+  color: #241a08;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(240, 161, 60, 0.34);
+  animation: nav-cta-glow 3s ease-in-out infinite;
+}
+
+/* Halki roshni jo pill par continuous chalti rehti hai. */
+.main-nav a.nav-cta::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 32%, rgba(255, 255, 255, 0.5) 50%, transparent 68%);
+  transform: translateX(-130%);
+  animation: nav-cta-shimmer 3.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.main-nav a.nav-cta svg {
+  position: relative;
+  z-index: 1;
+  stroke-width: 2;
+  animation: nav-cta-sparkle 3s ease-in-out infinite;
+}
+
+.main-nav a.nav-cta span {
+  position: relative;
+  z-index: 1;
+}
+
+.main-nav a.nav-cta:hover {
+  background: linear-gradient(135deg, #f9d074, #f2ab4d);
+  color: #241a08;
+}
+
+.main-nav a.nav-cta.active {
+  color: #241a08;
+}
+
+.main-nav a.nav-cta::after {
+  background: #241a08;
+  opacity: 0.6;
+}
+
+.main-nav a.nav-cta.active::after {
+  opacity: 1;
+}
+
+@keyframes nav-cta-glow {
+  0%,
+  100% {
+    box-shadow: 0 10px 20px rgba(240, 161, 60, 0.28);
+  }
+  50% {
+    box-shadow: 0 13px 28px rgba(240, 161, 60, 0.55);
+  }
+}
+
+@keyframes nav-cta-shimmer {
+  0%,
+  18% {
+    transform: translateX(-130%);
+  }
+  62%,
+  100% {
+    transform: translateX(130%);
+  }
+}
+
+@keyframes nav-cta-sparkle {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+  45% {
+    transform: scale(1.14) rotate(-7deg);
+  }
+  70% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main-nav a.nav-cta,
+  .main-nav a.nav-cta::before,
+  .main-nav a.nav-cta svg {
+    animation: none;
+  }
+}
+
 .header-actions {
   display: flex;
   align-items: center;
@@ -216,12 +309,26 @@ footer {
   align-items: center;
   max-width: 1240px;
   margin: 0 auto;
-  padding: 80px 60px 110px;
-  gap: 72px;
+  padding: 100px 60px 130px;
+  gap: 64px;
+  overflow: hidden;
 }
 
 .hero-copy {
-  max-width: 610px;
+  max-width: 600px;
+}
+
+.hero-copy::after {
+  content: '';
+  position: absolute;
+  right: -120px;
+  top: -120px;
+  width: 320px;
+  height: 320px;
+  background: radial-gradient(circle at center, rgba(240, 91, 69, 0.16), transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: -1;
 }
 
 .eyebrow,
@@ -229,8 +336,8 @@ footer {
   color: #ef604a;
   font-family: 'DM Mono', monospace;
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
@@ -238,11 +345,27 @@ footer {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 14px;
+  padding: 10px 16px;
   border-radius: 999px;
-  background: rgba(240, 91, 69, 0.08);
-  border: 1px solid rgba(240, 91, 69, 0.1);
-  margin-bottom: 20px;
+  background: rgba(240, 91, 69, 0.07);
+  border: 1px solid rgba(240, 91, 69, 0.14);
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.eyebrow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  transform: translateX(-100%);
+  animation: eyebrow-shine 3s ease-in-out infinite;
+}
+
+@keyframes eyebrow-shine {
+  0%, 40% { transform: translateX(-100%); }
+  60%, 100% { transform: translateX(120%); }
 }
 
 .eyebrow-dot {
@@ -252,6 +375,7 @@ footer {
   border-radius: 50%;
   background: linear-gradient(135deg, #f7cb6a, #f0b44f);
   flex-shrink: 0;
+  box-shadow: 0 0 12px rgba(247, 198, 97, 0.8);
 }
 
 .eyebrow-text {
@@ -264,10 +388,15 @@ h1, h2, h3, p { margin: 0; }
 h1 {
   max-width: 620px;
   color: #182435;
-  font-size: clamp(48px, 5vw, 78px);
+  font-size: clamp(52px, 5.2vw, 84px);
   font-weight: 800;
-  letter-spacing: -0.06em;
-  line-height: 0.96;
+  letter-spacing: -0.05em;
+  line-height: 0.94;
+  background: linear-gradient(135deg, #182435 0%, #31435c 45%, #ef604a 75%, #f7c661 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(29, 41, 56, 0.08));
 }
 
 h1 em,
@@ -279,11 +408,11 @@ h1 em,
 }
 
 .hero-intro {
-  max-width: 460px;
-  margin-top: 24px;
-  color: #62707d;
-  font-size: 15px;
-  line-height: 1.7;
+  max-width: 470px;
+  margin-top: 26px;
+  color: #5c6a78;
+  font-size: 16px;
+  line-height: 1.8;
 }
 
 .hero-intro strong {
@@ -294,8 +423,9 @@ h1 em,
 .hero-actions {
   display: flex;
   align-items: center;
-  gap: 24px;
-  margin-top: 34px;
+  gap: 16px;
+  margin-top: 40px;
+  flex-wrap: wrap;
 }
 
 .primary-button,
@@ -306,27 +436,43 @@ h1 em,
   justify-content: center;
   gap: 10px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 16px;
   color: #fff;
-  background: linear-gradient(135deg, #1d2938, #2a3d57);
-  box-shadow: 0 12px 24px rgba(29, 41, 56, 0.16);
-  padding: 15px 20px;
+  background: linear-gradient(135deg, #1d2938 0%, #243550 100%);
+  box-shadow: 0 14px 28px rgba(29, 41, 56, 0.14), inset 0 1px 0 rgba(255,255,255,0.15);
+  padding: 17px 24px;
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .primary-button:hover,
 .choose-button:hover,
 .analyze-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 16px 28px rgba(29, 41, 56, 0.18);
+  transform: translateY(-3px);
+  box-shadow: 0 20px 34px rgba(29, 41, 56, 0.18);
+  background: linear-gradient(135deg, #243550 0%, #31435c 100%);
+}
+
+.primary-button:active,
+.choose-button:active,
+.analyze-button:active {
+  transform: translateY(0);
 }
 
 .primary-button {
-  background: linear-gradient(135deg, #1c2b3f, #24384f 65%, #ff7e63 160%);
+  background: linear-gradient(135deg, #ef604a 0%, #f7c661 60%, #ef604a 100%);
+  background-size: 200% 200%;
+  animation: coral-flow 3s ease infinite;
+}
+
+@keyframes coral-flow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
 .trust-line {
@@ -775,6 +921,10 @@ h1 em,
   color: #f05b45;
 }
 
+.step-card:nth-child(1) .step-icon { background: linear-gradient(135deg, #fde6e2, #fbeae6); color: #d6543f; }
+.step-card:nth-child(2) .step-icon { background: linear-gradient(135deg, #e3f1ff, #e8f4ff); color: #1d6fa5; }
+.step-card:nth-child(3) .step-icon { background: linear-gradient(135deg, #fdf2e0, #faead9); color: #b26a00; }
+
 .step-card h3 {
   margin-top: 20px;
   color: #1b2737;
@@ -856,38 +1006,72 @@ h1 em,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
+  gap: 26px;
   width: calc(100% - 48px);
   max-width: 1240px;
-  margin: 0 auto 58px;
-  padding: 38px 48px;
-  border-radius: 28px;
-  background: linear-gradient(135deg, #232f42 0%, #31435c 60%, #3c2f4e 100%);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 24px 48px rgba(20, 28, 38, 0.18);
+  margin: 0 auto 70px;
+  padding: 44px 52px;
+  border-radius: 32px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 30px 60px rgba(20, 28, 38, 0.16);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.notes-band,
+.quiz-band,
+.practice-band {
+  background: linear-gradient(135deg, rgba(24, 35, 51, 0.92) 0%, rgba(42, 54, 72, 0.92) 100%);
+  backdrop-filter: blur(12px);
+}
+
+.notes-band::before,
+.quiz-band::before,
+.practice-band::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 32px 32px 0 0;
+}
+
+.notes-band::before { background: linear-gradient(90deg, #f0a13c, #ef604a); }
+.quiz-band::before { background: linear-gradient(90deg, #2ec4b6, #4fc3f7); }
+.practice-band::before { background: linear-gradient(90deg, #f7c661, #f0a13c); }
+
+.notes-band:hover,
+.quiz-band:hover,
+.practice-band:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 38px 70px rgba(20, 28, 38, 0.2);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .notes-band h2,
 .quiz-band h2,
 .practice-band h2 {
-  margin-top: 10px;
+  margin-top: 6px;
   color: #fffaf7;
-  font-size: clamp(30px, 3.2vw, 46px);
-  line-height: 1.04;
-  letter-spacing: -0.05em;
+  font-size: clamp(32px, 3.4vw, 50px);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  font-weight: 800;
 }
 
 .practice-cta {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 24px;
 }
 
 .practice-cta p {
-  max-width: 440px;
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 14px;
-  line-height: 1.6;
+  max-width: 430px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14.5px;
+  line-height: 1.65;
 }
 
 footer {
@@ -1520,6 +1704,44 @@ footer p {
   margin-top: 34px;
 }
 
+/* Formula chips: subject-wise groups (Maths / Physics / Chemistry) */
+.formula-chips {
+  margin-top: 26px;
+}
+
+.formula-chips .cat-chips {
+  margin-top: 0;
+}
+
+.formula-subject-group + .formula-subject-group {
+  padding-top: 26px;
+  border-top: 1px dashed rgba(33, 42, 54, 0.14);
+}
+
+.formula-subject-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(33, 42, 54, 0.1);
+}
+
+.formula-subject-count {
+  color: #8a94a0;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+[data-theme="dark"] .formula-subject-group + .formula-subject-group {
+  border-top-color: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="dark"] .formula-subject-head {
+  border-bottom-color: rgba(255, 255, 255, 0.14);
+}
+
 .identity-card {
   cursor: pointer;
 }
@@ -1676,6 +1898,25 @@ footer p {
 
 [data-theme="dark"] .main-nav a::after {
   background: #e8edf3;
+}
+
+/* Dark mode me bhi Solve pill gold hi rahe. */
+[data-theme="dark"] .main-nav a.nav-cta {
+  background: linear-gradient(135deg, #f7c661, #f0a13c);
+  color: #241a08;
+}
+
+[data-theme="dark"] .main-nav a.nav-cta:hover {
+  background: linear-gradient(135deg, #f9d074, #f2ab4d);
+  color: #241a08;
+}
+
+[data-theme="dark"] .main-nav a.nav-cta.active {
+  color: #241a08;
+}
+
+[data-theme="dark"] .main-nav a.nav-cta::after {
+  background: #241a08;
 }
 
 [data-theme="dark"] .icon-button,
