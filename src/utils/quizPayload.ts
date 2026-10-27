@@ -1,4 +1,4 @@
-import type { QuizQuestion } from '../components/QuizModal'
+import type { QuizQuestion } from '../types/quiz'
 
 /**
  * Server/AI se aaya payload validate karke saaf MCQ list banao.
@@ -41,11 +41,14 @@ export function parseQuizPayload(raw: unknown, count: number): QuizQuestion[] {
     }
 
     out.push({
+      id: `ai-${out.length + 1}-${prompt.slice(0, 24).replace(/[^a-z0-9]+/gi, '-').toLowerCase()}`,
+      type: 'mcq',
       prompt,
       sub: typeof record.sub === 'string' ? record.sub.trim() : '',
       options,
       answer,
       explain,
+      difficulty: 'Medium',
     })
     if (out.length >= count) break
   }

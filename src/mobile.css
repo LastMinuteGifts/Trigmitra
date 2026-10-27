@@ -51,3 +51,16 @@
   .detected-question p { font-size: 17px; }
   .final-answer { padding: 20px 16px; }
 }
+@media (max-width: 760px) {
+  .quiz-daily-card { flex-direction: column; align-items: stretch; }
+  .quiz-daily-card .quiz-button { justify-content: center; }
+  .quiz-stats-strip { gap: 6px; }
+  .quiz-shortcuts { display: none; }
+  .quiz-score-line { font-size: 10.5px; }
+  .quiz-leaderboard-head { align-items: flex-start; flex-direction: column; }
+  .quiz-name-field { width: 100%; }
+  .quiz-name-field input { flex: 1; }
+  .quiz-self-mark { flex-direction: column; align-items: stretch; }
+  .quiz-review-head { align-items: flex-start; flex-wrap: wrap; }
+  .quiz-result h3 { font-size: 36px; }
+}

@@ -1,258 +1,317 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react'
-import { Award, Check, FileText, RotateCcw, Search, Target, Upload, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { formulaCategories } from '../data/formulas'
 import { ncertChapters } from '../data/ncertChapters'
-import { getFormulaExample } from '../data/formulaExamples'
 import { extractPdfText } from '../utils/pdfText'
 import { generateQuizFromText } from '../utils/quizApi'
+import { answerMatch, looksCorrect } from '../utils/answerCheck'
+import { buildDailyChallenge } from '../utils/dailyChallenge'
+import { buildPyqQuiz, buildQuiz, buildSprintQuiz, dailyPool, QUIZ_COUNTS } from '../utils/quizBuild'
+import {
+  QUIZ_BEST_KEY,
+  QUIZ_PROGRESS_KEY,
+  addAttempt,
+  addLeaderEntry,
+  formatSeconds,
+  loadDaily,
+  loadLeaderboard,
+  loadPlayerName,
+  loadStats,
+  loadStreak,
+  readJSON,
+  recordTopicAnswer,
+  removeKey,
+  saveDaily,
+  savePlayerName,
+  todayKey,
+  touchStreak,
+  weakTopics,
+  writeJSON,
+  type DailyState,
+  type LeaderEntry,
+  type QuizStats,
+  type StreakState,
+} from '../utils/quizStore'
+import type { DifficultyFilter, QuizAnswerRecord, QuizMode, QuizQuestion, QuizTypeFilter } from '../types/quiz'
+import QuizPlay from './QuizPlay'
+import QuizResult, { type ReviewItem } from './QuizResult'
+import QuizSetup, { type ChipGroup } from './QuizSetup'
 
-export interface QuizExplain {
-  q: string
-  steps: string[]
-}
-
-export interface QuizQuestion {
-  prompt: string
-  sub: string
-  options: string[]
-  answer: number
-  explain: QuizExplain | null
-}
-
-interface BankEntry {
-  formula: string
-  label: string
-  cat: string
-}
-
-// Class chuni ho to us class ke NCERT chapters chips me dikhte hain (Maths aur
-// Physics alag groups me), warna generic topic chips.
-interface ChipOption {
-  key: string
-  cats: string[]
-}
-
-interface ChipGroup {
-  label: string
-  options: ChipOption[]
-}
-
-export const QUIZ_COUNTS = [10, 15, 20, 30, 50]
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr]
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[a[i], a[j]] = [a[j], a[i]]
-  }
-  return a
-}
-
-function unique(values: string[]): string[] {
-  return [...new Set(values)]
-}
-
-export function buildQuiz(count: number, cats: string[] = []): QuizQuestion[] {
-  const all: BankEntry[] = formulaCategories.flatMap((c) => c.formulas.map((f) => ({ ...f, cat: c.name })))
-  const pool = cats.length > 0 ? all.filter((p) => cats.includes(p.cat)) : all
-  const picked = shuffle(pool).slice(0, Math.min(Math.max(count, 1), pool.length))
-  return picked.map((entry) => {
-    const ex = getFormulaExample(entry.formula)
-    const explain: QuizExplain | null = ex ? { q: ex.q, steps: ex.steps } : null
-    const eq = entry.formula.indexOf('=')
-    if (eq > 0) {
-      const left = entry.formula.slice(0, eq).trim()
-      const right = entry.formula.slice(eq + 1).trim()
-      const sameCat = pool.filter((p) => p.cat === entry.cat && p.formula !== entry.formula)
-      const distractPool = sameCat.length >= 3 ? sameCat : pool.filter((p) => p.formula !== entry.formula)
-      const correct = right.slice(0, 60)
-      const distractors = unique(
-        shuffle(distractPool).map((d) => {
-          const i = d.formula.indexOf('=')
-          return (i > 0 ? d.formula.slice(i + 1).trim() : d.formula).slice(0, 60)
-        }),
-      ).filter((value) => value !== correct)
-      const options = shuffle([correct, ...distractors.slice(0, 3)])
-      return {
-        prompt: `Complete: ${left} = ?`,
-        sub: `${entry.cat} · ${entry.label}`,
-        options,
-        answer: options.indexOf(correct),
-        explain,
-      }
-    }
-    const correct = entry.formula.slice(0, 60)
-    const distractors = unique(
-      shuffle(pool.filter((p) => p.formula !== entry.formula)).map((d) => d.formula.slice(0, 60)),
-    ).filter((value) => value !== correct)
-    const options = shuffle([correct, ...distractors.slice(0, 3)])
-    return {
-      prompt: `Which one is "${entry.label}"?`,
-      sub: entry.cat,
-      options,
-      answer: options.indexOf(correct),
-      explain,
-    }
-  })
-}
-
-const BEST_KEY = 'anknawab_quiz_best'
-const PROGRESS_KEY = 'anknawab_quiz_progress'
+export type { QuizExplain, QuizQuestion } from '../types/quiz'
+export { buildQuiz, QUIZ_COUNTS }
 
 interface SavedQuiz {
   questions: QuizQuestion[]
   idx: number
-  score: number
-  picked: number | null
-  answered: number
+  answers: Record<string, QuizAnswerRecord>
+  startedAt: number
+  mode: QuizMode
 }
 
-function loadSavedQuiz(): SavedQuiz | null {
+function loadBest(): number {
   try {
-    const raw = localStorage.getItem(PROGRESS_KEY)
-    if (!raw) return null
-    const data = JSON.parse(raw) as SavedQuiz
-    if (!Array.isArray(data.questions) || data.questions.length === 0) return null
-    if (typeof data.idx !== 'number' || data.idx < 0 || data.idx >= data.questions.length) return null
-    return {
-      questions: data.questions,
-      idx: data.idx,
-      score: typeof data.score === 'number' ? data.score : 0,
-      picked: typeof data.picked === 'number' ? data.picked : null,
-      answered: typeof data.answered === 'number' ? data.answered : 0,
-    }
-  } catch {
-    return null
-  }
-}
-
-function clearProgress() {
-  try {
-    localStorage.removeItem(PROGRESS_KEY)
-  } catch {
-    // ignore
-  }
-}
-
-function getBest(): number {
-  try {
-    return Number(localStorage.getItem(BEST_KEY) ?? 0) || 0
+    return Number(localStorage.getItem(QUIZ_BEST_KEY) ?? 0) || 0
   } catch {
     return 0
   }
 }
 
-export function QuizRunner({ onExit }: { onExit: () => void }) {
+function saveBest(score: number) {
+  try {
+    localStorage.setItem(QUIZ_BEST_KEY, String(score))
+  } catch {
+    // ignore
+  }
+}
+
+function normalizeSavedQuestion(raw: unknown, index: number): QuizQuestion | null {
+  if (!raw || typeof raw !== 'object') return null
+  const record = raw as Partial<QuizQuestion>
+  if (typeof record.prompt !== 'string' || !record.prompt) return null
+  const options = Array.isArray(record.options) ? record.options.filter((item): item is string => typeof item === 'string') : []
+  const type = record.type === 'subjective' ? 'subjective' : 'mcq'
+  return {
+    id: typeof record.id === 'string' && record.id ? record.id : `saved-${index}`,
+    type,
+    prompt: record.prompt,
+    sub: typeof record.sub === 'string' ? record.sub : '',
+    options,
+    answer: typeof record.answer === 'number' ? record.answer : -1,
+    explain: record.explain ?? null,
+    hint: record.hint,
+    topic: record.topic,
+    difficulty: record.difficulty,
+    formula: record.formula,
+    modelAnswer: record.modelAnswer,
+    keywords: record.keywords,
+    classNum: record.classNum,
+    source: record.source,
+  }
+}
+
+function loadSavedQuiz(): SavedQuiz | null {
+  const data = readJSON<Record<string, unknown> | null>(QUIZ_PROGRESS_KEY, null)
+  if (!data || !Array.isArray(data.questions) || data.questions.length === 0) return null
+
+  const questions = (data.questions as unknown[])
+    .map((item, index) => normalizeSavedQuestion(item, index))
+    .filter((item): item is QuizQuestion => item !== null)
+  if (questions.length === 0) return null
+
+  const idx = typeof data.idx === 'number' && data.idx >= 0 && data.idx < questions.length ? Math.floor(data.idx) : 0
+  const answers: Record<string, QuizAnswerRecord> =
+    data.answers && typeof data.answers === 'object' ? (data.answers as Record<string, QuizAnswerRecord>) : {}
+
+  // Purane format me sirf current question ka `picked` tha — usse record banao.
+  if (Object.keys(answers).length === 0 && typeof data.picked === 'number') {
+    const question = questions[idx]
+    answers[question.id] = {
+      questionId: question.id,
+      picked: data.picked,
+      text: '',
+      correct: question.answer === data.picked,
+      skipped: false,
+      hintUsed: false,
+    }
+  }
+
+  return {
+    questions,
+    idx,
+    answers,
+    startedAt: typeof data.startedAt === 'number' ? data.startedAt : Date.now(),
+    mode: (data.mode as QuizMode) ?? 'topics',
+  }
+}
+
+function countAnswered(answers: Record<string, QuizAnswerRecord>): number {
+  return Object.values(answers).filter((answer) => !answer.skipped).length
+}
+
+function scoreOf(answers: Record<string, QuizAnswerRecord>): number {
+  return Object.values(answers).filter((answer) => answer.correct && !answer.skipped).length
+}
+
+export function QuizRunner({ onExit, playerName: initialName }: { onExit: () => void; playerName?: string }) {
   const [phase, setPhase] = useState<'setup' | 'asking' | 'done'>('setup')
-  const [quizClass, setQuizClass] = useState<string>('All')
+  const [mode, setMode] = useState<QuizMode>('topics')
+  const [quizClass, setQuizClass] = useState('All')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
   const [topicQuery, setTopicQuery] = useState('')
   const [count, setCount] = useState(10)
+  const [difficulty, setDifficulty] = useState<DifficultyFilter>('Mixed')
+  const [typeFilter, setTypeFilter] = useState<QuizTypeFilter>('mixed')
   const [setupError, setSetupError] = useState<string | null>(null)
-  // Quiz ka source: formulas/chapters se, ya student ki PDF se.
-  const [source, setSource] = useState<'topics' | 'pdf'>('topics')
   const [pdfBusy, setPdfBusy] = useState(false)
   const [pdfName, setPdfName] = useState<string | null>(null)
   const pdfInput = useRef<HTMLInputElement>(null)
 
   const [questions, setQuestions] = useState<QuizQuestion[]>([])
-  const [savedQuiz, setSavedQuiz] = useState<SavedQuiz | null>(() => loadSavedQuiz())
   const [idx, setIdx] = useState(0)
-  const [picked, setPicked] = useState<number | null>(null)
-  const [score, setScore] = useState(0)
-  const [answered, setAnswered] = useState(0)
-  const [best, setBest] = useState(() => getBest())
+  const [answers, setAnswers] = useState<Record<string, QuizAnswerRecord>>({})
+  const [draft, setDraft] = useState('')
+  const [hintOpen, setHintOpen] = useState(false)
+  const [similarity, setSimilarity] = useState(0)
+  const [reinforced, setReinforced] = useState(false)
+  const [startedAt, setStartedAt] = useState(() => Date.now())
+  const [now, setNow] = useState(() => Date.now())
+  const [sprintLeft, setSprintLeft] = useState<number | null>(null)
+  const [finalSeconds, setFinalSeconds] = useState(0)
+  const [savedQuiz, setSavedQuiz] = useState<SavedQuiz | null>(() => loadSavedQuiz())
+  const [best, setBest] = useState(() => loadBest())
+  const [stats, setStats] = useState<QuizStats>(() => loadStats())
+  const [streak, setStreak] = useState<StreakState>(() => loadStreak())
+  const [daily, setDaily] = useState<DailyState>(() => loadDaily())
+  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>(() => loadLeaderboard())
+  const [playerName, setPlayerName] = useState(() => initialName?.trim() || loadPlayerName())
+  const [reviewOpen, setReviewOpen] = useState(false)
+  const statsDone = useRef<Set<string>>(new Set())
 
-  // Khelte waqt progress save hota rahe — beech me chhoda to wapas milega.
-  useEffect(() => {
-    if (phase !== 'asking' || questions.length === 0) return
-    try {
-      localStorage.setItem(PROGRESS_KEY, JSON.stringify({ questions, idx, score, picked, answered }))
-    } catch {
-      // ignore
-    }
-  }, [phase, questions, idx, score, picked, answered])
-
-  // Class chuni ho to us class ke NCERT chapters (Maths/Physics alag), warna generic topics.
   const groups = useMemo<ChipGroup[]>(() => {
+    if (mode === 'pyq') {
+      return [{ label: '', options: formulaCategories.map((category) => ({ key: category.name, cats: [category.name] })) }]
+    }
     if (quizClass === 'All') {
-      return [{ label: '', options: formulaCategories.map((c) => ({ key: c.name, cats: [c.name] })) }]
+      return [{ label: '', options: formulaCategories.map((category) => ({ key: category.name, cats: [category.name] })) }]
     }
     const list = ncertChapters[Number(quizClass)] ?? []
-    const toOption = (ch: { name: string; cat: string }): ChipOption => ({ key: ch.name, cats: [ch.cat] })
-    const maths = list.filter((c) => c.subject === 'Maths').map(toOption)
-    const physics = list.filter((c) => c.subject === 'Physics').map(toOption)
-    const chemistry = list.filter((c) => c.subject === 'Chemistry').map(toOption)
+    const toOption = (chapter: { name: string; cat: string }) => ({ key: chapter.name, cats: [chapter.cat] })
+    const maths = list.filter((chapter) => chapter.subject === 'Maths').map(toOption)
+    const physics = list.filter((chapter) => chapter.subject === 'Physics').map(toOption)
+    const chemistry = list.filter((chapter) => chapter.subject === 'Chemistry').map(toOption)
     const out: ChipGroup[] = []
     if (maths.length) out.push({ label: 'Maths', options: maths })
     if (physics.length) out.push({ label: 'Physics', options: physics })
     if (chemistry.length) out.push({ label: 'Chemistry', options: chemistry })
     return out
-  }, [quizClass])
+  }, [quizClass, mode])
 
-  const allOptions = useMemo(() => groups.flatMap((g) => g.options), [groups])
+  const allOptions = useMemo(() => groups.flatMap((group) => group.options), [groups])
 
-  // Class badalne par purani selection hatao (topics aur chapters alag hain).
+  const searchedGroups = useMemo(() => {
+    const query = topicQuery.trim().toLowerCase()
+    return groups
+      .map((group) => ({
+        label: group.label,
+        options: query ? group.options.filter((option) => option.key.toLowerCase().includes(query)) : group.options,
+      }))
+      .filter((group) => group.options.length > 0)
+  }, [groups, topicQuery])
+
   useEffect(() => {
     setSelectedCats([])
     setSetupError(null)
   }, [quizClass])
 
-  const searchedGroups = useMemo(() => {
-    const q = topicQuery.trim().toLowerCase()
-    return groups
-      .map((g) => ({
-        label: g.label,
-        options: q ? g.options.filter((o) => o.key.toLowerCase().includes(q)) : g.options,
-      }))
-      .filter((g) => g.options.length > 0)
-  }, [groups, topicQuery])
+  useEffect(() => {
+    setSelectedCats([])
+  }, [mode])
 
-  const toggleCat = (name: string) => {
+  const pool = useMemo(() => dailyPool(), [])
+  const weak = useMemo(() => weakTopics(stats), [stats])
+
+  const current = questions[Math.min(idx, Math.max(questions.length - 1, 0))]
+  const currentAnswer = current ? answers[current.id] ?? null : null
+  const score = scoreOf(answers)
+  const answeredNow = countAnswered(answers)
+  const elapsed = Math.max(0, Math.floor((now - startedAt) / 1000))
+
+  // Timer sirf quiz ke dauraan tick karta hai.
+  useEffect(() => {
+    if (phase !== 'asking') return
+    const timer = window.setInterval(() => setNow(Date.now()), 500)
+    return () => window.clearInterval(timer)
+  }, [phase])
+
+  // Sprint ka countdown + auto-finish.
+  useEffect(() => {
+    if (phase !== 'asking' || mode !== 'sprint') {
+      setSprintLeft(null)
+      return
+    }
+    setSprintLeft(Math.max(0, 60 - elapsed))
+  }, [phase, mode, elapsed])
+
+  // Khelte waqt progress save — sprint chhod ke (timer wala quiz resume nahi hota).
+  useEffect(() => {
+    if (phase !== 'asking' || questions.length === 0 || mode === 'sprint') return
+    writeJSON(QUIZ_PROGRESS_KEY, { questions, idx, answers, startedAt, mode })
+  }, [phase, questions, idx, answers, startedAt, mode])
+
+  const commitStat = (question: QuizQuestion, correct: boolean) => {
+    if (statsDone.current.has(question.id)) return
+    statsDone.current.add(question.id)
+    setStats(recordTopicAnswer(question.topic ?? question.sub, correct))
+  }
+
+  const begin = (quiz: QuizQuestion[], nextMode: QuizMode) => {
+    if (quiz.length === 0) {
+      setSetupError('Is selection par sawaal nahi mile — doosra topic ya difficulty try karo.')
+      return
+    }
+    const stamp = Date.now()
+    statsDone.current = new Set()
+    setQuestions(quiz)
+    setIdx(0)
+    setAnswers({})
+    setDraft('')
+    setHintOpen(false)
+    setSimilarity(0)
+    setReinforced(false)
+    setReviewOpen(false)
+    setStartedAt(stamp)
+    setNow(stamp)
+    setSprintLeft(nextMode === 'sprint' ? 60 : null)
+    setMode(nextMode)
+    setSavedQuiz(null)
     setSetupError(null)
-    setSelectedCats((prev) => {
-      if (prev.includes(name)) return prev.filter((c) => c !== name)
-      if (prev.length >= 3) {
-        setSetupError('Sirf 3 topics tak chun sakte ho.')
-        return prev
-      }
-      return [...prev, name]
-    })
+    removeKey(QUIZ_PROGRESS_KEY)
+    setPhase('asking')
+  }
+
+  const resolveCats = (): string[] => {
+    const optionMap = new Map(allOptions.map((option) => [option.key, option.cats]))
+    const validKeys = selectedCats.filter((key) => optionMap.has(key))
+    return [...new Set(validKeys.flatMap((key) => optionMap.get(key) ?? []))]
   }
 
   const startQuiz = () => {
-    const optionMap = new Map(allOptions.map((o) => [o.key, o.cats]))
-    const validKeys = selectedCats.filter((k) => optionMap.has(k))
-    if (validKeys.length < 1) {
+    if (mode === 'sprint') {
+      begin(buildSprintQuiz(), 'sprint')
+      return
+    }
+    if (mode === 'topics' && selectedCats.length === 0) {
       setSetupError('Kam se kam 1 topic chuno.')
       return
     }
-    const cats = [...new Set(validKeys.flatMap((k) => optionMap.get(k) ?? []))]
-    const n = Math.min(50, Math.max(10, Math.floor(Number(count) || 10)))
-    setCount(n)
-    setQuestions(buildQuiz(n, cats))
-    setIdx(0)
-    setPicked(null)
-    setScore(0)
-    setAnswered(0)
-    setSavedQuiz(null)
-    clearProgress()
-    setPhase('asking')
+    const cats = resolveCats()
+    const classNum = quizClass === 'All' ? undefined : Number(quizClass)
+    const quiz =
+      mode === 'pyq'
+        ? buildPyqQuiz(count, cats, difficulty, typeFilter, classNum)
+        : buildQuiz(count, cats, difficulty, typeFilter)
+    begin(quiz, mode)
   }
 
-  const startGeneratedQuiz = (quiz: QuizQuestion[], n: number) => {
-    setCount(n)
-    setQuestions(quiz)
-    setIdx(0)
-    setPicked(null)
-    setScore(0)
-    setAnswered(0)
-    setSavedQuiz(null)
-    clearProgress()
-    setPhase('asking')
+  const startDaily = () => {
+    begin(buildDailyChallenge(todayKey(), pool, 5), 'daily')
   }
 
-  // PDF upload → text extract → AI se MCQs → seedha quiz shuru.
+  const practiceWeak = () => {
+    const topics = weak.map((item) => item.topic)
+    if (topics.length === 0) {
+      setSetupError('Abhi weak topics ka data nahi hai — pehle kuch quizzes khelo.')
+      return
+    }
+    setSelectedCats([])
+    const cats = [...new Set(formulaCategories.filter((category) => topics.includes(category.name)).map((category) => category.name))]
+    begin(buildQuiz(Math.min(15, Math.max(10, count)), cats, 'Mixed', typeFilter), 'topics')
+  }
+
+  const startGeneratedQuiz = (quiz: QuizQuestion[]) => {
+    begin(quiz, 'pdf')
+  }
+
   const onPdfSelected = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
@@ -275,7 +334,7 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
       }
       const n = Math.min(50, Math.max(10, Math.floor(Number(count) || 10)))
       const quiz = await generateQuizFromText(text, n, quizClass === 'All' ? undefined : Number(quizClass))
-      startGeneratedQuiz(quiz, n)
+      startGeneratedQuiz(quiz)
     } catch (error) {
       setSetupError(error instanceof Error ? error.message : 'PDF se quiz nahi bana. Doosri PDF try karo.')
     } finally {
@@ -283,336 +342,365 @@ export function QuizRunner({ onExit }: { onExit: () => void }) {
     }
   }
 
+  // `extra` sirf us case ke liye jab aakhri sawaal skip karte waqt uska record
+  // abhi state me nahi pahuncha hota — warna wo answer count se chhoot jata.
+  const finishQuiz = (extra?: Record<string, QuizAnswerRecord>) => {
+    if (phase !== 'asking') return
+    const finalAnswers = extra ? { ...answers, ...extra } : answers
+    const finalScore = scoreOf(finalAnswers)
+    for (const question of questions) {
+      const answer = finalAnswers[question.id]
+      if (answer && !answer.skipped) commitStat(question, answer.correct)
+    }
+    const day = todayKey()
+    const seconds = Math.max(1, Math.round((Date.now() - startedAt) / 1000))
+    setFinalSeconds(seconds)
+    if (countAnswered(finalAnswers) > 0) setStreak(touchStreak(day))
+    if (finalScore > best) {
+      setBest(finalScore)
+      saveBest(finalScore)
+    }
+    const topics = [...new Set(questions.map((question) => question.topic ?? question.sub))]
+    addAttempt({ at: new Date().toISOString(), score: finalScore, total: questions.length, topics, mode, seconds, difficulty })
+    if (mode === 'daily') setDaily(saveDaily(finalScore, questions.length, day))
+    setLeaderboard(addLeaderEntry({ name: (playerName || 'Guest').slice(0, 18), score: finalScore, total: questions.length, day, mode }))
+    removeKey(QUIZ_PROGRESS_KEY)
+    setReviewOpen(false)
+    setSprintLeft(null)
+    setPhase('done')
+  }
+
+  // Sprint ka time khatam → result.
+  useEffect(() => {
+    if (phase === 'asking' && mode === 'sprint' && sprintLeft === 0) finishQuiz()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sprintLeft, phase, mode])
+
+  const recordAnswer = (record: Omit<QuizAnswerRecord, 'questionId'>) => {
+    if (!current) return
+    const full: QuizAnswerRecord = { ...record, questionId: current.id }
+    setAnswers((previous) => ({ ...previous, [current.id]: full }))
+    return full
+  }
+
+  /**
+   * Adaptive practice: jawab galat hua to isi topic ka agla sawaal turant
+   * next par le aao, taaki galti wahin clear ho.
+   */
+  const reinforce = (question: QuizQuestion) => {
+    const from = questions.findIndex(
+      (item, itemIndex) => itemIndex > idx && item.topic === question.topic && item.id !== question.id,
+    )
+    if (from < 0 || question.topic === undefined) return false
+    setQuestions((previous) => {
+      const at = previous.findIndex((item) => item.id === questions[from]?.id)
+      if (at < 0) return previous
+      const next = [...previous]
+      const [item] = next.splice(at, 1)
+      next.splice(idx + 1, 0, item)
+      return next
+    })
+    return true
+  }
+
+  const pick = (optionIndex: number) => {
+    if (!current || current.type !== 'mcq' || answers[current.id]) return
+    const correct = optionIndex === current.answer
+    recordAnswer({ picked: optionIndex, text: '', correct, skipped: false, hintUsed: hintOpen })
+    commitStat(current, correct)
+    if (!correct && reinforce(current)) setReinforced(true)
+  }
+
+  const checkText = () => {
+    if (!current || current.type !== 'subjective' || answers[current.id] || draft.trim().length < 2) return
+    const match = answerMatch(draft, current.modelAnswer, current.keywords)
+    setSimilarity(match)
+    const auto = looksCorrect(match)
+    recordAnswer({
+      picked: null,
+      text: draft.trim(),
+      correct: auto,
+      skipped: false,
+      hintUsed: hintOpen,
+      partial: !auto && match >= 0.3,
+    })
+    if (!auto && reinforce(current)) setReinforced(true)
+  }
+
+  const selfMark = (correct: boolean) => {
+    if (!current) return
+    const existing = answers[current.id]
+    if (!existing) return
+    setAnswers((previous) => ({ ...previous, [current.id]: { ...existing, correct, partial: false } }))
+    commitStat(current, correct)
+  }
+
+  const goNext = () => {
+    if (current) {
+      const answer = answers[current.id]
+      if (answer && !answer.skipped) commitStat(current, answer.correct)
+    }
+    if (idx + 1 >= questions.length) {
+      finishQuiz()
+      return
+    }
+    setIdx((value) => value + 1)
+    setDraft('')
+    setHintOpen(false)
+    setSimilarity(0)
+    setReinforced(false)
+  }
+
+  const skip = () => {
+    if (!current) return
+    let nextAnswers = answers
+    if (!answers[current.id]) {
+      const record: QuizAnswerRecord = {
+        questionId: current.id,
+        picked: null,
+        text: '',
+        correct: false,
+        skipped: true,
+        hintUsed: hintOpen,
+      }
+      nextAnswers = { ...answers, [current.id]: record }
+      recordAnswer({ picked: null, text: '', correct: false, skipped: true, hintUsed: hintOpen })
+      if (idx + 1 >= questions.length) {
+        finishQuiz(nextAnswers)
+        return
+      }
+    }
+    if (idx + 1 >= questions.length) finishQuiz()
+    else {
+      setIdx((value) => value + 1)
+      setDraft('')
+      setHintOpen(false)
+      setSimilarity(0)
+      setReinforced(false)
+    }
+  }
+
+  const toggleCat = (name: string) => {
+    setSetupError(null)
+    setSelectedCats((previous) => {
+      if (previous.includes(name)) return previous.filter((item) => item !== name)
+      if (previous.length >= 3) {
+        setSetupError('Sirf 3 topics tak chun sakte ho.')
+        return previous
+      }
+      return [...previous, name]
+    })
+  }
+
   const resumeQuiz = () => {
     if (!savedQuiz) return
+    const stamp = Date.now()
     setQuestions(savedQuiz.questions)
     setIdx(savedQuiz.idx)
-    setScore(savedQuiz.score)
-    setPicked(savedQuiz.picked)
-    setAnswered(savedQuiz.answered)
+    setAnswers(savedQuiz.answers)
+    setStartedAt(stamp)
+    setNow(stamp)
+    setMode(savedQuiz.mode)
+    setSprintLeft(null)
     setSavedQuiz(null)
+    setDraft('')
+    setHintOpen(false)
+    setSimilarity(0)
+    setReinforced(false)
+    statsDone.current = new Set(Object.keys(savedQuiz.answers))
     setPhase('asking')
   }
 
   const discardSaved = () => {
-    clearProgress()
+    removeKey(QUIZ_PROGRESS_KEY)
     setSavedQuiz(null)
   }
 
-  const endQuiz = () => {
-    clearProgress()
-    setPhase('done')
+  const backToSetup = () => {
+    removeKey(QUIZ_PROGRESS_KEY)
+    setPhase('setup')
+    setMode((currentMode) => (currentMode === 'daily' ? 'topics' : currentMode))
+    setAnswers({})
+    setIdx(0)
+    setDraft('')
+    setHintOpen(false)
+    setReviewOpen(false)
+    setQuestions([])
   }
 
-  const done = phase === 'done'
-  const atMax = selectedCats.length >= 3
-  const current = questions[Math.min(idx, Math.max(questions.length - 1, 0))]
-  const progress = questions.length > 0 ? Math.round((Math.min(idx, questions.length) / questions.length) * 100) : 0
+  const retryWrong = () => {
+    const wrong = questions.filter((question) => {
+      const answer = answers[question.id]
+      return answer && !answer.skipped && !answer.correct
+    })
+    if (wrong.length === 0) return backToSetup()
+    begin(wrong, mode === 'sprint' || mode === 'daily' ? 'topics' : mode)
+  }
 
-  const pick = (i: number) => {
-    if (picked !== null || !current) return
-    setPicked(i)
-    setAnswered((a) => a + 1)
-    if (i === current.answer) {
-      const s = score + 1
-      setScore(s)
-      if (s > best) {
-        setBest(s)
-        try {
-          localStorage.setItem(BEST_KEY, String(s))
-        } catch {
-          // ignore
+  const changeName = (value: string) => {
+    setPlayerName(value)
+    savePlayerName(value)
+  }
+
+  const review: ReviewItem[] = questions.map((question) => ({ question, answer: answers[question.id] ?? null }))
+  const wrongCount = review.filter((item) => item.answer && !item.answer.skipped && !item.answer.correct).length
+  const accuracy = answeredNow > 0 ? score / answeredNow : 0
+  const atMax = selectedCats.length >= 3
+
+  // Keyboard shortcuts — 1-4 option, H hint, S skip, Enter next/check.
+  useEffect(() => {
+    if (phase !== 'asking') return
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      const typing = target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)
+      if (typing) {
+        if (event.key === 'Enter' && target?.tagName === 'TEXTAREA' && current && !answers[current.id]) {
+          event.preventDefault()
+          checkText()
         }
+        return
+      }
+      if (event.key === 'h' || event.key === 'H') {
+        if (currentAnswer === null && sprintLeft === null) setHintOpen(true)
+      } else if (event.key === 's' || event.key === 'S') {
+        if (currentAnswer === null) skip()
+      } else if (event.key === 'Enter') {
+        if (currentAnswer !== null) goNext()
+      } else if (['1', '2', '3', '4'].includes(event.key)) {
+        if (current?.type === 'mcq' && currentAnswer === null) pick(Number(event.key) - 1)
       }
     }
-  }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, current, currentAnswer, draft, hintOpen, answers, sprintLeft])
 
-  const next = () => {
-    if (idx + 1 >= questions.length) {
-      clearProgress()
-      setPhase('done')
-    } else {
-      setPicked(null)
-      setIdx((i) => i + 1)
-    }
-  }
-
-  const backToSetup = () => {
-    clearProgress()
-    setPhase('setup')
-    setPicked(null)
-    setIdx(0)
-    setScore(0)
-    setAnswered(0)
-  }
+  const printMode = mode === 'daily' ? 'Daily challenge' : mode === 'sprint' ? 'Formula sprint' : mode === 'pyq' ? 'Board PYQ' : mode === 'pdf' ? 'PDF quiz' : 'Topics'
 
   return (
     <div className="example-box quiz-box quiz-page-box">
-        <div className="example-head">
-          <div>
-            <span className="section-kicker">PRACTICE QUIZ</span>
-            <h3>
-              {phase === 'setup'
-                ? 'Quiz setup karo'
-                : done
-                  ? 'Result!'
-                  : `Question ${Math.min(idx + 1, questions.length)} / ${questions.length}`}
-            </h3>
-          </div>
-          <button className="close-upload" aria-label="Close quiz" onClick={onExit}>
-            <X size={20} />
-          </button>
+      <div className="example-head">
+        <div>
+          <span className="section-kicker">PRACTICE QUIZ · {printMode.toUpperCase()}</span>
+          <h3>
+            {phase === 'setup'
+              ? 'Quiz setup karo'
+              : phase === 'done'
+                ? 'Result!'
+                : `Question ${Math.min(idx + 1, questions.length)} / ${questions.length}`}
+          </h3>
         </div>
-        {phase === 'setup' ? (
-          <div className="quiz-setup">
-            {savedQuiz && (
-              <div className="quiz-resume">
-                <p>
-                  Adhura quiz mila: <b>Q{savedQuiz.idx + 1}/{savedQuiz.questions.length}</b>, Score{' '}
-                  <b>{savedQuiz.score}</b> — wahin se shuru karo?
-                </p>
-                <div className="quiz-resume-actions">
-                  <button className="analyze-button" type="button" onClick={resumeQuiz}>
-                    Resume quiz
-                  </button>
-                  <button className="outline-button" type="button" onClick={discardSaved}>
-                    Discard
-                  </button>
-                </div>
-              </div>
-            )}
-            <label className="auth-field">
-              Class chuno
-              <select value={quizClass} onChange={(event) => setQuizClass(event.target.value)}>
-                <option value="All">All classes</option>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-                  <option key={n} value={String(n)}>Class {n}</option>
-                ))}
-              </select>
-            </label>
-            <div className="quiz-source">
-              <button
-                type="button"
-                className={source === 'topics' ? 'cat-chip active' : 'cat-chip'}
-                onClick={() => { setSource('topics'); setSetupError(null) }}
-              >
-                Topics / Chapters se
-              </button>
-              <button
-                type="button"
-                className={source === 'pdf' ? 'cat-chip active' : 'cat-chip'}
-                onClick={() => { setSource('pdf'); setSetupError(null) }}
-              >
-                PDF se MCQs
-              </button>
-            </div>
-            {source === 'topics' ? (
-              <>
-            <div className="quiz-topics-head">
-              <span className="section-kicker">
-                {quizClass === 'All' ? 'TOPICS' : `NCERT CHAPTERS · CLASS ${quizClass}`} · MAX 3 ({selectedCats.length} selected)
-              </span>
-            </div>
-            <label className="auth-field">
-              <div className="admin-search">
-                <Search size={15} />
-                <input
-                  value={topicQuery}
-                  onChange={(event) => setTopicQuery(event.target.value)}
-                  placeholder={quizClass === 'All' ? 'Topic search karo...' : 'Chapter search karo...'}
-                />
-              </div>
-            </label>
-            <div className="chip-groups">
-              {searchedGroups.map((group, gi) => (
-                <div className="chip-group" key={group.label || `group-${gi}`}>
-                  {group.label ? (
-                    <span className="chip-group-head">
-                      {group.label} <i>{group.options.length}</i>
-                    </span>
-                  ) : null}
-                  <div className="cat-chips quiz-cats">
-                    {group.options.map((opt) => (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        role="checkbox"
-                        aria-checked={selectedCats.includes(opt.key)}
-                        disabled={atMax && !selectedCats.includes(opt.key)}
-                        className={selectedCats.includes(opt.key) ? 'cat-chip active' : 'cat-chip'}
-                        onClick={() => toggleCat(opt.key)}
-                      >
-                        {selectedCats.includes(opt.key) ? <Check size={13} /> : null} {opt.key}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              {searchedGroups.length === 0 && <p className="example-label">Koi topic nahi mila.</p>}
-            </div>
-              </>
-            ) : null}
-            <div className="quiz-count-row">
-              <span className="section-kicker">QUESTIONS (10–50)</span>
-              <div className="quiz-count-chips">
-                {[10, 15, 20, 30, 50].map((n) => (
-                  <button
-                    key={n}
-                    type="button"
-                    className={count === n ? 'cat-chip active' : 'cat-chip'}
-                    onClick={() => setCount(n)}
-                  >
-                    {n}
-                  </button>
-                ))}
-                <input
-                  className="limit-input"
-                  type="number"
-                  min={10}
-                  max={50}
-                  value={count}
-                  onChange={(event) => {
-                    const v = Math.floor(Number(event.target.value) || 0)
-                    setCount(Math.min(50, Math.max(10, v || 10)))
-                  }}
-                  aria-label="Custom question count"
-                />
-              </div>
-            </div>
-            {source === 'pdf' && (
-              <div className="quiz-pdf">
-                <div className="quiz-pdf-icon">
-                  <FileText size={22} />
-                </div>
-                <h4>PDF se MCQs banao</h4>
-                <p>
-                  Apni book, notes ya question paper ki PDF upload karo. Us text se {count} MCQs banenge —
-                  phir wahin quiz khelo.
-                </p>
-                <input
-                  ref={pdfInput}
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  hidden
-                  onChange={onPdfSelected}
-                />
-                <button
-                  className="analyze-button quiz-next"
-                  type="button"
-                  disabled={pdfBusy}
-                  onClick={() => pdfInput.current?.click()}
-                >
-                  {pdfBusy ? (
-                    <>
-                      <span className="spinner" /> PDF padh kar quiz ban raha hai…
-                    </>
-                  ) : (
-                    <>
-                      <Upload size={16} /> PDF choose karo
-                    </>
-                  )}
-                </button>
-                {pdfName && <span className="upload-hint">Selected: {pdfName}</span>}
-                <span className="upload-hint">Text wali PDF best hai · max 12 MB</span>
-              </div>
-            )}
-            {setupError && <div className="upload-error">{setupError}</div>}
-            {source === 'topics' ? (
-              <button className="analyze-button quiz-next" onClick={startQuiz}>
-                <Target size={16} /> Start quiz — {count} MCQs
-              </button>
-            ) : null}
-          </div>
-        ) : !done && current ? (
-          <>
-            <div className="quiz-progress">
-              <i style={{ width: `${progress}%` }} />
-            </div>
-            <div className="quiz-score-line">
-              <span>{current.sub}</span>
-              <span>Score: {score} · Best: {best}</span>
-              <button type="button" className="text-button end-quiz-btn" onClick={endQuiz}>
-                End quiz
-              </button>
-            </div>
-            <p className="quiz-prompt">{current.prompt}</p>
-            <div className="quiz-options">
-              {current.options.map((opt, i) => {
-                const isAnswer = i === current.answer
-                const isPicked = i === picked
-                const cls = picked === null
-                  ? 'quiz-opt'
-                  : isAnswer
-                    ? 'quiz-opt correct'
-                    : isPicked
-                      ? 'quiz-opt wrong'
-                      : 'quiz-opt dim'
-                return (
-                  <button key={i} type="button" className={cls} onClick={() => pick(i)} disabled={picked !== null}>
-                    {picked !== null && isAnswer && <Check size={15} />}
-                    <span>{opt}</span>
-                  </button>
-                )
-              })}
-            </div>
-            {picked !== null && picked !== current.answer && (
-              <div className="quiz-explain">
-                <span className="section-kicker">SAMJHO</span>
-                {current.explain ? (
-                  <>
-                    <p><b>Example:</b> {current.explain.q}</p>
-                    <ol className="example-steps">
-                      {current.explain.steps.map((s, i) => (
-                        <li key={i}>{s}</li>
-                      ))}
-                    </ol>
-                  </>
-                ) : (
-                  <p>Sahi jawab: <b>{current.options[current.answer]}</b></p>
-                )}
-              </div>
-            )}
-            {picked !== null && (
-              <button className="analyze-button quiz-next" onClick={next}>
-                {idx + 1 >= questions.length ? 'See result' : 'Next question'} <Target size={16} />
-              </button>
-            )}
-          </>
-        ) : done && questions.length > 0 ? (
-          <div className="quiz-result">
-            <Award size={40} />
-            <h3>{score} / {answered}</h3>
-            <p>
-              {answered > 0 && score === answered
-                ? 'Perfect! Tum to Nawab nikle!'
-                : answered > 0 && score / answered >= 0.7
-                  ? 'Bahut khoob! Thodi aur practice.'
-                  : 'Koi baat nahi — formulas revise karke phir try karo.'}
-            </p>
-            <p className="example-label">
-              {answered} of {questions.length} attempted · Best score: {Math.max(best, score)}
-            </p>
-            <div className="quiz-result-actions">
-              <button className="analyze-button" onClick={backToSetup}>
-                <RotateCcw size={16} /> New quiz
-              </button>
-              <button className="outline-button" type="button" onClick={onExit}>
-                Back to site
-              </button>
-            </div>
-          </div>
-        ) : null}
+        <button className="close-upload" aria-label="Close quiz" onClick={onExit}>
+          <X size={20} />
+        </button>
+      </div>
+
+      {phase === 'setup' ? (
+        <QuizSetup
+          quizClass={quizClass}
+          onClass={setQuizClass}
+          mode={mode}
+          onMode={(nextMode) => {
+            setMode(nextMode)
+            setSetupError(null)
+          }}
+          difficulty={difficulty}
+          onDifficulty={setDifficulty}
+          typeFilter={typeFilter}
+          onTypeFilter={setTypeFilter}
+          searchedGroups={searchedGroups}
+          selectedCats={selectedCats}
+          maxCats={3}
+          atMax={atMax}
+          topicQuery={topicQuery}
+          onTopicQuery={setTopicQuery}
+          onToggleCat={toggleCat}
+          count={count}
+          onCount={setCount}
+          setupError={setupError}
+          savedQuiz={
+            savedQuiz
+              ? { idx: savedQuiz.idx, total: savedQuiz.questions.length, score: scoreOf(savedQuiz.answers) }
+              : null
+          }
+          onResume={resumeQuiz}
+          onDiscard={discardSaved}
+          onStart={startQuiz}
+          onStartDaily={startDaily}
+          onPracticeWeak={practiceWeak}
+          streak={streak.count}
+          daily={daily}
+          dailyPoolSize={pool.length}
+          best={best}
+          stats={stats}
+          weak={weak}
+          playerName={playerName}
+          onName={changeName}
+          pdfBusy={pdfBusy}
+          pdfName={pdfName}
+          pdfInput={pdfInput}
+          onPdfSelected={onPdfSelected}
+        />
+      ) : phase === 'asking' && current ? (
+        <QuizPlay
+          question={current}
+          index={idx}
+          total={questions.length}
+          score={score}
+          best={best}
+          elapsed={formatSeconds(elapsed)}
+          sprintLeft={sprintLeft}
+          answer={currentAnswer}
+          draft={draft}
+          hintOpen={hintOpen}
+          similarity={similarity}
+          sprint={sprintLeft !== null}
+          reinforced={reinforced}
+          onDraft={setDraft}
+          onPick={pick}
+          onCheckText={checkText}
+          onSelfMark={selfMark}
+          onHint={() => setHintOpen(true)}
+          onSkip={skip}
+          onNext={goNext}
+          onEnd={finishQuiz}
+        />
+      ) : phase === 'done' && questions.length > 0 ? (
+        <QuizResult
+          score={score}
+          attempted={answeredNow}
+          total={questions.length}
+          seconds={finalSeconds || elapsed}
+          best={best}
+          mode={mode}
+          streak={streak}
+          daily={daily}
+          accuracy={accuracy}
+          review={review}
+          wrongCount={wrongCount}
+          reviewOpen={reviewOpen}
+          weak={weak}
+          leaderboard={leaderboard}
+          playerName={playerName}
+          onNameChange={changeName}
+          onToggleReview={() => setReviewOpen((value) => !value)}
+          onRetryWrong={retryWrong}
+          onPracticeWeak={practiceWeak}
+          onNewQuiz={backToSetup}
+          onExit={onExit}
+        />
+      ) : null}
     </div>
   )
 }
 
-export default function QuizPage({ onExit }: { onExit: () => void }) {
+export default function QuizPage({ onExit, playerName }: { onExit: () => void; playerName?: string }) {
   return (
     <div className="quiz-page">
       <button type="button" className="text-button quiz-back" onClick={onExit}>
         ← Back to site
       </button>
-      <QuizRunner onExit={onExit} />
+      <QuizRunner onExit={onExit} playerName={playerName} />
     </div>
   )
 }
