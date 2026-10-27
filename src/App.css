@@ -2108,10 +2108,22 @@ footer p {
 [data-theme="dark"] .type-label textarea,
 [data-theme="dark"] .note-field textarea,
 [data-theme="dark"] .auth-field input,
+[data-theme="dark"] .auth-field select,
+[data-theme="dark"] .history-class select,
 [data-theme="dark"] .class-pick select {
   background: #10161f;
   border-color: rgba(255, 255, 255, 0.14);
   color: #eef2f7;
+}
+
+[data-theme="dark"] .history-class {
+  color: #c6d0db;
+}
+
+[data-theme="dark"] .auth-class-hero {
+  background: rgba(79, 140, 255, 0.12);
+  border-color: rgba(79, 140, 255, 0.24);
+  color: #c6d0db;
 }
 
 [data-theme="dark"] .upload-tips {

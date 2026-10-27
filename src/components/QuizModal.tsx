@@ -132,10 +132,10 @@ function scoreOf(answers: Record<string, QuizAnswerRecord>): number {
   return Object.values(answers).filter((answer) => answer.correct && !answer.skipped).length
 }
 
-export function QuizRunner({ onExit, playerName: initialName }: { onExit: () => void; playerName?: string }) {
+export function QuizRunner({ onExit, playerName: initialName, playerClass }: { onExit: () => void; playerName?: string; playerClass?: number | null }) {
   const [phase, setPhase] = useState<'setup' | 'asking' | 'done'>('setup')
   const [mode, setMode] = useState<QuizMode>('topics')
-  const [quizClass, setQuizClass] = useState('All')
+  const [quizClass, setQuizClass] = useState(playerClass ? String(playerClass) : 'All')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
   const [topicQuery, setTopicQuery] = useState('')
   const [count, setCount] = useState(10)
@@ -694,13 +694,13 @@ export function QuizRunner({ onExit, playerName: initialName }: { onExit: () => 
   )
 }
 
-export default function QuizPage({ onExit, playerName }: { onExit: () => void; playerName?: string }) {
+export default function QuizPage({ onExit, playerName, playerClass }: { onExit: () => void; playerName?: string; playerClass?: number | null }) {
   return (
     <div className="quiz-page">
       <button type="button" className="text-button quiz-back" onClick={onExit}>
         ← Back to site
       </button>
-      <QuizRunner onExit={onExit} playerName={playerName} />
+      <QuizRunner onExit={onExit} playerName={playerName} playerClass={playerClass} />
     </div>
   )
 }

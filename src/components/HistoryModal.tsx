@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { History, LogOut, Trash2, X } from 'lucide-react'
+import { GraduationCap, History, LogOut, Trash2, X } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { CLASS_LEVELS, parseClassLevel } from '../utils/studentClass'
 import type { StructuredSolution } from '../types/solution'
 
 export interface HistoryItem {
@@ -18,17 +19,21 @@ export interface HistoryItem {
 interface HistoryModalProps {
   userEmail: string | null
   accessExpiry: string | null
+  userClass: number | null
   onClose: () => void
   onLogin: () => void
   onLogout: () => void
+  onClassChange: (level: number) => void
   onView: (solution: StructuredSolution, isDemo: boolean) => void
 }
 
-export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin, onLogout, onView }: HistoryModalProps) {
+export default function HistoryModal({ userEmail, accessExpiry, userClass, onClose, onLogin, onLogout, onClassChange, onView }: HistoryModalProps) {
   const [items, setItems] = useState<HistoryItem[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [quota, setQuota] = useState<{ used: number; limit: number | null } | null>(null)
+  const [classSaving, setClassSaving] = useState(false)
+  const [classError, setClassError] = useState<string | null>(null)
 
   useEffect(() => {
     const db = supabase
@@ -107,6 +112,18 @@ export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin
     await db.from('solutions').delete().eq('id', id)
   }
 
+  const changeClass = async (value: string) => {
+    const db = supabase
+    const level = parseClassLevel(value)
+    if (!db || !level) return
+    setClassSaving(true)
+    setClassError(null)
+    const { error: saveError } = await db.auth.updateUser({ data: { class_level: level } })
+    if (saveError) setClassError('Class save nahi hui. Phir try karo.')
+    else onClassChange(level)
+    setClassSaving(false)
+  }
+
   const topics = new Set(items.map((item) => item.topic)).size
 
   return (
@@ -137,6 +154,24 @@ export default function HistoryModal({ userEmail, accessExpiry, onClose, onLogin
                 <LogOut size={14} /> Logout
               </button>
             </div>
+            <label className="history-class">
+              <span className="history-class-label"><GraduationCap size={14} /> Class</span>
+              <select
+                value={userClass ? String(userClass) : ''}
+                onChange={(event) => changeClass(event.target.value)}
+                disabled={classSaving}
+                aria-label="Your class"
+              >
+                <option value="" disabled>Class chuno</option>
+                {CLASS_LEVELS.map((n) => (
+                  <option key={n} value={String(n)}>
+                    Class {n}
+                  </option>
+                ))}
+              </select>
+              {classSaving && <span className="example-label">Save ho raha...</span>}
+            </label>
+            {classError && <div className="upload-error">{classError}</div>}
             {accessExpiry ? (
               <p className="access-line">
                 Access valid till {new Date(accessExpiry).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}

@@ -14,6 +14,7 @@ import HistoryModal from './components/HistoryModal'
 import AdminPanel from './components/AdminPanel'
 import TeacherPanel from './components/TeacherPanel'
 import { supabase } from './lib/supabase'
+import { classFromUser } from './utils/studentClass'
 import { demoSolution } from './data/demoSolution'
 import { getFormulaExample } from './data/formulaExamples'
 import { sanitizeSvg } from './utils/sanitizeSvg'
@@ -161,6 +162,7 @@ function App() {
   const [isDemoSolution, setIsDemoSolution] = useState(false)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null)
+  const [userClass, setUserClass] = useState<number | null>(null)
   const [authOpen, setAuthOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [quizPage, setQuizPage] = useState(false)
@@ -246,17 +248,29 @@ function App() {
   // Login session track karo.
   useEffect(() => {
     if (!supabase) return
-    const applySession = (email: string | null, name: string | null) => {
+    const applySession = (email: string | null, name: string | null, level: number | null) => {
       setUserEmail(email)
       setUserName(name && name.trim() ? name.trim() : null)
+      setUserClass(level)
+      // Solve form me user ki saved class pehle se bhar do (agar usne khud
+      // kuch aur select nahi kiya hai).
+      if (level) setStudentClass((current) => current || String(level))
     }
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user
-      applySession(u?.email ?? null, (u?.user_metadata?.display_name as string | undefined) ?? null)
+      applySession(
+        u?.email ?? null,
+        (u?.user_metadata?.display_name as string | undefined) ?? null,
+        classFromUser(u),
+      )
     })
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user
-      applySession(u?.email ?? null, (u?.user_metadata?.display_name as string | undefined) ?? null)
+      applySession(
+        u?.email ?? null,
+        (u?.user_metadata?.display_name as string | undefined) ?? null,
+        classFromUser(u),
+      )
     })
     return () => listener.subscription.unsubscribe()
   }, [])
@@ -528,7 +542,7 @@ function App() {
     return <TeacherPanel onClose={closeTeacher} />
   }
   if (quizPage) {
-    return <QuizPage onExit={closeQuizPage} playerName={userName ?? undefined} />
+    return <QuizPage onExit={closeQuizPage} playerName={userName ?? undefined} playerClass={userClass} />
   }
 
   return <div className="app-shell">
@@ -578,13 +592,26 @@ function App() {
         analyzeSolution={analyzeSolution}
         freeLeft={userEmail ? null : Math.max(0, FREE_LIMIT - freeUsed)}
       />}
-    {authOpen && <AuthModal onClose={() => setAuthOpen(false)} />}
+    {authOpen && (
+      <AuthModal
+        onClose={() => setAuthOpen(false)}
+        onClassSaved={(level) => {
+          setUserClass(level)
+          setStudentClass(String(level))
+        }}
+      />
+    )}
     {historyOpen && <HistoryModal
       userEmail={userEmail}
       accessExpiry={accessExpiry}
+      userClass={userClass}
+      onClassChange={(level) => {
+        setUserClass(level)
+        setStudentClass(String(level))
+      }}
       onClose={() => setHistoryOpen(false)}
       onLogin={() => { setHistoryOpen(false); setAuthOpen(true) }}
-      onLogout={async () => { await supabase?.auth.signOut(); setUserEmail(null) }}
+      onLogout={async () => { await supabase?.auth.signOut(); setUserEmail(null); setUserClass(null) }}
       onView={(sol, demo) => { setSolution(sol); setIsDemoSolution(demo); setHistoryOpen(false) }}
     />}
     <footer>
