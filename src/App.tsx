@@ -10,6 +10,7 @@ import DoubtBox from './components/DoubtBox'
 import SolutionActions from './components/SolutionActions'
 import NotesPage from './components/NotesPage'
 import AuthModal from './components/AuthModal'
+import ClassPrompt from './components/ClassPrompt'
 import HistoryModal from './components/HistoryModal'
 import AdminPanel from './components/AdminPanel'
 import TeacherPanel from './components/TeacherPanel'
@@ -164,6 +165,7 @@ function App() {
   const [userName, setUserName] = useState<string | null>(null)
   const [userClass, setUserClass] = useState<number | null>(null)
   const [authOpen, setAuthOpen] = useState(false)
+  const [classPromptOpen, setClassPromptOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [quizPage, setQuizPage] = useState(false)
   const [notesPage, setNotesPage] = useState(false)
@@ -258,19 +260,23 @@ function App() {
     }
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user
+      const level = classFromUser(u)
       applySession(
         u?.email ?? null,
         (u?.user_metadata?.display_name as string | undefined) ?? null,
-        classFromUser(u),
+        level,
       )
+      // Pehle se logged-in user jiski class set nahi — site khulte hi poochho.
+      if (u?.email && !level) setClassPromptOpen(true)
     })
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user
       applySession(
         u?.email ?? null,
         (u?.user_metadata?.display_name as string | undefined) ?? null,
         classFromUser(u),
       )
+      if (event === 'SIGNED_OUT') setClassPromptOpen(false)
     })
     return () => listener.subscription.unsubscribe()
   }, [])
@@ -592,12 +598,24 @@ function App() {
         analyzeSolution={analyzeSolution}
         freeLeft={userEmail ? null : Math.max(0, FREE_LIMIT - freeUsed)}
       />}
+    {classPromptOpen && userEmail && (
+      <ClassPrompt
+        userEmail={userEmail}
+        savedClass={userClass}
+        onSaved={(level) => {
+          setUserClass(level)
+          setStudentClass(String(level))
+        }}
+        onClose={() => setClassPromptOpen(false)}
+      />
+    )}
     {authOpen && (
       <AuthModal
         onClose={() => setAuthOpen(false)}
         onClassSaved={(level) => {
           setUserClass(level)
           setStudentClass(String(level))
+          setClassPromptOpen(false)
         }}
       />
     )}
