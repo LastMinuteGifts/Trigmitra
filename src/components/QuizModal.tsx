@@ -215,6 +215,8 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const score = scoreOf(answers)
   const answeredNow = countAnswered(answers)
   const elapsed = Math.max(0, Math.floor((now - startedAt) / 1000))
+  // Leaderboard kis class me jayega: login ki class, warna quiz setup me chuni class.
+  const activeClass = playerClass ?? (quizClass === 'All' ? null : Number(quizClass))
 
   // Timer sirf quiz ke dauraan tick karta hai.
   useEffect(() => {
@@ -363,7 +365,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     const topics = [...new Set(questions.map((question) => question.topic ?? question.sub))]
     addAttempt({ at: new Date().toISOString(), score: finalScore, total: questions.length, topics, mode, seconds, difficulty })
     if (mode === 'daily') setDaily(saveDaily(finalScore, questions.length, day))
-    setLeaderboard(addLeaderEntry({ name: (playerName || 'Guest').slice(0, 18), score: finalScore, total: questions.length, day, mode }))
+    setLeaderboard(addLeaderEntry({ name: (playerName || 'Guest').slice(0, 18), score: finalScore, total: questions.length, day, mode, classNum: activeClass }))
     removeKey(QUIZ_PROGRESS_KEY)
     setReviewOpen(false)
     setSprintLeft(null)
@@ -682,6 +684,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           weak={weak}
           leaderboard={leaderboard}
           playerName={playerName}
+          playerClass={activeClass}
           onNameChange={changeName}
           onToggleReview={() => setReviewOpen((value) => !value)}
           onRetryWrong={retryWrong}

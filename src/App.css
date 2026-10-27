@@ -2983,13 +2983,17 @@ footer p {
 .quiz-leaderboard { width: 100%; padding: 15px 17px; border-radius: 16px; background: rgba(29, 41, 56, 0.035); border: 1px solid rgba(29, 41, 56, 0.08); text-align: left; }
 .quiz-leaderboard-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .quiz-leaderboard-head .section-kicker { display: inline-flex; align-items: center; gap: 5px; }
+.quiz-leaderboard-controls { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .quiz-name-field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: #6b7785; }
 .quiz-name-field input { width: 110px; padding: 6px 9px; border-radius: 9px; border: 1px solid rgba(29, 41, 56, 0.16); font: inherit; font-size: 12px; color: #1a2433; background: #fff; }
+.quiz-name-field select { padding: 6px 9px; border-radius: 9px; border: 1px solid rgba(29, 41, 56, 0.16); font: inherit; font-size: 12px; font-weight: 400; color: #1a2433; background: #fff; }
 .quiz-leaderboard-list { display: grid; gap: 4px; margin: 10px 0 0; padding: 0; list-style: none; }
 .quiz-leaderboard-list li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 9px; font-size: 12.5px; }
 .quiz-leaderboard-list li b { color: #f0a13c; }
 .quiz-leaderboard-list li i { font-style: normal; font-weight: 700; color: #4a5666; }
 .quiz-leaderboard-list li.is-me { background: rgba(84, 160, 110, 0.14); font-weight: 700; }
+.quiz-leader-class { margin-left: 7px; padding: 1px 7px; border-radius: 999px; background: rgba(79, 140, 255, 0.12); color: #2f5fae; font-size: 10px; font-style: normal; font-weight: 700; white-space: nowrap; }
+.quiz-leaderboard-hint { margin: 10px 0 0; }
 
 .quiz-review { display: grid; gap: 12px; width: 100%; margin-top: 8px; text-align: left; }
 .quiz-review-item { padding: 14px 16px; border-radius: 14px; border: 1px solid rgba(29, 41, 56, 0.09); background: rgba(255, 255, 255, 0.55); }
@@ -3025,6 +3029,8 @@ footer p {
 [data-theme="dark"] .quiz-weak-chip { background: #131b26; border-color: rgba(255, 255, 255, 0.14); color: #d4dce6; }
 [data-theme="dark"] .quiz-leaderboard { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.09); }
 [data-theme="dark"] .quiz-name-field input { background: #10161f; border-color: rgba(255, 255, 255, 0.14); color: #eef2f7; }
+[data-theme="dark"] .quiz-name-field select { background: #10161f; border-color: rgba(255, 255, 255, 0.14); color: #eef2f7; }
+[data-theme="dark"] .quiz-leader-class { background: rgba(79, 140, 255, 0.18); color: #a9c6f7; }
 [data-theme="dark"] .quiz-leaderboard-list li i { color: #b9c4d0; }
 [data-theme="dark"] .quiz-leaderboard-list li.is-me { background: rgba(84, 160, 110, 0.2); }
 [data-theme="dark"] .quiz-review-item { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.1); }

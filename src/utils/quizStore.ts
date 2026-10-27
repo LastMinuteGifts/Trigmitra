@@ -53,6 +53,22 @@ export interface LeaderEntry {
   total: number
   day: string
   mode: string
+  /** Quiz ke waqt student ki class. Purani entries me missing ho sakti hai. */
+  classNum?: number | null
+}
+
+/**
+ * Class-wise leaderboard: class do to sirf usi class ke entries, `null` do to
+ * saare (All classes). Purani class-less entries sirf "All classes" me aati hain.
+ */
+export function filterLeaderboard(entries: LeaderEntry[], classNum: number | null): LeaderEntry[] {
+  if (classNum === null) return entries
+  return entries.filter((entry) => entry.classNum === classNum)
+}
+
+/** Heading ke liye scope label. */
+export function leaderboardScope(classNum: number | null): string {
+  return classNum ? `Class ${classNum}` : 'All classes'
 }
 
 function storage(): Storage | null {

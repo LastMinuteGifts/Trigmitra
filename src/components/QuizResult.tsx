@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Award, RotateCcw, Trophy } from 'lucide-react'
 import type { QuizAnswerRecord, QuizQuestion } from '../types/quiz'
 import type { DailyState, LeaderEntry, StreakState, WeakTopic } from '../utils/quizStore'
-import { formatSeconds } from '../utils/quizStore'
+import { filterLeaderboard, formatSeconds, leaderboardScope } from '../utils/quizStore'
+import { CLASS_LEVELS } from '../utils/studentClass'
 
 export interface ReviewItem {
   question: QuizQuestion
@@ -24,6 +26,8 @@ interface QuizResultProps {
   weak: WeakTopic[]
   leaderboard: LeaderEntry[]
   playerName: string
+  /** Login wale user ki class — leaderboard default isi class ka dikhta hai. */
+  playerClass: number | null
   onNameChange: (name: string) => void
   onToggleReview: () => void
   onRetryWrong: () => void
@@ -61,6 +65,7 @@ export function QuizResult({
   weak,
   leaderboard,
   playerName,
+  playerClass,
   onNameChange,
   onToggleReview,
   onRetryWrong,
@@ -69,8 +74,11 @@ export function QuizResult({
   onExit,
 }: QuizResultProps) {
   const overall = total > 0 ? score / total : 0
+  // Leaderboard class-wise: default user ki apni class, chaho to "All classes".
+  const [boardClass, setBoardClass] = useState<number | null>(playerClass)
+  const board = filterLeaderboard(leaderboard, boardClass)
   // Sirf sabse recent matching entry highlight karo (same score wale purane na ho).
-  const meIndex = leaderboard.findLastIndex((entry) => entry.name === playerName && entry.score === score)
+  const meIndex = board.findLastIndex((entry) => entry.name === playerName && entry.score === score)
 
   return (
     <div className="quiz-result">
@@ -109,29 +117,65 @@ export function QuizResult({
 
       <div className="quiz-leaderboard">
         <div className="quiz-leaderboard-head">
-          <span className="section-kicker"><Trophy size={13} /> TOP SCORES (IS DEVICE PAR)</span>
-          <label className="quiz-name-field">
-            Naam
-            <input
-              value={playerName}
-              maxLength={18}
-              onChange={(event) => onNameChange(event.target.value)}
-              aria-label="Leaderboard name"
-            />
-          </label>
+          <span className="section-kicker">
+            <Trophy size={13} /> TOP SCORES · {leaderboardScope(boardClass).toUpperCase()} (IS DEVICE PAR)
+          </span>
+          <div className="quiz-leaderboard-controls">
+            <label className="quiz-name-field">
+              Class
+              <select
+                value={boardClass ? String(boardClass) : 'all'}
+                onChange={(event) => {
+                  const value = event.target.value
+                  setBoardClass(value === 'all' ? null : Number(value))
+                }}
+                aria-label="Leaderboard class"
+              >
+                <option value="all">All classes</option>
+                {CLASS_LEVELS.map((n) => (
+                  <option key={n} value={String(n)}>
+                    Class {n}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="quiz-name-field">
+              Naam
+              <input
+                value={playerName}
+                maxLength={18}
+                onChange={(event) => onNameChange(event.target.value)}
+                aria-label="Leaderboard name"
+              />
+            </label>
+          </div>
         </div>
-        {leaderboard.length === 0 ? (
-          <p className="example-label">Pehla score tumhara — leaderboard tumse shuru!</p>
+        {board.length === 0 ? (
+          <p className="example-label">
+            {boardClass
+              ? `Class ${boardClass} ka pehla score tumhara — leaderboard yahan se shuru!`
+              : 'Pehla score tumhara — leaderboard tumse shuru!'}
+          </p>
         ) : (
           <ol className="quiz-leaderboard-list">
-            {leaderboard.slice(0, 5).map((entry, index) => (
+            {board.slice(0, 5).map((entry, index) => (
               <li key={`${entry.day}-${index}-${entry.name}`} className={index === meIndex ? 'is-me' : undefined}>
                 <b>{index + 1}</b>
-                <span>{entry.name}</span>
+                <span>
+                  {entry.name}
+                  {boardClass === null && entry.classNum ? (
+                    <em className="quiz-leader-class">Class {entry.classNum}</em>
+                  ) : null}
+                </span>
                 <i>{entry.score}/{entry.total}</i>
               </li>
             ))}
           </ol>
+        )}
+        {playerClass === null && (
+          <p className="example-label quiz-leaderboard-hint">
+            Apni class login me set karo — phir leaderboard seedha tumhari class ka khulega.
+          </p>
         )}
       </div>
 
