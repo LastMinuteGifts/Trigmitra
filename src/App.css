@@ -740,6 +740,11 @@ h1 em,
   display: inline-block;
 }
 
+/* Hero ki "Physics samjho." line — phone par do lines me. */
+.sci-samjho {
+  display: inline;
+}
+
 .subject-tags {
   display: flex;
   flex-wrap: wrap;
