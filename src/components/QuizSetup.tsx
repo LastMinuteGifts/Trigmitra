@@ -173,7 +173,7 @@ export function QuizSetup({
       </label>
 
       <label className="auth-field">
-        Leaderboard naam
+        Name for Leaderboard
         <input
           value={playerName}
           maxLength={18}
