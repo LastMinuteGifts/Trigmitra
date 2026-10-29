@@ -5,6 +5,9 @@
   .history-button { display: none; }
   .hero-section { padding: 58px 22px 64px; display: block; }
   h1 { font-size: clamp(43px, 12vw, 58px); }
+  /* Rotating "Maths / Physics / Chemistry samjho." phone par ek hi line me. */
+  h1 em { font-size: clamp(24px, 9vw, 44px); }
+  .sci-word { white-space: nowrap; }
   .hero-intro { font-size: 14px; }
   .hero-actions { align-items: flex-start; flex-direction: column; gap: 20px; }
   .hero-visual { min-height: 390px; margin-top: 45px; }
