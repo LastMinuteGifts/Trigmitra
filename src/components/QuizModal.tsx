@@ -125,11 +125,11 @@ function loadSavedQuiz(): SavedQuiz | null {
 }
 
 function countAnswered(answers: Record<string, QuizAnswerRecord>): number {
-  return Object.values(answers).filter((answer) => !answer.skipped).length
+  return Object.values(answers).filter((answer) => answer && !answer.skipped).length
 }
 
 function scoreOf(answers: Record<string, QuizAnswerRecord>): number {
-  return Object.values(answers).filter((answer) => answer.correct && !answer.skipped).length
+  return Object.values(answers).filter((answer) => answer && answer.correct && !answer.skipped).length
 }
 
 export function QuizRunner({ onExit, playerName: initialName, playerClass }: { onExit: () => void; playerName?: string; playerClass?: number | null }) {
@@ -665,7 +665,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           onHint={() => setHintOpen(true)}
           onSkip={skip}
           onNext={goNext}
-          onEnd={finishQuiz}
+          onEnd={() => finishQuiz()}
         />
       ) : phase === 'done' && questions.length > 0 ? (
         <QuizResult
