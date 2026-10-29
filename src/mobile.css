@@ -63,4 +63,19 @@
   .quiz-self-mark { flex-direction: column; align-items: stretch; }
   .quiz-review-head { align-items: flex-start; flex-wrap: wrap; }
   .quiz-result h3 { font-size: 36px; }
+
+  /* Quiz page phone par full width: koi card/box nahi, content kinaro tak. */
+  .quiz-page { padding: 12px 0 56px; gap: 10px; }
+  .quiz-page .quiz-back { margin: 0 16px; }
+  .quiz-page .example-box.quiz-box {
+    width: 100%;
+    max-height: none;
+    padding: 14px 16px 28px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  /* Har chapter chip line ko poora bhar de (ragged gaps na rahein). */
+  .quiz-page .quiz-cats .cat-chip { flex: 1 1 auto; min-width: 0; }
 }
