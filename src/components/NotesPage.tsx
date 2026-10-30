@@ -6,11 +6,19 @@ import { fetchNoteOverrides, mergeNote, type NoteOverrideContent } from '../util
 const CLASS_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 /** Class-wise chapter notes page — summary, key points aur formulas (alag page par). */
-export default function NotesPage({ onBack }: { onBack?: () => void }) {
-  const [classNum, setClassNum] = useState(10)
+export default function NotesPage({ onBack, userClass }: { onBack?: () => void; userClass?: number | null }) {
+  // Login account ki class se shuru, warna Class 10.
+  const [classNum, setClassNum] = useState(userClass ?? 10)
   const [query, setQuery] = useState('')
   const [selectedName, setSelectedName] = useState<string | null>(null)
   const [overrides, setOverrides] = useState<Record<string, NoteOverrideContent>>({})
+
+  // Account me class badli (history/class prompt) to notes turant usi class par.
+  useEffect(() => {
+    if (!userClass) return
+    setClassNum(userClass)
+    setSelectedName(null)
+  }, [userClass])
 
   useEffect(() => {
     const controller = new AbortController()

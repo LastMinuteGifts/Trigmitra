@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Award, RotateCcw, Trophy } from 'lucide-react'
 import type { QuizAnswerRecord, QuizQuestion } from '../types/quiz'
 import type { DailyState, LeaderEntry, StreakState, WeakTopic } from '../utils/quizStore'
@@ -79,6 +79,10 @@ export function QuizResult({
   const overall = total > 0 ? score / total : 0
   // Leaderboard class-wise: default user ki apni class, chaho to "All classes".
   const [boardClass, setBoardClass] = useState<number | null>(playerClass)
+  // Account me class badli to leaderboard bhi usi class ka dikhe.
+  useEffect(() => {
+    if (playerClass) setBoardClass(playerClass)
+  }, [playerClass])
   const board = filterLeaderboard(leaderboard, boardClass)
   // Sirf sabse recent matching entry highlight karo (same score wale purane na ho).
   const meIndex = board.findLastIndex((entry) => entry.name === playerName && entry.score === score)
