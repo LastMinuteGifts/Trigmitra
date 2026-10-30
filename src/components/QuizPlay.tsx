@@ -1,6 +1,6 @@
 import { Check, Lightbulb, SkipForward, Target } from 'lucide-react'
 import type { QuizAnswerRecord, QuizQuestion } from '../types/quiz'
-import { similarityLabel } from '../utils/answerCheck'
+import type { SubjectiveCheck } from '../utils/answerCheck'
 
 interface QuizPlayProps {
   question: QuizQuestion
@@ -15,7 +15,8 @@ interface QuizPlayProps {
   answer: QuizAnswerRecord | null
   draft: string
   hintOpen: boolean
-  similarity: number
+  /** Subjective auto-check ka result (null = abhi check nahi hua). */
+  check: SubjectiveCheck | null
   sprint: boolean
   reinforced: boolean
   onDraft: (value: string) => void
@@ -42,7 +43,7 @@ export function QuizPlay({
   answer,
   draft,
   hintOpen,
-  similarity,
+  check,
   sprint,
   reinforced,
   onDraft,
@@ -118,32 +119,62 @@ export function QuizPlay({
             <div className="quiz-model-answer">
               <span className="section-kicker">MODEL ANSWER</span>
               <p>{question.modelAnswer ?? question.formula ?? '—'}</p>
-              <div className="quiz-self-mark">
+              <div className="quiz-auto-check">
                 {answer.text ? (
-                  <span className="example-label">
-                    Aapka jawab {similarityLabel(similarity)}
-                    {answer.partial ? ' · thoda adhoora lag raha hai' : ''}
-                  </span>
+                  <>
+                    <div className="quiz-auto-head">
+                      <span
+                        className={
+                          answer.correct
+                            ? 'quiz-auto-badge correct'
+                            : check?.verdict === 'partial'
+                              ? 'quiz-auto-badge partial'
+                              : 'quiz-auto-badge wrong'
+                        }
+                      >
+                        {answer.correct ? '✅ Sahi' : check?.verdict === 'partial' ? '🟡 Aadha sahi' : '❌ Galat'}
+                      </span>
+                      {check && <span className="quiz-auto-score">{Math.round(check.score * 100)}% match</span>}
+                    </div>
+                    {check && <p className="quiz-auto-summary">{check.summary}</p>}
+                    {check && (check.matched.length > 0 || check.missing.length > 0) && (
+                      <div className="quiz-auto-points">
+                        {check.matched.map((point) => (
+                          <span key={`hit-${point}`} className="quiz-auto-point hit">
+                            ✓ {point}
+                          </span>
+                        ))}
+                        {check.missing.map((point) => (
+                          <span key={`miss-${point}`} className="quiz-auto-point miss">
+                            ✗ {point}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    {!answer.skipped && (
+                      <details className="quiz-auto-override">
+                        <summary>Auto-check se sehmat nahi? Khud badlo</summary>
+                        <div className="quiz-self-mark-buttons">
+                          <button
+                            type="button"
+                            className={answer.correct ? 'cat-chip active' : 'cat-chip'}
+                            onClick={() => onSelfMark(true)}
+                          >
+                            ✅ Sahi tha
+                          </button>
+                          <button
+                            type="button"
+                            className={!answer.correct ? 'cat-chip active' : 'cat-chip'}
+                            onClick={() => onSelfMark(false)}
+                          >
+                            ❌ Galat tha
+                          </button>
+                        </div>
+                      </details>
+                    )}
+                  </>
                 ) : (
                   <span className="example-label">Question skip kiya gaya</span>
-                )}
-                {!answer.skipped && (
-                  <div className="quiz-self-mark-buttons">
-                    <button
-                      type="button"
-                      className={answer.correct ? 'cat-chip active' : 'cat-chip'}
-                      onClick={() => onSelfMark(true)}
-                    >
-                      ✅ Sahi tha
-                    </button>
-                    <button
-                      type="button"
-                      className={!answer.correct ? 'cat-chip active' : 'cat-chip'}
-                      onClick={() => onSelfMark(false)}
-                    >
-                      ❌ Galat tha
-                    </button>
-                  </div>
                 )}
               </div>
             </div>

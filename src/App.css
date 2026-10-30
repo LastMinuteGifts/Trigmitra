@@ -3007,6 +3007,31 @@ footer p {
 .quiz-self-mark { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-top: 12px; }
 .quiz-self-mark-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
+/* Subjective auto-check: verdict + score + kya mila/kya chhoota. */
+.quiz-auto-check { display: grid; gap: 8px; margin-top: 12px; }
+.quiz-auto-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.quiz-auto-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+.quiz-auto-badge.correct { background: rgba(46, 125, 79, 0.14); color: #1f6b41; }
+.quiz-auto-badge.partial { background: rgba(240, 161, 60, 0.2); color: #8a5a10; }
+.quiz-auto-badge.wrong { background: rgba(192, 57, 43, 0.12); color: #a63a2c; }
+.quiz-auto-score { font-size: 11.5px; font-weight: 700; color: #6b7785; font-variant-numeric: tabular-nums; }
+.quiz-auto-summary { margin: 0; font-size: 12.5px; line-height: 1.55; color: #4a5666; }
+.quiz-auto-points { display: flex; flex-wrap: wrap; gap: 6px; }
+.quiz-auto-point { padding: 3px 9px; border-radius: 8px; font-size: 11.5px; font-weight: 700; }
+.quiz-auto-point.hit { background: rgba(46, 125, 79, 0.12); color: #1f6b41; }
+.quiz-auto-point.miss { background: rgba(192, 57, 43, 0.1); color: #a63a2c; }
+.quiz-auto-override { margin-top: 2px; font-size: 11.5px; color: #6b7785; }
+.quiz-auto-override summary { cursor: pointer; font-weight: 700; color: #4a5666; }
+.quiz-auto-override .quiz-self-mark-buttons { margin-top: 8px; }
+[data-theme="dark"] .quiz-auto-summary { color: #c3ccd8; }
+[data-theme="dark"] .quiz-auto-score { color: #93a1b3; }
+[data-theme="dark"] .quiz-auto-override summary { color: #c3ccd8; }
+[data-theme="dark"] .quiz-auto-badge.correct { background: rgba(84, 190, 130, 0.18); color: #8fe3b2; }
+[data-theme="dark"] .quiz-auto-badge.partial { background: rgba(240, 190, 100, 0.2); color: #f6cf85; }
+[data-theme="dark"] .quiz-auto-badge.wrong { background: rgba(240, 122, 104, 0.18); color: #ff9f8f; }
+[data-theme="dark"] .quiz-auto-point.hit { background: rgba(84, 190, 130, 0.16); color: #8fe3b2; }
+[data-theme="dark"] .quiz-auto-point.miss { background: rgba(240, 122, 104, 0.16); color: #ff9f8f; }
+
 .quiz-hint { padding: 14px 16px; border-radius: 14px; border-left: 4px solid #f0a13c; background: rgba(247, 198, 97, 0.16); }
 .quiz-hint p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.6; color: #5a4318; }
 .quiz-explain.correct { border-left-color: #2e7d4f; background: rgba(84, 160, 110, 0.12); }

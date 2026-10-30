@@ -4,7 +4,7 @@ import { formulaCategories } from '../data/formulas'
 import { ncertChapters } from '../data/ncertChapters'
 import { extractPdfText } from '../utils/pdfText'
 import { generateQuizFromText } from '../utils/quizApi'
-import { answerMatch, looksCorrect } from '../utils/answerCheck'
+import { checkSubjectiveAnswer, type SubjectiveCheck } from '../utils/answerCheck'
 import { buildDailyChallenge } from '../utils/dailyChallenge'
 import { buildPyqQuiz, buildQuiz, buildSprintQuiz, dailyPool, QUIZ_COUNTS } from '../utils/quizBuild'
 import {
@@ -157,7 +157,8 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const [answers, setAnswers] = useState<Record<string, QuizAnswerRecord>>({})
   const [draft, setDraft] = useState('')
   const [hintOpen, setHintOpen] = useState(false)
-  const [similarity, setSimilarity] = useState(0)
+  // Subjective ka auto-check result — verdict, matched/missing points ke saath.
+  const [answerCheck, setAnswerCheck] = useState<SubjectiveCheck | null>(null)
   const [reinforced, setReinforced] = useState(false)
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [now, setNow] = useState(() => Date.now())
@@ -293,7 +294,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setAnswers({})
     setDraft('')
     setHintOpen(false)
-    setSimilarity(0)
+    setAnswerCheck(null)
     setReinforced(false)
     setReviewOpen(false)
     setStartedAt(stamp)
@@ -456,18 +457,17 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
 
   const checkText = () => {
     if (!current || current.type !== 'subjective' || answers[current.id] || draft.trim().length < 2) return
-    const match = answerMatch(draft, current.modelAnswer, current.keywords)
-    setSimilarity(match)
-    const auto = looksCorrect(match)
+    const result = checkSubjectiveAnswer(draft, current.modelAnswer, current.keywords)
+    setAnswerCheck(result)
     recordAnswer({
       picked: null,
       text: draft.trim(),
-      correct: auto,
+      correct: result.correct,
       skipped: false,
       hintUsed: hintOpen,
-      partial: !auto && match >= 0.3,
+      partial: result.verdict === 'partial',
     })
-    if (!auto && reinforce(current)) setReinforced(true)
+    if (!result.correct && reinforce(current)) setReinforced(true)
   }
 
   const selfMark = (correct: boolean) => {
@@ -490,7 +490,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setIdx((value) => value + 1)
     setDraft('')
     setHintOpen(false)
-    setSimilarity(0)
+    setAnswerCheck(null)
     setReinforced(false)
   }
 
@@ -518,7 +518,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
       setIdx((value) => value + 1)
       setDraft('')
       setHintOpen(false)
-      setSimilarity(0)
+      setAnswerCheck(null)
       setReinforced(false)
     }
   }
@@ -548,7 +548,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setSavedQuiz(null)
     setDraft('')
     setHintOpen(false)
-    setSimilarity(0)
+    setAnswerCheck(null)
     setReinforced(false)
     statsDone.current = new Set(Object.keys(savedQuiz.answers))
     setPhase('asking')
@@ -693,7 +693,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           answer={currentAnswer}
           draft={draft}
           hintOpen={hintOpen}
-          similarity={similarity}
+          check={answerCheck}
           sprint={sprintLeft !== null}
           reinforced={reinforced}
           onDraft={setDraft}

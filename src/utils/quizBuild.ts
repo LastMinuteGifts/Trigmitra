@@ -31,8 +31,12 @@ function keywordsFromFormula(formula: string): string[] {
   return unique(
     formula
       .toLowerCase()
-      .replace(/[^a-z0-9\u0900-\u097f]+/g, ' ')
+      // Decimal numbers (1.414) toot na jayein, isliye dot allowed hai.
+      .replace(/[^a-z0-9.\u0900-\u097f]+/g, ' ')
       .split(' ')
+      .filter((word) => word.length > 1)
+      // "1.414" ke aage-peeche ka dot hata do.
+      .map((word) => word.replace(/^\.+|\.+$/g, ''))
       .filter((word) => word.length > 1),
   )
 }
