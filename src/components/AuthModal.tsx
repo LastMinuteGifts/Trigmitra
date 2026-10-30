@@ -7,9 +7,11 @@ interface AuthModalProps {
   onClose: () => void
   /** Class save hone par App ko turant batao (metadata listener ka wait na karo). */
   onClassSaved?: (level: number) => void
+  /** Koi feature login maang raha hai — ye wajah modal ke top par dikhao. */
+  reason?: string | null
 }
 
-export default function AuthModal({ onClose, onClassSaved }: AuthModalProps) {
+export default function AuthModal({ onClose, onClassSaved, reason }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   // Login/signup ke baad class confirm karne ka step.
   const [step, setStep] = useState<'form' | 'class'>('form')
@@ -176,7 +178,7 @@ export default function AuthModal({ onClose, onClassSaved }: AuthModalProps) {
           </>
         ) : (
           <>
-            <p className="example-label">Login karoge to tumhare solved questions save rahenge — har device par.</p>
+            <p className={reason ? 'example-label auth-reason' : 'example-label'}>{reason ?? 'Login karoge to tumhare solved questions save rahenge — har device par.'}</p>
             <div className="auth-tab-row">
               <div className="auth-tabs" role="tablist">
                 <button

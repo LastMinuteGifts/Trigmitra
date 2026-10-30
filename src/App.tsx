@@ -43,6 +43,9 @@ const navItems = [
 // Hero headline me ghumta shabd: Maths / Physics / Chemistry.
 const sciWords = ['Maths', 'Physics', 'Chemistry']
 
+// Quiz login ke bina nahi khulta — modal me ye line dikhti hai.
+const QUIZ_LOGIN_REASON = 'Quiz khelne ke liye login karo — score aur progress account me save hota hai.'
+
 // Hero badge me har class ka topic rotate hota hai.
 const classTopics = [
   'CLASS 1 · NUMBERS',
@@ -165,6 +168,10 @@ function App() {
   const [userName, setUserName] = useState<string | null>(null)
   const [userClass, setUserClass] = useState<number | null>(null)
   const [authOpen, setAuthOpen] = useState(false)
+  /** Login modal me dikhne wali wajah (jaise quiz ke liye login). */
+  const [authReason, setAuthReason] = useState<string | null>(null)
+  /** Login ke baad seedha quiz kholna hai? */
+  const pendingQuiz = useRef(false)
   const [classPromptOpen, setClassPromptOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [quizPage, setQuizPage] = useState(false)
@@ -513,6 +520,15 @@ function App() {
   useEffect(() => {
     const sync = () => {
       const hash = window.location.hash
+      // Quiz login ke baad hi khulta hai: seedha #/quiz kholne par bhi pehle login maango.
+      if (hash === '#/quiz' && !userEmail) {
+        pendingQuiz.current = true
+        setQuizPage(false)
+        history.replaceState(null, '', window.location.pathname + window.location.search)
+        setAuthReason(QUIZ_LOGIN_REASON)
+        setAuthOpen(true)
+        return
+      }
       setQuizPage(hash === '#/quiz')
       setNotesPage(hash === '#/notes')
       if (hash === '#/notes') setActiveNav('notes')
@@ -521,7 +537,7 @@ function App() {
     sync()
     window.addEventListener('hashchange', sync)
     return () => window.removeEventListener('hashchange', sync)
-  }, [])
+  }, [userEmail])
   useEffect(() => {
     if (notesPage) window.scrollTo({ top: 0, behavior: 'auto' })
   }, [notesPage])
@@ -538,8 +554,28 @@ function App() {
     }
   }
   const openQuizPage = () => {
+    if (!userEmail) {
+      pendingQuiz.current = true
+      setAuthReason(QUIZ_LOGIN_REASON)
+      setAuthOpen(true)
+      return
+    }
+    setAuthReason(null)
     window.location.hash = '#/quiz'
   }
+  const closeAuth = () => {
+    setAuthOpen(false)
+    setAuthReason(null)
+    pendingQuiz.current = false
+  }
+  // Login/signup ho gaya aur quiz ka wait tha — quiz page kholo.
+  // Modal ko khud band karne do, taaki class wala step bhi poora ho jaye.
+  useEffect(() => {
+    if (!userEmail || !pendingQuiz.current) return
+    pendingQuiz.current = false
+    setAuthReason(null)
+    window.location.hash = '#/quiz'
+  }, [userEmail])
   // Admin alag full page par: public site bilkul nahi dikhegi.
   if (adminOpen) {
     return <AdminPanel onClose={closeAdmin} />
@@ -608,7 +644,8 @@ function App() {
     )}
     {authOpen && (
       <AuthModal
-        onClose={() => setAuthOpen(false)}
+        reason={authReason}
+        onClose={closeAuth}
         onClassSaved={(level) => {
           setUserClass(level)
           setStudentClass(String(level))
@@ -625,7 +662,7 @@ function App() {
         setStudentClass(String(level))
       }}
       onClose={() => setHistoryOpen(false)}
-      onLogin={() => { setHistoryOpen(false); setAuthOpen(true) }}
+      onLogin={() => { setHistoryOpen(false); setAuthReason(null); setAuthOpen(true) }}
       onLogout={async () => { await supabase?.auth.signOut(); setUserEmail(null); setUserClass(null) }}
       onView={(sol, demo) => { setSolution(sol); setIsDemoSolution(demo); setHistoryOpen(false) }}
     />}

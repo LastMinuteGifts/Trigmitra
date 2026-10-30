@@ -1790,6 +1790,19 @@ footer p {
   font-size: 12px;
 }
 
+/* Login modal me feature ki wajah (jaise "Quiz khelne ke liye login karo"). */
+.auth-reason {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border-left: 3px solid #f05b45;
+  background: #fff4f1;
+  color: #b4472f;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
 .example-q {
   margin-top: 18px;
   padding: 16px 18px;
@@ -2097,6 +2110,12 @@ footer p {
 [data-theme="dark"] .paste-hint,
 [data-theme="dark"] .example-label {
   color: #8b98a9;
+}
+
+[data-theme="dark"] .auth-reason {
+  background: #33221f;
+  border-left-color: #f05b45;
+  color: #ffb3a3;
 }
 
 [data-theme="dark"] .choose-button {
