@@ -133,7 +133,7 @@ function scoreOf(answers: Record<string, QuizAnswerRecord>): number {
 }
 
 export function QuizRunner({ onExit, playerName: initialName, playerClass }: { onExit: () => void; playerName?: string; playerClass?: number | null }) {
-  const [phase, setPhase] = useState<'setup' | 'asking' | 'retry' | 'done'>('setup')
+  const [phase, setPhase] = useState<'setup' | 'asking' | 'done'>('setup')
   const [mode, setMode] = useState<QuizMode>('topics')
   const [quizClass, setQuizClass] = useState(playerClass ? String(playerClass) : 'All')
   const [selectedCats, setSelectedCats] = useState<string[]>([])
@@ -165,15 +165,6 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>(() => loadLeaderboard())
   const [playerName, setPlayerName] = useState(() => initialName?.trim() || loadPlayerName())
   const [reviewOpen, setReviewOpen] = useState(false)
-  // Galat sawaal dobara (end me) — inka apna chhota round, score original hi rehta hai.
-  const [retryQuestions, setRetryQuestions] = useState<QuizQuestion[]>([])
-  const [retryIdx, setRetryIdx] = useState(0)
-  const [retryAnswers, setRetryAnswers] = useState<Record<string, QuizAnswerRecord>>({})
-  const [retryDraft, setRetryDraft] = useState('')
-  const [retryHint, setRetryHint] = useState(false)
-  const [retrySimilarity, setRetrySimilarity] = useState(0)
-  const [retrySummary, setRetrySummary] = useState<{ total: number; correct: number } | null>(null)
-  const finalAnswersRef = useRef<Record<string, QuizAnswerRecord>>({})
   const statsDone = useRef<Set<string>>(new Set())
 
   const groups = useMemo<ChipGroup[]>(() => {
@@ -223,10 +214,6 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const currentAnswer = current ? answers[current.id] ?? null : null
   const score = scoreOf(answers)
   const answeredNow = countAnswered(answers)
-  // Retry round ke derived values.
-  const retryCurrent = retryQuestions[Math.min(retryIdx, Math.max(retryQuestions.length - 1, 0))]
-  const retryAnswer = retryCurrent ? retryAnswers[retryCurrent.id] ?? null : null
-  const retryScore = scoreOf(retryAnswers)
   const elapsed = Math.max(0, Math.floor((now - startedAt) / 1000))
   // Leaderboard kis class me jayega: login ki class, warna quiz setup me chuni class.
   const activeClass = playerClass ?? (quizClass === 'All' ? null : Number(quizClass))
@@ -280,14 +267,6 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setMode(nextMode)
     setSavedQuiz(null)
     setSetupError(null)
-    setRetryQuestions([])
-    setRetryIdx(0)
-    setRetryAnswers({})
-    setRetryDraft('')
-    setRetryHint(false)
-    setRetrySimilarity(0)
-    setRetrySummary(null)
-    finalAnswersRef.current = {}
     removeKey(QUIZ_PROGRESS_KEY)
     setPhase('asking')
   }
@@ -370,36 +349,6 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const finishQuiz = (extra?: Record<string, QuizAnswerRecord>) => {
     if (phase !== 'asking') return
     const finalAnswers = extra ? { ...answers, ...extra } : answers
-    finalAnswersRef.current = finalAnswers
-    // Pehle galat sawaal dobara poochho (sprint me timer ki wajah se nahi).
-    const wrong = mode === 'sprint'
-      ? []
-      : [...new Map(
-          questions
-            .filter((question) => {
-              const answer = finalAnswers[question.id]
-              return answer && !answer.skipped && !answer.correct
-            })
-            .map((question) => [question.id, question]),
-        ).values()]
-    if (wrong.length > 0) {
-      setRetryQuestions(wrong)
-      setRetryIdx(0)
-      setRetryAnswers({})
-      setRetryDraft('')
-      setRetryHint(false)
-      setRetrySimilarity(0)
-      setRetrySummary(null)
-      setReviewOpen(false)
-      setSprintLeft(null)
-      setPhase('retry')
-      return
-    }
-    completeQuiz(finalAnswers)
-  }
-
-  /** Quiz khatam — score, stats aur leaderboard original answers se. */
-  const completeQuiz = (finalAnswers: Record<string, QuizAnswerRecord>) => {
     const finalScore = scoreOf(finalAnswers)
     for (const question of questions) {
       const answer = finalAnswers[question.id]
@@ -533,54 +482,8 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     }
   }
 
-  /* ---- Dobara round: sirf galat sawaal (score isse nahi badalta) ---- */
-  const retryRecord = (record: Omit<QuizAnswerRecord, 'questionId'>) => {
-    if (!retryCurrent) return
-    setRetryAnswers((previous) => ({ ...previous, [retryCurrent.id]: { ...record, questionId: retryCurrent.id } }))
-  }
-
-  const retryPick = (optionIndex: number) => {
-    if (!retryCurrent || retryCurrent.type !== 'mcq' || retryAnswers[retryCurrent.id]) return
-    retryRecord({ picked: optionIndex, text: '', correct: optionIndex === retryCurrent.answer, skipped: false, hintUsed: retryHint })
-  }
-
-  const retryCheckText = () => {
-    if (!retryCurrent || retryCurrent.type !== 'subjective' || retryAnswers[retryCurrent.id] || retryDraft.trim().length < 2) return
-    const match = answerMatch(retryDraft, retryCurrent.modelAnswer, retryCurrent.keywords)
-    setRetrySimilarity(match)
-    const auto = looksCorrect(match)
-    retryRecord({ picked: null, text: retryDraft.trim(), correct: auto, skipped: false, hintUsed: retryHint, partial: !auto && match >= 0.3 })
-  }
-
-  const retrySelfMark = (correct: boolean) => {
-    if (!retryCurrent) return
-    const existing = retryAnswers[retryCurrent.id]
-    if (!existing) return
-    setRetryAnswers((previous) => ({ ...previous, [retryCurrent.id]: { ...existing, correct, partial: false } }))
-  }
-
-  const retrySkip = () => {
-    if (!retryCurrent || retryAnswers[retryCurrent.id]) return
-    retryRecord({ picked: null, text: '', correct: false, skipped: true, hintUsed: retryHint })
-  }
-
-  const finishRetry = () => {
-    setRetrySummary({ total: retryQuestions.length, correct: retryScore })
-    completeQuiz(finalAnswersRef.current)
-  }
-
-  const retryNext = () => {
-    if (retryIdx + 1 >= retryQuestions.length) {
-      finishRetry()
-      return
-    }
-    setRetryIdx((value) => value + 1)
-    setRetryDraft('')
-    setRetryHint(false)
-    setRetrySimilarity(0)
-  }
-
-  const toggleCat = (name: string) => {    setSetupError(null)
+  const toggleCat = (name: string) => {
+    setSetupError(null)
     setSelectedCats((previous) => {
       if (previous.includes(name)) return previous.filter((item) => item !== name)
       if (previous.length >= 3) {
@@ -627,22 +530,14 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setQuestions([])
   }
 
-  const retryWrong = () => {
-    const wrong = questions.filter((question) => {
-      const answer = answers[question.id]
-      return answer && !answer.skipped && !answer.correct
-    })
-    if (wrong.length === 0) return backToSetup()
-    begin(wrong, mode === 'sprint' || mode === 'daily' ? 'topics' : mode)
-  }
-
   const changeName = (value: string) => {
     setPlayerName(value)
     savePlayerName(value)
   }
 
   const review: ReviewItem[] = questions.map((question) => ({ question, answer: answers[question.id] ?? null }))
-  const wrongCount = review.filter((item) => item.answer && !item.answer.skipped && !item.answer.correct).length
+  // Result ka alag section: galat + skipped (ya attempt na hua) sawaal only.
+  const mistakes = review.filter((item) => !item.answer || item.answer.skipped || !item.answer.correct)
   const accuracy = answeredNow > 0 ? score / answeredNow : 0
   const atMax = selectedCats.length >= 3
 
@@ -681,15 +576,13 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     <div className="example-box quiz-box quiz-page-box">
       <div className="example-head">
         <div>
-          <span className="section-kicker">{phase === 'retry' ? 'DOBARA · GALAT SAWAAL' : `PRACTICE QUIZ · ${printMode.toUpperCase()}`}</span>
+          <span className="section-kicker">{`PRACTICE QUIZ · ${printMode.toUpperCase()}`}</span>
           <h3>
             {phase === 'setup'
               ? 'Quiz setup karo'
               : phase === 'done'
                 ? 'Result!'
-                : phase === 'retry'
-                  ? `Dobara ${Math.min(retryIdx + 1, retryQuestions.length)} / ${retryQuestions.length}`
-                  : `Question ${Math.min(idx + 1, questions.length)} / ${questions.length}`}
+                : `Question ${Math.min(idx + 1, questions.length)} / ${questions.length}`}
           </h3>
         </div>
         <button className="close-upload" aria-label="Close quiz" onClick={onExit}>
@@ -769,30 +662,6 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           onNext={goNext}
           onEnd={() => finishQuiz()}
         />
-      ) : phase === 'retry' && retryCurrent ? (
-        <QuizPlay
-          question={retryCurrent}
-          index={retryIdx}
-          total={retryQuestions.length}
-          score={retryScore}
-          best={best}
-          elapsed={formatSeconds(finalSeconds || elapsed)}
-          sprintLeft={null}
-          answer={retryAnswer}
-          draft={retryDraft}
-          hintOpen={retryHint}
-          similarity={retrySimilarity}
-          sprint={false}
-          reinforced={false}
-          onDraft={setRetryDraft}
-          onPick={retryPick}
-          onCheckText={retryCheckText}
-          onSelfMark={retrySelfMark}
-          onHint={() => setRetryHint(true)}
-          onSkip={retrySkip}
-          onNext={retryNext}
-          onEnd={finishRetry}
-        />
       ) : phase === 'done' && questions.length > 0 ? (
         <QuizResult
           score={score}
@@ -805,7 +674,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           daily={daily}
           accuracy={accuracy}
           review={review}
-          wrongCount={wrongCount}
+          mistakes={mistakes}
           reviewOpen={reviewOpen}
           weak={weak}
           leaderboard={leaderboard}
@@ -813,9 +682,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           playerClass={activeClass}
           onNameChange={changeName}
           nameLocked={!!initialName?.trim()}
-          retry={retrySummary}
           onToggleReview={() => setReviewOpen((value) => !value)}
-          onRetryWrong={retryWrong}
           onPracticeWeak={practiceWeak}
           onNewQuiz={backToSetup}
           onExit={onExit}
