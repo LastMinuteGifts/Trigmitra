@@ -103,20 +103,29 @@ footer {
 .brand-mark span { transform: rotate(4deg); }
 
 .main-nav {
-  position: absolute;
-  top: 6px;
+  position: fixed;
+  top: auto;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
   left: 50%;
+  right: auto;
   transform: translateX(-50%);
-  z-index: 25;
+  z-index: 40;
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 7px 12px;
+  gap: 4px;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
   border-radius: 999px;
-  background: #fffdf8;
+  background: rgba(255, 253, 248, 0.94);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   border: 1px solid rgba(214, 189, 130, 0.6);
-  box-shadow: 0 12px 26px rgba(29, 41, 56, 0.08);
+  box-shadow: 0 18px 44px rgba(29, 41, 56, 0.16);
 }
+
+/* Floating dock neeche ka content na dhake. */
+.app-shell footer { padding-bottom: 118px; }
 
 .main-nav a {
   position: relative;
@@ -1507,28 +1516,25 @@ footer p {
   50% { transform: scale(1.08); }
 }
 
-/* Tablets (iPad portrait/landscape): 2-column grids + neeche fixed menu bar */
+/* Tablets (iPad portrait/landscape): 2-column grids + bottom floating dock */
 @media (max-width: 1024px) {
   .main-nav {
-    position: fixed;
-    top: auto;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    left: 12px;
-    right: 12px;
-    transform: none;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: min(560px, calc(100vw - 24px));
     padding: 8px 6px 10px;
     gap: 0;
     border-radius: 999px;
-    background: #fffdf8;
+    background: rgba(255, 253, 248, 0.94);
     border: 1px solid rgba(214, 189, 130, 0.6);
-    box-shadow: 0 -12px 30px rgba(29, 41, 56, 0.14);
+    box-shadow: 0 16px 38px rgba(29, 41, 56, 0.16);
   }
   .main-nav a {
     flex: 1;
     min-width: 0;
     padding: 7px 2px 11px;
   }
-  .app-shell { padding-bottom: 0; }
   .app-shell footer { padding-bottom: 112px; }
   .steps-grid,
   .identity-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1891,7 +1897,7 @@ footer p {
 }
 
 [data-theme="dark"] .main-nav {
-  background: #141c28;
+  background: rgba(20, 28, 40, 0.94);
   border-color: rgba(255, 255, 255, 0.12);
 }
 
