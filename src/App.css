@@ -3012,6 +3012,9 @@ footer p {
 
 .quiz-result-stats { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .quiz-result-stats span { padding: 6px 12px; border-radius: 999px; background: rgba(29, 41, 56, 0.05); font-size: 12px; font-weight: 600; color: #4a5666; }
+/* Dobara round ka summary (result par). */
+.quiz-retry-note { margin: 4px 0 0; padding: 9px 14px; border-radius: 12px; background: rgba(240, 161, 60, 0.14); border: 1px solid rgba(240, 161, 60, 0.4); color: #8a5320; font-size: 12.5px; font-weight: 600; text-align: center; }
+[data-theme="dark"] .quiz-retry-note { background: rgba(240, 161, 60, 0.16); border-color: rgba(240, 161, 60, 0.42); color: #f6c47a; }
 .quiz-weak { display: grid; gap: 10px; justify-items: center; padding: 14px 16px; border-radius: 16px; border: 1px dashed rgba(240, 91, 69, 0.4); background: rgba(240, 91, 69, 0.05); }
 .quiz-weak-list { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
 .quiz-weak-chip { padding: 5px 11px; border-radius: 999px; background: #fff; border: 1px solid rgba(29, 41, 56, 0.12); font-size: 12px; font-weight: 600; }
@@ -3021,8 +3024,7 @@ footer p {
 .quiz-leaderboard-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .quiz-leaderboard-head .section-kicker { display: inline-flex; align-items: center; gap: 5px; }
 .quiz-leaderboard-controls { display: inline-flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.quiz-name-field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: #6b7785; }
-.quiz-name-field input { width: 110px; padding: 6px 9px; border-radius: 9px; border: 1px solid rgba(29, 41, 56, 0.16); font: inherit; font-size: 12px; color: #1a2433; background: #fff; }
+.quiz-name-field { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; color: #6b7785; }.quiz-name-field input { width: 110px; padding: 6px 9px; border-radius: 9px; border: 1px solid rgba(29, 41, 56, 0.16); font: inherit; font-size: 12px; color: #1a2433; background: #fff; }
 .quiz-name-field select { padding: 6px 9px; border-radius: 9px; border: 1px solid rgba(29, 41, 56, 0.16); font: inherit; font-size: 12px; font-weight: 400; color: #1a2433; background: #fff; }
 .quiz-leaderboard-list { display: grid; gap: 4px; margin: 10px 0 0; padding: 0; list-style: none; }
 .quiz-leaderboard-list li { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 9px; font-size: 12.5px; }

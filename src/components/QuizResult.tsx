@@ -31,6 +31,8 @@ interface QuizResultProps {
   onNameChange: (name: string) => void
   /** Naam login account se aa raha hai — to result par naam badalne ka option nahi. */
   nameLocked?: boolean
+  /** Dobara (galat sawaal) round ka summary — score isse nahi badalta. */
+  retry?: { total: number; correct: number } | null
   onToggleReview: () => void
   onRetryWrong: () => void
   onPracticeWeak: () => void
@@ -70,6 +72,7 @@ export function QuizResult({
   playerClass,
   onNameChange,
   nameLocked,
+  retry,
   onToggleReview,
   onRetryWrong,
   onPracticeWeak,
@@ -105,6 +108,13 @@ export function QuizResult({
         {attempted} of {total} attempted · {total - attempted} chhoot gaye
         {mode === 'daily' ? ` · Daily challenge best: ${daily.best}` : ''}
       </p>
+
+      {retry && retry.total > 0 && (
+        <p className="quiz-retry-note">
+          🔁 Galat sawaal dobara: <b>{retry.correct}/{retry.total}</b> sahi
+          {retry.correct === retry.total ? ' — ab sab clear!' : ' — review me explanation dekho.'}
+        </p>
+      )}
 
       {weak.length > 0 && (
         <div className="quiz-weak">
