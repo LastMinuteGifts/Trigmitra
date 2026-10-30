@@ -234,6 +234,12 @@ export function QuizSetup({
         ))}
       </div>
 
+      {mode !== 'sprint' && (
+        <p className="quiz-timer-note">
+          ⏱ Har sawaal ka apna timer: <b>MCQ 30 second</b> · <b>Subjective 3 minute</b> — time khatam to sawaal chhoot jayega.
+        </p>
+      )}
+
       {showTopics && (
         <>
           <div className="quiz-topics-head">

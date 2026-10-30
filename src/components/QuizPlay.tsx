@@ -10,6 +10,8 @@ interface QuizPlayProps {
   best: number
   elapsed: string
   sprintLeft: number | null
+  /** Is sawaal ka bacha hua time (seconds) — sprint me null. */
+  questionLeft: number | null
   answer: QuizAnswerRecord | null
   draft: string
   hintOpen: boolean
@@ -36,6 +38,7 @@ export function QuizPlay({
   best,
   elapsed,
   sprintLeft,
+  questionLeft,
   answer,
   draft,
   hintOpen,
@@ -55,6 +58,11 @@ export function QuizPlay({
   const progress = total > 0 ? Math.round((Math.min(index, total) / total) * 100) : 0
   const isSubjective = question.type === 'subjective'
   const showExplanation = !sprint && (answered || (answer?.skipped ?? false))
+  const questionDanger = questionLeft !== null && questionLeft <= (isSubjective ? 15 : 5)
+  const questionClock =
+    questionLeft === null
+      ? ''
+      : `${Math.floor(questionLeft / 60)}:${String(questionLeft % 60).padStart(2, '0')}`
 
   return (
     <>
@@ -69,7 +77,18 @@ export function QuizPlay({
           {question.sub}
         </span>
         <span>
-          {sprintLeft !== null ? <b className={sprintLeft <= 10 ? 'quiz-timer danger' : 'quiz-timer'}>⏱ {sprintLeft}s</b> : <b className="quiz-timer">⏱ {elapsed}</b>}
+          {questionLeft !== null ? (
+            <b
+              className={questionDanger ? 'quiz-timer danger' : 'quiz-timer'}
+              title={isSubjective ? 'Is sawaal ke liye 3 minute' : 'Is sawaal ke liye 30 second'}
+            >
+              ⏱ {questionClock}
+            </b>
+          ) : sprintLeft !== null ? (
+            <b className={sprintLeft <= 10 ? 'quiz-timer danger' : 'quiz-timer'}>⏱ {sprintLeft}s</b>
+          ) : (
+            <b className="quiz-timer">⏱ {elapsed}</b>
+          )}
           {' '}Score: {score} · Best: {best}
         </span>
         <button type="button" className="text-button end-quiz-btn" onClick={onEnd}>

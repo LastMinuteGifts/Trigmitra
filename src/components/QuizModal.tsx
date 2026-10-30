@@ -42,6 +42,10 @@ import QuizSetup, { type ChipGroup } from './QuizSetup'
 export type { QuizExplain, QuizQuestion } from '../types/quiz'
 export { buildQuiz, QUIZ_COUNTS }
 
+// Har sawaal ka time limit — MCQ 30 second, subjective 3 minute.
+const MCQ_SECONDS = 30
+const SUBJECTIVE_SECONDS = 180
+
 interface SavedQuiz {
   questions: QuizQuestion[]
   idx: number
@@ -158,6 +162,8 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [now, setNow] = useState(() => Date.now())
   const [sprintLeft, setSprintLeft] = useState<number | null>(null)
+  // Har sawaal ka apna countdown — MCQ 30s, subjective 3 min (sprint me nahi).
+  const [questionLeft, setQuestionLeft] = useState<number | null>(null)
   const [finalSeconds, setFinalSeconds] = useState(0)
   const [savedQuiz, setSavedQuiz] = useState<SavedQuiz | null>(() => loadSavedQuiz())
   const [best, setBest] = useState(() => loadBest())
@@ -237,6 +243,31 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     }
     setSprintLeft(Math.max(0, 60 - elapsed))
   }, [phase, mode, elapsed])
+
+  // Har naye sawaal par timer reset: MCQ 30s, subjective 180s.
+  useEffect(() => {
+    if (phase !== 'asking' || mode === 'sprint' || !current) {
+      setQuestionLeft(null)
+      return
+    }
+    setQuestionLeft(current.type === 'mcq' ? MCQ_SECONDS : SUBJECTIVE_SECONDS)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, idx, mode])
+
+  // Countdown — sirf jab tak jawab nahi diya. 0 hote hi sawaal chhoot jata hai.
+  const timerQuestionRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (phase !== 'asking' || questionLeft === null || currentAnswer || !current) return
+    if (questionLeft > 0) {
+      timerQuestionRef.current = current.id
+      const timer = window.setTimeout(() => setQuestionLeft((value) => (value === null ? null : Math.max(0, value - 1))), 1000)
+      return () => window.clearTimeout(timer)
+    }
+    // Sirf usi sawaal ka timeout lo jiska timer chalu tha (naya sawaal galti se na chhoote).
+    if (timerQuestionRef.current !== current.id) return
+    skip()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, questionLeft, currentAnswer, current])
 
   // Khelte waqt progress save — sprint chhod ke (timer wala quiz resume nahi hota).
   useEffect(() => {
@@ -658,6 +689,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           best={best}
           elapsed={formatSeconds(elapsed)}
           sprintLeft={sprintLeft}
+          questionLeft={questionLeft}
           answer={currentAnswer}
           draft={draft}
           hintOpen={hintOpen}
