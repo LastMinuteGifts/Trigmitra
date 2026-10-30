@@ -43,8 +43,10 @@ const navItems = [
 // Hero headline me ghumta shabd: Maths / Physics / Chemistry.
 const sciWords = ['Maths', 'Physics', 'Chemistry']
 
-// Quiz login ke bina nahi khulta — modal me ye line dikhti hai.
+// Feature kholne se pehle login — modal me wajah dikhti hai.
 const QUIZ_LOGIN_REASON = 'Quiz khelne ke liye login karo — score aur progress account me save hota hai.'
+const REVISE_LOGIN_REASON = 'Notes padhne ke liye login karo — chapters tumhari class ke hisaab se milenge.'
+const SOLVE_LOGIN_REASON = 'Sawaal solve karne ke liye login karo — photo aur solution account me save rahega.'
 
 // Hero badge me har class ka topic rotate hota hai.
 const classTopics = [
@@ -170,8 +172,8 @@ function App() {
   const [authOpen, setAuthOpen] = useState(false)
   /** Login modal me dikhne wali wajah (jaise quiz ke liye login). */
   const [authReason, setAuthReason] = useState<string | null>(null)
-  /** Login ke baad seedha quiz kholna hai? */
-  const pendingQuiz = useRef(false)
+  /** Login ke baad kya kholna tha (quiz, notes, uploader). */
+  const pendingAfterLogin = useRef<(() => void) | null>(null)
   const [classPromptOpen, setClassPromptOpen] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [quizPage, setQuizPage] = useState(false)
@@ -364,10 +366,10 @@ function App() {
       setUploadError('Clipboard read nahi ho paya. Image copy karke modal me Ctrl+V dabao.')
     }
   }
-  const openUploader = () => {
+  const openUploader = () => requireLogin(SOLVE_LOGIN_REASON, () => {
     setUploadOpen(true)
     setUploadError(null)
-  }
+  })
   const handleFile = (file: File) => {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setUploadError('Sirf JPG, PNG ya WEBP image upload karo.')
@@ -520,12 +522,14 @@ function App() {
   useEffect(() => {
     const sync = () => {
       const hash = window.location.hash
-      // Quiz login ke baad hi khulta hai: seedha #/quiz kholne par bhi pehle login maango.
-      if (hash === '#/quiz' && !userEmail) {
-        pendingQuiz.current = true
+      // Login ke bina ye pages nahi khulte: seedha #/quiz ya #/notes kholne par bhi pehle login.
+      const gateReason = hash === '#/quiz' ? QUIZ_LOGIN_REASON : hash === '#/notes' ? REVISE_LOGIN_REASON : null
+      if (gateReason && !userEmail) {
+        pendingAfterLogin.current = () => { window.location.hash = hash }
         setQuizPage(false)
+        setNotesPage(false)
         history.replaceState(null, '', window.location.pathname + window.location.search)
-        setAuthReason(QUIZ_LOGIN_REASON)
+        setAuthReason(gateReason)
         setAuthOpen(true)
         return
       }
@@ -553,28 +557,33 @@ function App() {
       history.replaceState(null, '', window.location.pathname + window.location.search)
     }
   }
-  const openQuizPage = () => {
+  /** Login zaroori hai to modal kholo, warna seedha action chalao. */
+  const requireLogin = (reason: string, action: () => void) => {
     if (!userEmail) {
-      pendingQuiz.current = true
-      setAuthReason(QUIZ_LOGIN_REASON)
+      pendingAfterLogin.current = action
+      setAuthReason(reason)
       setAuthOpen(true)
       return
     }
     setAuthReason(null)
-    window.location.hash = '#/quiz'
+    action()
   }
+  const openQuizPage = () => requireLogin(QUIZ_LOGIN_REASON, () => { window.location.hash = '#/quiz' })
+  const openNotesPage = () => requireLogin(REVISE_LOGIN_REASON, () => { window.location.hash = '#/notes' })
   const closeAuth = () => {
     setAuthOpen(false)
     setAuthReason(null)
-    pendingQuiz.current = false
+    pendingAfterLogin.current = null
   }
-  // Login/signup ho gaya aur quiz ka wait tha — quiz page kholo.
+  // Login/signup ho gaya aur koi feature wait kar raha tha — wahi kholo.
   // Modal ko khud band karne do, taaki class wala step bhi poora ho jaye.
   useEffect(() => {
-    if (!userEmail || !pendingQuiz.current) return
-    pendingQuiz.current = false
+    if (!userEmail) return
+    const action = pendingAfterLogin.current
+    if (!action) return
+    pendingAfterLogin.current = null
     setAuthReason(null)
-    window.location.hash = '#/quiz'
+    action()
   }, [userEmail])
   // Admin alag full page par: public site bilkul nahi dikhegi.
   if (adminOpen) {
@@ -598,7 +607,7 @@ function App() {
       <section className="section-block how-section" id="how-it-works"><div className="section-heading"><div><span className="section-kicker">THE ANKNAWAB METHOD</span><h2>From stuck to<br /><em>sorted.</em></h2></div><p>Three simple steps between you<br />and that “ohhh, samajh gaya!” moment.</p></div><div className="steps-grid">{steps.map((step, index) => { const Icon = step.icon; return <motion.article className="step-card" key={step.number} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * .08 }}><div className="step-top"><span className="step-number">{step.number}</span><div className="step-icon"><Icon size={20} /></div></div><h3>{step.title}</h3><p>{step.copy}</p><ChevronRight className="step-arrow" size={18} /></motion.article> })}</div></section>
       <section className="section-block subjects-section" id="subjects"><div className="section-heading"><div><span className="section-kicker">MATHS + SCIENCE</span><h2>Three subjects.<br /><em>One Nawab.</em></h2></div><p>Photo bhejo — solve pao.<br />Teeno me expert.</p></div><div className="steps-grid"><motion.article className="step-card" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}><div className="step-top"><span className="step-number">M</span><div className="step-icon"><BookOpen size={20} /></div></div><h3>Mathematics · Class 1–10</h3><p>Arithmetic, Algebra, Geometry, Trig — 160+ formulas ke saath step-by-step.</p><div className="subject-tags"><span>Algebra</span><span>Geometry</span><span>Trig</span></div></motion.article><motion.article className="step-card" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.08 }}><div className="step-top"><span className="step-number">P</span><div className="step-icon"><Atom size={20} /></div></div><h3>Physics · Class 6–10</h3><p>Motion, Force, Light, Electricity ke numericals — kahani samjho, phir solve.</p><div className="subject-tags"><span>Motion</span><span>Light</span><span>Current</span></div></motion.article><motion.article className="step-card" initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.16 }}><div className="step-top"><span className="step-number">C</span><div className="step-icon"><FlaskConical size={20} /></div></div><h3>Chemistry · Class 6–10</h3><p>Mole concept, gas laws, acids-bases aur reactions — numericals aur balancing.</p><div className="subject-tags"><span>Mole</span><span>Gas Laws</span><span>Reactions</span></div></motion.article></div></section>
       <section className="section-block identities-section" id="identities"><div className="section-heading"><div><span className="section-kicker">QUICK REFERENCE</span><h2>Formulas worth<br /><em>knowing.</em></h2></div><button className="outline-button" type="button" onClick={() => setShowAllIdentities((value) => !value)}>{showAllIdentities ? 'Hide formulas' : 'View all formulas'} <ArrowRight size={16} /></button></div><div className="chip-groups formula-chips"><div className="chip-group"><div className="cat-chips" aria-label="Formula categories">{['All'].map((name) => <button key={name} type="button" aria-pressed={activeCategory === name} className={activeCategory === name ? 'cat-chip active' : 'cat-chip'} onClick={() => setActiveCategory(name)}>{name}</button>)}</div></div>{formulaSubjectGroups.map((group) => <div className="chip-group" key={group.subject}><span className="chip-group-head">{group.subject} <i>{group.categories.reduce((count, category) => count + category.formulas.length, 0)}</i></span><div className="cat-chips">{group.categories.map((category) => <button key={category.name} type="button" aria-pressed={activeCategory === category.name} className={activeCategory === category.name ? 'cat-chip active' : 'cat-chip'} onClick={() => setActiveCategory(category.name)}>{category.name}</button>)}</div></div>)}</div>{activeCategory === 'All' && !showAllIdentities ? <div className="identity-grid">{featuredFormulas.map((identity) => <article className={`identity-card ${identity.tone}`} key={identity.formula} onClick={() => openExample(identity.formula, identity.label)}><div className="identity-icon"><FileText size={18} /></div><span>{identity.label}</span><h3>{identity.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${identity.label}`}><CircleHelp size={16} /></button></article>)}</div> : <div className="all-identities-panel">{formulaSubjectGroups.map((group) => { const cats = group.categories.filter((c) => activeCategory === 'All' || c.name === activeCategory); if (cats.length === 0) return null; return <div className="formula-subject-group" key={group.subject}><div className="formula-subject-head"><span className="section-kicker">{group.subject.toUpperCase()}</span><span className="formula-subject-count">{cats.reduce((count, category) => count + category.formulas.length, 0)} formulas</span></div>{cats.map((cat, gi) => <div key={cat.name}><div className="all-identities-header"><h3>{cat.name} formulas</h3></div><div className="identity-grid full-grid">{cat.formulas.map((entry, fi) => { const tone = tones[(gi + fi) % tones.length]; return <article className={`identity-card ${tone}`} key={`${cat.name}-${entry.formula}`} onClick={() => openExample(entry.formula, entry.label)}><div className="identity-icon"><FileText size={18} /></div><span>{entry.label}</span><h3>{entry.formula}</h3><p>Keep handy while solving.</p><button aria-label={`Learn about ${entry.label}`}><CircleHelp size={16} /></button></article> })}</div></div>)}</div>})}</div>}</section>
-      <section className="notes-band" id="notes"><div><span className="section-kicker">REVISE SMARTER</span><h2>Chapter notes,<br /><em>ek nazar me.</em></h2></div><div className="practice-cta"><p>Class 6–10 ke chapters ka quick summary, key points aur formulas — revision se pehle do minute ka look.</p><button className="quiz-button" type="button" onClick={() => { window.location.hash = '#/notes' }}><BookOpen size={17} /> Revise chapter</button></div></section>
+      <section className="notes-band" id="notes"><div><span className="section-kicker">REVISE SMARTER</span><h2>Chapter notes,<br /><em>ek nazar me.</em></h2></div><div className="practice-cta"><p>Class 6–10 ke chapters ka quick summary, key points aur formulas — revision se pehle do minute ka look.</p><button className="quiz-button" type="button" onClick={openNotesPage}><BookOpen size={17} /> Revise chapter</button></div></section>
       <section className="quiz-band" id="quiz"><div><span className="section-kicker">TEST YOURSELF</span><h2>Quiz khelo,<br /><em>topper bano.</em></h2></div><div className="practice-cta"><p>MCQ + subjective sawaal, board PYQ, hints, daily challenge aur weak-topic practice — sab ek jagah. Har jawab ke baad turant explanation.</p><button className="quiz-button" onClick={openQuizPage}>Take a Quiz <ArrowRight size={17} /></button></div></section>
       <section className="practice-band" id="practice"><div><span className="section-kicker">READY WHEN YOU ARE</span><h2>One question can<br /><em>change everything.</em></h2></div><div className="practice-cta"><p>Bring your toughest maths, physics or chemistry problem, Class 1 to 10. We’ll bring the patience.</p><button className="quiz-button" onClick={openUploader}>Start solving <ArrowRight size={17} /></button></div></section>
     </>}</main>
