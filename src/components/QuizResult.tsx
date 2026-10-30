@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Award, RotateCcw, Trophy } from 'lucide-react'
-import type { QuizAnswerRecord, QuizQuestion } from '../types/quiz'
+import type { QuizReviewItem } from '../types/quiz'
 import type { DailyState, LeaderEntry, StreakState, WeakTopic } from '../utils/quizStore'
 import { filterLeaderboard, formatSeconds, leaderboardScope } from '../utils/quizStore'
 import { CLASS_LEVELS } from '../utils/studentClass'
+import { MistakesSection, ReviewItemCard } from './MistakesSection'
 
-export interface ReviewItem {
-  question: QuizQuestion
-  answer: QuizAnswerRecord | null
-}
+export type ReviewItem = QuizReviewItem
 
 interface QuizResultProps {
   score: number
@@ -46,12 +44,6 @@ function message(accuracy: number): string {
   return 'Koi baat nahi — hints aur explanations padho, phir dobara try karo.'
 }
 
-function isCorrectLabel(answer: QuizAnswerRecord | null): string {
-  if (!answer) return 'Attempt nahi hua'
-  if (answer.skipped) return 'Skip kiya'
-  return answer.correct ? 'Sahi' : 'Galat'
-}
-
 export function QuizResult({
   score,
   attempted,
@@ -77,10 +69,6 @@ export function QuizResult({
   onExit,
 }: QuizResultProps) {
   const overall = total > 0 ? score / total : 0
-  // Galat + skipped sawaalon ka section default khula rehta hai.
-  const [mistakesOpen, setMistakesOpen] = useState(true)
-  const wrongTotal = mistakes.filter((item) => item.answer && !item.answer.skipped && !item.answer.correct).length
-  const missedTotal = mistakes.length - wrongTotal
   // Leaderboard class-wise: default user ki apni class, chaho to "All classes".
   const [boardClass, setBoardClass] = useState<number | null>(playerClass)
   // Account me class badli to leaderboard bhi usi class ka dikhe.
@@ -90,51 +78,6 @@ export function QuizResult({
   const board = filterLeaderboard(leaderboard, boardClass)
   // Sirf sabse recent matching entry highlight karo (same score wale purane na ho).
   const meIndex = board.findLastIndex((entry) => entry.name === playerName && entry.score === score)
-
-  // Ek sawaal ka full review card — mistakes section aur full review dono me same.
-  const renderReviewItem = ({ question, answer }: ReviewItem, index: number) => (
-    <div className="quiz-review-item" key={question.id}>
-      <div className="quiz-review-head">
-        <span className="section-kicker">Q{index + 1} · {question.sub}</span>
-        <span
-          className={
-            answer?.correct ? 'quiz-review-badge correct' : answer?.skipped ? 'quiz-review-badge skipped' : 'quiz-review-badge wrong'
-          }
-        >
-          {isCorrectLabel(answer)}
-        </span>
-      </div>
-      <p className="quiz-review-prompt">{question.prompt}</p>
-      {question.type === 'subjective' ? (
-        <>
-          <p className="quiz-review-answer"><b>Tumhara jawab:</b> {answer?.text || '—'}</p>
-          <p className="quiz-review-answer"><b>Model answer:</b> {question.modelAnswer ?? question.formula ?? '—'}</p>
-        </>
-      ) : (
-        <>
-          <p className="quiz-review-answer">
-            <b>Tumhara jawab:</b>{' '}
-            {answer?.picked != null ? question.options[answer.picked] : '—'}
-          </p>
-          <p className="quiz-review-answer correct">
-            <b>Sahi jawab:</b> {question.options[question.answer]}
-          </p>
-        </>
-      )}
-      {question.explain && (
-        <details className="quiz-review-explain">
-          <summary>Explanation dekho</summary>
-          <p>{question.explain.q}</p>
-          <ol className="example-steps">
-            {question.explain.steps.map((step, stepIndex) => (
-              <li key={stepIndex}>{step}</li>
-            ))}
-          </ol>
-        </details>
-      )}
-      {answer?.hintUsed && <span className="example-label">Hint use hua</span>}
-    </div>
-  )
 
   return (
     <div className="quiz-result">
@@ -155,23 +98,7 @@ export function QuizResult({
         {mode === 'daily' ? ` · Daily challenge best: ${daily.best}` : ''}
       </p>
 
-      {mistakes.length > 0 && (
-        <div className="quiz-mistakes">
-          <div className="quiz-mistakes-head">
-            <span className="section-kicker">❌ GALAT & CHHOOTE SAWAAL · {mistakes.length}</span>
-            <button type="button" className="text-button quiz-mistakes-toggle" onClick={() => setMistakesOpen((value) => !value)}>
-              {mistakesOpen ? 'Band karo' : 'Dekho'}
-            </button>
-          </div>
-          <p className="quiz-mistakes-sub">
-            {wrongTotal > 0 ? `${wrongTotal} galat` : ''}
-            {wrongTotal > 0 && missedTotal > 0 ? ' · ' : ''}
-            {missedTotal > 0 ? `${missedTotal} skip/chhoote` : ''}
-            {' — '}yahan se sahi jawab aur explanation padho.
-          </p>
-          {mistakesOpen && <div className="quiz-mistakes-list">{mistakes.map(renderReviewItem)}</div>}
-        </div>
-      )}
+      <MistakesSection items={mistakes} />
 
       {weak.length > 0 && (
         <div className="quiz-weak">
@@ -269,7 +196,9 @@ export function QuizResult({
 
       {reviewOpen && (
         <div className="quiz-review">
-          {review.map(renderReviewItem)}
+          {review.map((item, index) => (
+            <ReviewItemCard key={item.question.id} {...item} index={index} />
+          ))}
         </div>
       )}
     </div>

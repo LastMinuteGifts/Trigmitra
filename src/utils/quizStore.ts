@@ -1,7 +1,7 @@
 // Quiz ki local memory — best score, adhura quiz, topic-wise accuracy, streak,
 // daily challenge, attempts aur leaderboard. Sab localStorage me, try/catch ke saath.
 
-import type { QuizDifficulty } from '../types/quiz'
+import type { QuizDifficulty, QuizReviewItem } from '../types/quiz'
 
 export const QUIZ_BEST_KEY = 'anknawab_quiz_best'
 export const QUIZ_PROGRESS_KEY = 'anknawab_quiz_progress'
@@ -11,6 +11,7 @@ export const QUIZ_STREAK_KEY = 'anknawab_quiz_streak'
 export const QUIZ_DAILY_KEY = 'anknawab_quiz_daily'
 export const QUIZ_LEADER_KEY = 'anknawab_quiz_leaderboard'
 export const QUIZ_NAME_KEY = 'anknawab_quiz_name'
+export const QUIZ_MISTAKES_KEY = 'anknawab_quiz_mistakes'
 
 export interface TopicStat {
   correct: number
@@ -275,6 +276,27 @@ export function savePlayerName(name: string): string {
     }
   }
   return clean
+}
+
+const MAX_MISTAKES = 40
+
+/** Pichhle quiz ke galat + chhoote sawaal (setup page par dikhane ke liye). */
+export function loadMistakes(): QuizReviewItem[] {
+  const list = readJSON<QuizReviewItem[]>(QUIZ_MISTAKES_KEY, [])
+  if (!Array.isArray(list)) return []
+  return list.filter(
+    (item) =>
+      item &&
+      item.question &&
+      typeof item.question.id === 'string' &&
+      typeof item.question.prompt === 'string' &&
+      Array.isArray(item.question.options) &&
+      (item.answer == null || typeof item.answer === 'object'),
+  )
+}
+
+export function saveMistakes(items: QuizReviewItem[]): void {
+  writeJSON(QUIZ_MISTAKES_KEY, items.slice(0, MAX_MISTAKES))
 }
 
 export function formatSeconds(total: number): string {

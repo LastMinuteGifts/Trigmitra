@@ -15,6 +15,7 @@ import {
   formatSeconds,
   loadDaily,
   loadLeaderboard,
+  loadMistakes,
   loadPlayerName,
   loadStats,
   loadStreak,
@@ -22,6 +23,7 @@ import {
   recordTopicAnswer,
   removeKey,
   saveDaily,
+  saveMistakes,
   savePlayerName,
   todayKey,
   touchStreak,
@@ -32,7 +34,7 @@ import {
   type QuizStats,
   type StreakState,
 } from '../utils/quizStore'
-import type { DifficultyFilter, QuizAnswerRecord, QuizMode, QuizQuestion, QuizTypeFilter } from '../types/quiz'
+import type { DifficultyFilter, QuizAnswerRecord, QuizMode, QuizQuestion, QuizReviewItem, QuizTypeFilter } from '../types/quiz'
 import QuizPlay from './QuizPlay'
 import QuizResult, { type ReviewItem } from './QuizResult'
 import QuizSetup, { type ChipGroup } from './QuizSetup'
@@ -165,6 +167,8 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>(() => loadLeaderboard())
   const [playerName, setPlayerName] = useState(() => initialName?.trim() || loadPlayerName())
   const [reviewOpen, setReviewOpen] = useState(false)
+  // Pichhle quiz ke galat + chhoote sawaal — setup page par bhi dikhte hain.
+  const [lastMistakes, setLastMistakes] = useState<QuizReviewItem[]>(() => loadMistakes())
   const statsDone = useRef<Set<string>>(new Set())
 
   const groups = useMemo<ChipGroup[]>(() => {
@@ -366,6 +370,12 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     addAttempt({ at: new Date().toISOString(), score: finalScore, total: questions.length, topics, mode, seconds, difficulty })
     if (mode === 'daily') setDaily(saveDaily(finalScore, questions.length, day))
     setLeaderboard(addLeaderEntry({ name: (playerName || 'Guest').slice(0, 18), score: finalScore, total: questions.length, day, mode, classNum: activeClass }))
+    // Agla setup page bhi yahi galtiyan dikhaye.
+    const missed = questions
+      .map((question) => ({ question, answer: finalAnswers[question.id] ?? null }))
+      .filter((item) => !item.answer || item.answer.skipped || !item.answer.correct)
+    setLastMistakes(missed)
+    saveMistakes(missed)
     removeKey(QUIZ_PROGRESS_KEY)
     setReviewOpen(false)
     setSprintLeft(null)
@@ -623,6 +633,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           onStart={startQuiz}
           onStartDaily={startDaily}
           onPracticeWeak={practiceWeak}
+          mistakes={lastMistakes}
           streak={streak.count}
           daily={daily}
           dailyPoolSize={pool.length}

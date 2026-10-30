@@ -1,7 +1,8 @@
 import type { ChangeEvent, RefObject } from 'react'
 import { CalendarDays, Check, FileText, Flame, GraduationCap, Search, Target, Trophy, Upload, UserRound, Zap } from 'lucide-react'
-import type { DifficultyFilter, QuizMode, QuizTypeFilter } from '../types/quiz'
+import type { QuizReviewItem, DifficultyFilter, QuizMode, QuizTypeFilter } from '../types/quiz'
 import type { DailyState, QuizStats, WeakTopic } from '../utils/quizStore'
+import { MistakesSection } from './MistakesSection'
 
 export interface ChipOption {
   key: string
@@ -50,6 +51,8 @@ interface QuizSetupProps {
   best: number
   stats: QuizStats
   weak: WeakTopic[]
+  /** Pichhle quiz ke galat + skip/chhoote sawaal (setup par bhi dikhte hain). */
+  mistakes: QuizReviewItem[]
   playerName: string
   onName: (value: string) => void
   /** Login account ki class (agar hai to select ki zaroorat nahi). */
@@ -102,6 +105,7 @@ export function QuizSetup({
   best,
   stats,
   weak,
+  mistakes,
   playerName,
   onName,
   accountClass,
@@ -142,6 +146,9 @@ export function QuizSetup({
         </span>
         <span className="quiz-stat"><Zap size={14} /> {stats.total} sawaal practice</span>
       </div>
+
+      {/* Pichhle quiz ke galat + chhoote sawaal — yahin se turant review. */}
+      <MistakesSection items={mistakes} defaultOpen={false} />
 
       {SHOW_DAILY_CHALLENGE && (
         <div className="quiz-daily-card">

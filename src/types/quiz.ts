@@ -55,3 +55,9 @@ export interface QuizAnswerRecord {
   /** Subjective ka aadha-adhoor jawab (auto-check se pata chala). */
   partial?: boolean
 }
+
+/** Review / "galat & chhoote sawaal" section ka ek item. */
+export interface QuizReviewItem {
+  question: QuizQuestion
+  answer: QuizAnswerRecord | null
+}
