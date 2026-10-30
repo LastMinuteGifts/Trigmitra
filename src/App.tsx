@@ -267,12 +267,18 @@ function App() {
       // kuch aur select nahi kiya hai).
       if (level) setStudentClass((current) => current || String(level))
     }
+    // Signup me display_name, Google login me full_name aata hai.
+    const nameFrom = (u: { user_metadata?: Record<string, unknown> } | undefined) => {
+      const meta = u?.user_metadata ?? {}
+      const name = (meta.display_name as string | undefined) || (meta.full_name as string | undefined) || ''
+      return name || null
+    }
     supabase.auth.getSession().then(({ data }) => {
       const u = data.session?.user
       const level = classFromUser(u)
       applySession(
         u?.email ?? null,
-        (u?.user_metadata?.display_name as string | undefined) ?? null,
+        nameFrom(u),
         level,
       )
       // Pehle se logged-in user jiski class set nahi — site khulte hi poochho.
@@ -282,7 +288,7 @@ function App() {
       const u = session?.user
       applySession(
         u?.email ?? null,
-        (u?.user_metadata?.display_name as string | undefined) ?? null,
+        nameFrom(u),
         classFromUser(u),
       )
       if (event === 'SIGNED_OUT') setClassPromptOpen(false)
@@ -599,7 +605,7 @@ function App() {
       <div className="header-actions"><button className="icon-button theme-toggle" aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'} onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}>{theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}</button><button className="history-button" onClick={() => setHistoryOpen(true)}><History size={16} /> Track progress</button>{userEmail ? <button className="user-chip" title={userName ?? userEmail} onClick={() => setHistoryOpen(true)}>{(userName?.[0] ?? userEmail[0]).toUpperCase()}</button> : <button className="user-chip login-chip" onClick={() => setAuthOpen(true)}>Login</button>}</div>
     </header>
     <nav className="main-nav" aria-label="Main navigation">{navItems.map((item) => { const Icon = item.icon; const navClass = [item.cta ? 'nav-cta' : '', activeNav === item.id ? 'active' : ''].filter(Boolean).join(' '); return <a key={item.id} className={navClass || undefined} href={`#${item.id}`} onClick={() => setActiveNav(item.id)}><Icon size={20} aria-hidden="true" /><span>{item.label}</span></a> })}</nav>
-    <main id="top">{quizPage ? <QuizPage onExit={closeQuizPage} playerName={userName ?? undefined} playerClass={userClass} /> : notesPage ? <NotesPage onBack={closeNotesPage} /> : <>
+    <main id="top">{quizPage ? <QuizPage onExit={closeQuizPage} playerName={userName ?? userEmail?.split('@')[0]} playerClass={userClass} /> : notesPage ? <NotesPage onBack={closeNotesPage} /> : <>
       <section className="hero-section"><div className="hero-copy"><motion.div className="eyebrow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}><span className="eyebrow-dot" /><AnimatePresence mode="wait"><motion.span key={topicIdx} className="eyebrow-text" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.35 }}>{classTopics[topicIdx]}</motion.span></AnimatePresence></motion.div><motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}>Photo upload karo.<br /><em><AnimatePresence mode="wait"><motion.span key={topicIdx % sciWords.length} className="sci-word" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.35 }}>{sciWords[topicIdx % sciWords.length]}{' '}<span className="sci-samjho">samjho.</span></motion.span></AnimatePresence></em><br />Confident bano.</motion.h1><motion.p className="hero-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>Maths, Physics ya Chemistry — difficult question ka sirf answer nahi, <strong>har step ka why</strong> samjho, simple Hinglish mein.</motion.p><motion.div className="hero-actions" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.28 }}><input ref={fileInput} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onFileSelected} /><input ref={cameraInput} type="file" accept="image/*" capture="environment" hidden onChange={onFileSelected} /><button className="primary-button" onClick={openUploader}><Upload size={18} /> {selectedFile ? 'Photo selected' : 'Solve my question'} <ArrowRight size={17} /></button><a className="text-button" href="#identities"><Sigma size={17} /> Explore formulas</a></motion.div><div className="trust-line"><span className="avatar-stack"><i>R</i><i>S</i><i>K</i></span><span>Made for curious Class 1–10 minds</span><span className="trust-star">✦</span></div></div>
         <motion.div className="hero-visual" initial={{ opacity: 0, scale: .96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: .12 }}><div className="visual-grid" /><div className="doodle doodle-left">sin² θ<br /><span>+ cos² θ</span></div><div className="doodle doodle-right">∠</div><div className="question-paper"><div className="paper-top"><span className="paper-tag">QUESTION 04</span><span className="paper-dots">•••</span></div><p className="paper-question">If <b>tan A = 3/4</b>,<br />find the value of<br /><b>sin A + cos A.</b></p><div className="triangle"><span className="tri-height">3</span><span className="tri-base">4</span><span className="tri-hyp">5</span></div><div className="paper-rule" /><div className="paper-answer"><span>hint</span><b>Right triangle ratios</b></div></div><div className="ai-badge"><span className="ai-spark">✦</span><span><b>AI tutor</b><small>ready to explain</small></span><Check size={17} /></div><div className="science-chip"><Atom size={14} /><span>F = ma · Class 9</span></div><div className="floating-note"><Lightbulb size={15} /><span>Why this step?</span></div></motion.div>
       </section>

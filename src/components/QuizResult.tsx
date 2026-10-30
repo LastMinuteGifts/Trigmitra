@@ -29,6 +29,8 @@ interface QuizResultProps {
   /** Login wale user ki class — leaderboard default isi class ka dikhta hai. */
   playerClass: number | null
   onNameChange: (name: string) => void
+  /** Naam login account se aa raha hai — to result par naam badalne ka option nahi. */
+  nameLocked?: boolean
   onToggleReview: () => void
   onRetryWrong: () => void
   onPracticeWeak: () => void
@@ -67,6 +69,7 @@ export function QuizResult({
   playerName,
   playerClass,
   onNameChange,
+  nameLocked,
   onToggleReview,
   onRetryWrong,
   onPracticeWeak,
@@ -139,15 +142,17 @@ export function QuizResult({
                 ))}
               </select>
             </label>
-            <label className="quiz-name-field">
-              Naam
-              <input
-                value={playerName}
-                maxLength={18}
-                onChange={(event) => onNameChange(event.target.value)}
-                aria-label="Leaderboard name"
-              />
-            </label>
+            {!nameLocked && (
+              <label className="quiz-name-field">
+                Naam
+                <input
+                  value={playerName}
+                  maxLength={18}
+                  onChange={(event) => onNameChange(event.target.value)}
+                  aria-label="Leaderboard name"
+                />
+              </label>
+            )}
           </div>
         </div>
         {board.length === 0 ? (

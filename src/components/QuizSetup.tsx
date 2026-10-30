@@ -1,5 +1,5 @@
 import type { ChangeEvent, RefObject } from 'react'
-import { CalendarDays, Check, FileText, Flame, Search, Target, Trophy, Upload, Zap } from 'lucide-react'
+import { CalendarDays, Check, FileText, Flame, GraduationCap, Search, Target, Trophy, Upload, UserRound, Zap } from 'lucide-react'
 import type { DifficultyFilter, QuizMode, QuizTypeFilter } from '../types/quiz'
 import type { DailyState, QuizStats, WeakTopic } from '../utils/quizStore'
 
@@ -52,6 +52,10 @@ interface QuizSetupProps {
   weak: WeakTopic[]
   playerName: string
   onName: (value: string) => void
+  /** Login account ki class (agar hai to select ki zaroorat nahi). */
+  accountClass: number | null
+  /** Login account ka naam (leaderboard isi naam se bharega). */
+  accountName: string
   pdfBusy: boolean
   pdfName: string | null
   pdfInput: RefObject<HTMLInputElement | null>
@@ -98,6 +102,8 @@ export function QuizSetup({
   weak,
   playerName,
   onName,
+  accountClass,
+  accountName,
   pdfBusy,
   pdfName,
   pdfInput,
@@ -162,25 +168,42 @@ export function QuizSetup({
         </button>
       )}
 
-      <label className="auth-field">
-        Class chuno
-        <select value={quizClass} onChange={(event) => onClass(event.target.value)}>
-          <option value="All">All classes</option>
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-            <option key={n} value={String(n)}>Class {n}</option>
-          ))}
-        </select>
-      </label>
+      {/* Class aur naam login account se aate hain — dobara poochne ki zaroorat nahi. */}
+      {accountClass ? (
+        <div className="quiz-account">
+          <span className="quiz-account-chip">
+            <GraduationCap size={15} /> Class {accountClass}
+          </span>
+          {accountName && (
+            <span className="quiz-account-chip">
+              <UserRound size={15} /> {accountName}
+            </span>
+          )}
+          <small>Login account se</small>
+        </div>
+      ) : (
+        <label className="auth-field">
+          Class chuno
+          <select value={quizClass} onChange={(event) => onClass(event.target.value)}>
+            <option value="All">All classes</option>
+            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
+              <option key={n} value={String(n)}>Class {n}</option>
+            ))}
+          </select>
+        </label>
+      )}
 
-      <label className="auth-field">
-        Name for Leaderboard
-        <input
-          value={playerName}
-          maxLength={18}
-          onChange={(event) => onName(event.target.value)}
-          placeholder="Apna naam likho"
-        />
-      </label>
+      {!accountName && (
+        <label className="auth-field">
+          Name for Leaderboard
+          <input
+            value={playerName}
+            maxLength={18}
+            onChange={(event) => onName(event.target.value)}
+            placeholder="Apna naam likho"
+          />
+        </label>
+      )}
 
       <div className="quiz-source">
         {([

@@ -287,7 +287,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
       return
     }
     const cats = resolveCats()
-    const classNum = quizClass === 'All' ? undefined : Number(quizClass)
+    const classNum = activeClass ?? undefined
     const quiz =
       mode === 'pyq'
         ? buildPyqQuiz(count, cats, difficulty, typeFilter, classNum)
@@ -638,6 +638,8 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           weak={weak}
           playerName={playerName}
           onName={changeName}
+          accountClass={playerClass ?? null}
+          accountName={initialName?.trim() ?? ''}
           pdfBusy={pdfBusy}
           pdfName={pdfName}
           pdfInput={pdfInput}
@@ -686,6 +688,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           playerName={playerName}
           playerClass={activeClass}
           onNameChange={changeName}
+          nameLocked={!!initialName?.trim()}
           onToggleReview={() => setReviewOpen((value) => !value)}
           onRetryWrong={retryWrong}
           onPracticeWeak={practiceWeak}
