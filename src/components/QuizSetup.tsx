@@ -63,6 +63,8 @@ interface QuizSetupProps {
 }
 
 const DIFFICULTIES: DifficultyFilter[] = ['Mixed', 'Easy', 'Medium', 'Hard']
+// Daily challenge abhi website par nahi dikhana — true karne par wapas aa jayega.
+const SHOW_DAILY_CHALLENGE = false
 const TYPE_FILTERS: { key: QuizTypeFilter; label: string }[] = [
   { key: 'mixed', label: 'Mixed (MCQ + Subjective)' },
   { key: 'mcq', label: 'Sirf MCQ' },
@@ -141,22 +143,24 @@ export function QuizSetup({
         <span className="quiz-stat"><Zap size={14} /> {stats.total} sawaal practice</span>
       </div>
 
-      <div className="quiz-daily-card">
-        <div>
-          <span className="section-kicker">DAILY CHALLENGE · {daily.day}</span>
-          <h4>
-            {dailyDone ? `Aaj ka score: ${daily.score}/${daily.total}` : 'Aaj ke 5 sawaal — streak bachao!'}
-          </h4>
-          <p className="example-label">
-            {dailyDone
-              ? `Best: ${daily.best}/${daily.total} · Har din naya set`
-              : `${dailyPoolSize} sawaalon me se aaj ke liye chune gaye 5`}
-          </p>
+      {SHOW_DAILY_CHALLENGE && (
+        <div className="quiz-daily-card">
+          <div>
+            <span className="section-kicker">DAILY CHALLENGE · {daily.day}</span>
+            <h4>
+              {dailyDone ? `Aaj ka score: ${daily.score}/${daily.total}` : 'Aaj ke 5 sawaal — streak bachao!'}
+            </h4>
+            <p className="example-label">
+              {dailyDone
+                ? `Best: ${daily.best}/${daily.total} · Har din naya set`
+                : `${dailyPoolSize} sawaalon me se aaj ke liye chune gaye 5`}
+            </p>
+          </div>
+          <button type="button" className="quiz-button" onClick={onStartDaily}>
+            <CalendarDays size={16} /> {dailyDone ? 'Dobara khelo' : 'Aaj ka challenge'}
+          </button>
         </div>
-        <button type="button" className="quiz-button" onClick={onStartDaily}>
-          <CalendarDays size={16} /> {dailyDone ? 'Dobara khelo' : 'Aaj ka challenge'}
-        </button>
-      </div>
+      )}
 
       {weak.length > 0 && (
         <button type="button" className="quiz-suggest" onClick={onPracticeWeak}>
