@@ -1,4 +1,5 @@
-import { Check, Lightbulb, SkipForward, Target } from 'lucide-react'
+import { useRef, type ChangeEvent } from 'react'
+import { Camera, Check, Lightbulb, Loader2, SkipForward, Target } from 'lucide-react'
 import type { QuizAnswerRecord, QuizQuestion } from '../types/quiz'
 import type { SubjectiveCheck } from '../utils/answerCheck'
 
@@ -17,11 +18,18 @@ interface QuizPlayProps {
   hintOpen: boolean
   /** Subjective auto-check ka result (null = abhi check nahi hua). */
   check: SubjectiveCheck | null
+  /** Photo AI check chal raha hai? */
+  photoBusy: boolean
+  /** Photo check me aayi dikkat (unclear photo, network…). */
+  photoError: string | null
+  /** Student ki bheji hui photo ka data URL (preview ke liye). */
+  photoPreview: string | null
   sprint: boolean
   reinforced: boolean
   onDraft: (value: string) => void
   onPick: (index: number) => void
   onCheckText: () => void
+  onCheckPhoto: (file: File) => void
   onSelfMark: (correct: boolean) => void
   onHint: () => void
   onSkip: () => void
@@ -44,11 +52,15 @@ export function QuizPlay({
   draft,
   hintOpen,
   check,
+  photoBusy,
+  photoError,
+  photoPreview,
   sprint,
   reinforced,
   onDraft,
   onPick,
   onCheckText,
+  onCheckPhoto,
   onSelfMark,
   onHint,
   onSkip,
@@ -64,6 +76,14 @@ export function QuizPlay({
     questionLeft === null
       ? ''
       : `${Math.floor(questionLeft / 60)}:${String(questionLeft % 60).padStart(2, '0')}`
+  const photoInput = useRef<HTMLInputElement>(null)
+
+  const onPhotoPicked = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    // Same photo dobara chunne par bhi change event chale.
+    event.target.value = ''
+    if (file) onCheckPhoto(file)
+  }
 
   return (
     <>
@@ -112,13 +132,51 @@ export function QuizPlay({
             aria-label="Subjective answer"
           />
           {answer === null ? (
-            <button type="button" className="analyze-button quiz-next" onClick={onCheckText} disabled={draft.trim().length < 2}>
-              <Check size={16} /> Jawab check karo
-            </button>
+            <>
+              <div className="quiz-answer-actions">
+                <button
+                  type="button"
+                  className="analyze-button quiz-next"
+                  onClick={onCheckText}
+                  disabled={draft.trim().length < 2 || photoBusy}
+                >
+                  <Check size={16} /> Jawab check karo
+                </button>
+                <button
+                  type="button"
+                  className="outline-button quiz-photo-btn"
+                  onClick={() => photoInput.current?.click()}
+                  disabled={photoBusy}
+                >
+                  {photoBusy ? <Loader2 size={16} className="quiz-spin" /> : <Camera size={16} />}
+                  {photoBusy ? 'AI check kar raha hai…' : 'Paper ki photo bhejo'}
+                </button>
+                <input
+                  ref={photoInput}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="quiz-photo-input"
+                  onChange={onPhotoPicked}
+                />
+              </div>
+              <p className="quiz-photo-note">
+                Paper par solve karke photo bhejo — <b>AI khud check karega</b>. Ya apna jawab type karke check karo.
+              </p>
+              {photoError && (
+                <p className="quiz-photo-error" role="alert">⚠️ {photoError}</p>
+              )}
+            </>
           ) : (
             <div className="quiz-model-answer">
               <span className="section-kicker">MODEL ANSWER</span>
               <p>{question.modelAnswer ?? question.formula ?? '—'}</p>
+              {photoPreview && (
+                <figure className="quiz-photo-preview">
+                  <img src={photoPreview} alt="Aapka paper par solve kiya jawab" />
+                  <figcaption>Aapki bheji hui photo — AI ne yahi padha</figcaption>
+                </figure>
+              )}
               <div className="quiz-auto-check">
                 {answer.text ? (
                   <>
@@ -135,8 +193,12 @@ export function QuizPlay({
                         {answer.correct ? '✅ Sahi' : check?.verdict === 'partial' ? '🟡 Aadha sahi' : '❌ Galat'}
                       </span>
                       {check && <span className="quiz-auto-score">{Math.round(check.score * 100)}% match</span>}
+                      {check?.source === 'ai' && <span className="quiz-ai-tag">🤖 AI checked</span>}
                     </div>
                     {check && <p className="quiz-auto-summary">{check.summary}</p>}
+                    {check?.source === 'ai' && check.transcript && (
+                      <p className="quiz-ai-transcript"><b>AI ne padha:</b> {check.transcript}</p>
+                    )}
                     {check && (check.matched.length > 0 || check.missing.length > 0) && (
                       <div className="quiz-auto-points">
                         {check.matched.map((point) => (

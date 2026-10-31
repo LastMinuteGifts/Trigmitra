@@ -6,7 +6,7 @@ import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import multer from 'multer'
 import { z } from 'zod'
-import { solveMathsImage, solveMathsText, askDoubt, generateMcqsFromText } from './aiClient.js'
+import { solveMathsImage, solveMathsText, askDoubt, generateMcqsFromText, gradeSubjectiveAnswer } from './aiClient.js'
 import { buildDemoSolution } from './localSolver.js'
 import {
   getAdminClient,
@@ -82,6 +82,15 @@ const solveLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { code: 'RATE_LIMITED', message: 'Bahut zyada requests. Thodi der rukkar phir try karo.' },
+})
+
+// Subjective photo checking bhi AI call hai — alag, thoda udar limit.
+const gradeLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  limit: 25,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { code: 'RATE_LIMITED', message: 'Bahut zyada photo checks. Thodi der rukkar phir try karo.' },
 })
 
 // Roz ka AI budget cap (bill protection): exceed ho to demo fallback.
@@ -185,6 +194,78 @@ app.post('/api/solve', solveLimiter, upload.single('questionImage'), async (requ
     }
     console.error(error)
     response.status(502).json({ code: 'AI_ANALYSIS_FAILED', message: 'Question analyze nahi ho paya. Please try again.' })
+  }
+})
+
+// Subjective answer ka AI check: student paper par solve karke photo bhejta hai.
+// AI photo padh kar model answer se compare karta hai. Photo dhundhli ho to 422.
+app.post('/api/grade', gradeLimiter, upload.single('answerImage'), async (request, response) => {
+  const body = (request.body ?? {}) as {
+    prompt?: unknown
+    modelAnswer?: unknown
+    answerText?: unknown
+    keywords?: unknown
+    studentClass?: unknown
+  }
+  const prompt = typeof body.prompt === 'string' ? body.prompt.trim().slice(0, 1200) : ''
+  const modelAnswer = typeof body.modelAnswer === 'string' ? body.modelAnswer.trim().slice(0, 2400) : ''
+  const answerText = typeof body.answerText === 'string' ? body.answerText.trim().slice(0, 3000) : ''
+
+  let keywords: string[] = []
+  if (typeof body.keywords === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(body.keywords)
+      if (Array.isArray(parsed)) {
+        keywords = parsed
+          .filter((item): item is string => typeof item === 'string')
+          .slice(0, 20)
+          .map((item) => item.slice(0, 80))
+      }
+    } catch {
+      // keywords optional hain — galat JSON ko ignore karo.
+    }
+  }
+
+  if (!request.file && !answerText) {
+    response.status(400).json({ code: 'ANSWER_REQUIRED', message: 'Photo bhejo ya apna jawab likho.' })
+    return
+  }
+  if (!prompt || !modelAnswer) {
+    response.status(400).json({ code: 'QUESTION_REQUIRED', message: 'Question aur model answer chahiye.' })
+    return
+  }
+  if (!env.AI_API_KEY) {
+    response.status(503).json({ code: 'AI_NOT_CONFIGURED', message: 'AI check abhi available nahi hai. Apna jawab likh kar check karo.' })
+    return
+  }
+  if (!budgetLeft()) {
+    response.status(429).json({ code: 'AI_BUDGET_OVER', message: 'Aaj ka AI limit khatm ho gaya. Apna jawab likh kar check karo.' })
+    return
+  }
+
+  try {
+    const studentClass = z.coerce.number().int().min(1).max(10).optional().parse(body.studentClass ?? undefined)
+    const result = await gradeSubjectiveAnswer(
+      { prompt, modelAnswer, keywords, answerText: answerText || undefined, studentClass },
+      { apiKey: env.AI_API_KEY, apiUrl: env.AI_API_URL, model: env.AI_MODEL, models: aiModels },
+      request.file ? { buffer: request.file.buffer, mimetype: request.file.mimetype } : undefined,
+    )
+    budgetSpend()
+    if (result.readable === false) {
+      response.status(422).json({
+        code: 'PHOTO_UNCLEAR',
+        message: result.summary || 'Photo clear nahi padh paya — dobara bhejo ya apna jawab likh kar check karo.',
+      })
+      return
+    }
+    response.json({ status: 'complete', check: { ...result, source: 'ai' } })
+  } catch (error) {
+    console.error('Subjective grade failed:', error)
+    if (error instanceof Error && error.message === 'AI_PROVIDER_NOT_CONFIGURED') {
+      response.status(503).json({ code: 'AI_NOT_CONFIGURED', message: 'AI check abhi available nahi hai. Apna jawab likh kar check karo.' })
+      return
+    }
+    response.status(502).json({ code: 'AI_GRADE_FAILED', message: 'AI check nahi ho paya. Photo dobara bhejo ya jawab likh kar check karo.' })
   }
 })
 

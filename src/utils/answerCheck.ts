@@ -167,6 +167,10 @@ export interface SubjectiveCheck {
   missing: string[]
   /** Ek line ka feedback. */
   summary: string
+  /** Check kahan se aaya — local rules ya AI (photo). */
+  source?: 'local' | 'ai'
+  /** AI ne photo/answer se jo padha. */
+  transcript?: string
 }
 
 /**
@@ -185,6 +189,7 @@ export function checkSubjectiveAnswer(userAnswer: string, modelAnswer = '', keyw
       matched: [],
       missing: groups.map((group) => group.raw),
       summary: 'Jawab likha hi nahi gaya.',
+      source: 'local',
     }
   }
 
@@ -250,6 +255,7 @@ export function checkSubjectiveAnswer(userAnswer: string, modelAnswer = '', keyw
     matched,
     missing,
     summary,
+    source: 'local',
   }
 }
 

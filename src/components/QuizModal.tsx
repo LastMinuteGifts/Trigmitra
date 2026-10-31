@@ -5,6 +5,7 @@ import { ncertChapters } from '../data/ncertChapters'
 import { extractPdfText } from '../utils/pdfText'
 import { generateQuizFromText } from '../utils/quizApi'
 import { checkSubjectiveAnswer, type SubjectiveCheck } from '../utils/answerCheck'
+import { gradePhotoAnswer } from '../utils/gradeApi'
 import { buildDailyChallenge } from '../utils/dailyChallenge'
 import { buildPyqQuiz, buildQuiz, buildSprintQuiz, dailyPool, QUIZ_COUNTS } from '../utils/quizBuild'
 import {
@@ -134,6 +135,16 @@ function countAnswered(answers: Record<string, QuizAnswerRecord>): number {
   return Object.values(answers).filter((answer) => answer && !answer.skipped).length
 }
 
+/** Photo ko panel me dikhane ke liye data URL banao. */
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '')
+    reader.onerror = () => reject(new Error('Photo padhi nahi ja saki'))
+    reader.readAsDataURL(file)
+  })
+}
+
 function scoreOf(answers: Record<string, QuizAnswerRecord>): number {
   return Object.values(answers).filter((answer) => answer && answer.correct && !answer.skipped).length
 }
@@ -159,6 +170,11 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const [hintOpen, setHintOpen] = useState(false)
   // Subjective ka auto-check result — verdict, matched/missing points ke saath.
   const [answerCheck, setAnswerCheck] = useState<SubjectiveCheck | null>(null)
+  // Photo se solve karke AI check karne ki state.
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const [photoError, setPhotoError] = useState<string | null>(null)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
+  const gradeTokenRef = useRef(0)
   const [reinforced, setReinforced] = useState(false)
   const [startedAt, setStartedAt] = useState(() => Date.now())
   const [now, setNow] = useState(() => Date.now())
@@ -258,7 +274,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   // Countdown — sirf jab tak jawab nahi diya. 0 hote hi sawaal chhoot jata hai.
   const timerQuestionRef = useRef<string | null>(null)
   useEffect(() => {
-    if (phase !== 'asking' || questionLeft === null || currentAnswer || !current) return
+    if (phase !== 'asking' || questionLeft === null || currentAnswer || photoBusy || !current) return
     if (questionLeft > 0) {
       timerQuestionRef.current = current.id
       const timer = window.setTimeout(() => setQuestionLeft((value) => (value === null ? null : Math.max(0, value - 1))), 1000)
@@ -268,7 +284,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     if (timerQuestionRef.current !== current.id) return
     skip()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, questionLeft, currentAnswer, current])
+  }, [phase, questionLeft, currentAnswer, current, photoBusy])
 
   // Khelte waqt progress save — sprint chhod ke (timer wala quiz resume nahi hota).
   useEffect(() => {
@@ -280,6 +296,14 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     if (statsDone.current.has(question.id)) return
     statsDone.current.add(question.id)
     setStats(recordTopicAnswer(question.topic ?? question.sub, correct))
+  }
+
+  // Photo state reset + purani AI request ko bekaar karo.
+  const resetPhoto = () => {
+    gradeTokenRef.current++
+    setPhotoBusy(false)
+    setPhotoError(null)
+    setPhotoPreview(null)
   }
 
   const begin = (quiz: QuizQuestion[], nextMode: QuizMode) => {
@@ -295,6 +319,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setDraft('')
     setHintOpen(false)
     setAnswerCheck(null)
+    resetPhoto()
     setReinforced(false)
     setReviewOpen(false)
     setStartedAt(stamp)
@@ -456,7 +481,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   }
 
   const checkText = () => {
-    if (!current || current.type !== 'subjective' || answers[current.id] || draft.trim().length < 2) return
+    if (!current || current.type !== 'subjective' || answers[current.id] || photoBusy || draft.trim().length < 2) return
     const result = checkSubjectiveAnswer(draft, current.modelAnswer, current.keywords)
     setAnswerCheck(result)
     recordAnswer({
@@ -468,6 +493,47 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
       partial: result.verdict === 'partial',
     })
     if (!result.correct && reinforce(current)) setReinforced(true)
+  }
+
+  /** Paper par solve ki hui photo AI se check karao. */
+  const checkPhoto = async (file: File) => {
+    if (!current || current.type !== 'subjective' || answers[current.id] || photoBusy) return
+    const question = current
+    const token = ++gradeTokenRef.current
+    setPhotoBusy(true)
+    setPhotoError(null)
+    try {
+      const preview = await readAsDataUrl(file)
+      if (token === gradeTokenRef.current && preview) setPhotoPreview(preview)
+    } catch {
+      // Preview optional hai — check phir bhi chalta rahe.
+    }
+    try {
+      const result = await gradePhotoAnswer({
+        file,
+        prompt: question.prompt,
+        modelAnswer: question.modelAnswer ?? question.formula ?? '',
+        keywords: question.keywords,
+        answerText: draft,
+        studentClass: activeClass,
+      })
+      if (token !== gradeTokenRef.current) return
+      setAnswerCheck(result)
+      recordAnswer({
+        picked: null,
+        text: result.transcript?.trim() || '📷 Paper par solve karke photo bheji',
+        correct: result.correct,
+        skipped: false,
+        hintUsed: hintOpen,
+        partial: result.verdict === 'partial',
+      })
+      if (!result.correct && reinforce(question)) setReinforced(true)
+    } catch (error) {
+      if (token !== gradeTokenRef.current) return
+      setPhotoError(error instanceof Error ? error.message : 'AI check nahi ho paya.')
+    } finally {
+      if (token === gradeTokenRef.current) setPhotoBusy(false)
+    }
   }
 
   const selfMark = (correct: boolean) => {
@@ -491,11 +557,13 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setDraft('')
     setHintOpen(false)
     setAnswerCheck(null)
+    resetPhoto()
     setReinforced(false)
   }
 
   const skip = () => {
     if (!current) return
+    resetPhoto()
     let nextAnswers = answers
     if (!answers[current.id]) {
       const record: QuizAnswerRecord = {
@@ -519,6 +587,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
       setDraft('')
       setHintOpen(false)
       setAnswerCheck(null)
+      resetPhoto()
       setReinforced(false)
     }
   }
@@ -549,6 +618,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setDraft('')
     setHintOpen(false)
     setAnswerCheck(null)
+    resetPhoto()
     setReinforced(false)
     statsDone.current = new Set(Object.keys(savedQuiz.answers))
     setPhase('asking')
@@ -567,6 +637,7 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     setIdx(0)
     setDraft('')
     setHintOpen(false)
+    resetPhoto()
     setReviewOpen(false)
     setQuestions([])
   }
@@ -694,11 +765,15 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
           draft={draft}
           hintOpen={hintOpen}
           check={answerCheck}
+          photoBusy={photoBusy}
+          photoError={photoError}
+          photoPreview={photoPreview}
           sprint={sprintLeft !== null}
           reinforced={reinforced}
           onDraft={setDraft}
           onPick={pick}
           onCheckText={checkText}
+          onCheckPhoto={checkPhoto}
           onSelfMark={selfMark}
           onHint={() => setHintOpen(true)}
           onSkip={skip}

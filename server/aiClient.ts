@@ -1,6 +1,7 @@
 import { mathsTutorSystemPrompt } from './aiPrompt.js'
 import { structuredSolutionSchema, type StructuredSolution } from './solutionSchema.js'
 import { quizResponseSchema, type QuizQuestionPayload } from './quizSchema.js'
+import { gradeResponseSchema, type GradePayload } from './gradeSchema.js'
 
 interface VisionConfig {
   apiKey?: string
@@ -269,4 +270,81 @@ export async function generateMcqsFromText(
   )
 
   return parsed.questions.slice(0, count)
+}
+
+const gradeSystemPrompt = `You are AnkNawab, a fair Indian school teacher grading a STUDENT'S ANSWER to a subjective / board-style question (Classes 1 to 10: Maths, Physics numericals, Chemistry).
+
+The student may answer by uploading a photo of their handwritten solution on paper, and/or by typing the answer. Compare the student's answer with the model answer and expected keywords. Judge the MEANING, not the handwriting style.
+
+Rules:
+- Accept any mathematically correct method or equivalent form: 3/4 = 0.75 = 75%, sin²θ + cos²θ = 1 is the same as 1 − sin²θ = cos²θ.
+- Read symbols carefully: sin²A vs sin 2A, x vs ×, 0 vs O, √ vs 7, − vs =.
+- If the photo is blank, too blurry, or contains no answer: set "readable": false, verdict "wrong", score 0, and say clearly in summary that the photo is not readable.
+- "score" is a number from 0 to 1 (NOT percent).
+- "matched" = short expected points the student actually got. "missing" = important expected points that are missing. Each item under 60 characters, max 6 items.
+- "summary" = friendly Hinglish feedback, max 2 short sentences. No LaTeX.
+- "transcript" = what you read from the student's answer (plain Unicode math like θ ² √ × ÷ − °, max 500 characters). If only typed text was given, repeat it briefly.
+- Return ONLY valid JSON in this exact shape, no Markdown fences: {"verdict":"correct|partial|wrong","score":0.0,"readable":true,"summary":"","matched":[],"missing":[],"transcript":""}`
+
+export interface GradeInput {
+  prompt: string
+  modelAnswer: string
+  keywords?: string[]
+  answerText?: string
+  studentClass?: number
+}
+
+function cleanList(values: string[]): string[] {
+  return [...new Set(values.map((value) => value.trim()).filter(Boolean))].slice(0, 6)
+}
+
+function finalizeGrade(payload: GradePayload): GradePayload {
+  const score = payload.score ?? (payload.verdict === 'correct' ? 0.8 : payload.verdict === 'partial' ? 0.5 : 0.2)
+  // AI ka verdict meaningful hai (explanation missing par partial etc.) — use as-is.
+  // Sirf tab derive karo jab AI ne verdict nahi diya.
+  const verdict = payload.verdict ?? (score >= 0.6 ? 'correct' : score >= 0.4 ? 'partial' : 'wrong')
+  return {
+    ...payload,
+    score,
+    verdict,
+    summary: payload.summary.trim() || (verdict === 'correct' ? 'Sahi jawab!' : 'Model answer se compare karo.'),
+    matched: cleanList(payload.matched),
+    missing: cleanList(payload.missing),
+    transcript: payload.transcript?.trim().slice(0, 1200) || undefined,
+  }
+}
+
+/** Student ke photo (aur optional typed text) ko model answer se compare karo. */
+export async function gradeSubjectiveAnswer(
+  input: GradeInput,
+  config: VisionConfig,
+  image?: { buffer: Buffer; mimetype: string },
+): Promise<GradePayload> {
+  if (!config.apiKey) {
+    throw new Error('AI_PROVIDER_NOT_CONFIGURED')
+  }
+
+  const keywordLine = input.keywords?.length ? input.keywords.join(', ') : '(none)'
+  const typedLine = input.answerText ? `\nTyped answer from student: "${input.answerText}"` : ''
+  const contextText = `Question: ${input.prompt}
+Model answer: ${input.modelAnswer}
+Expected keywords / points: ${keywordLine}${typedLine}${classHint(input.studentClass)}`
+
+  const userContent: unknown = image
+    ? [
+        { type: 'text', text: contextText },
+        { type: 'image_url', image_url: { url: `data:${image.mimetype};base64,${image.buffer.toString('base64')}` } },
+      ]
+    : contextText
+
+  return runWithRetry(
+    config,
+    () => [
+      { role: 'system', content: gradeSystemPrompt },
+      { role: 'user', content: userContent },
+    ],
+    (content) => finalizeGrade(gradeResponseSchema.parse(sanitizeSolutionText(extractJson(content)))),
+    true,
+    0.1,
+  )
 }
