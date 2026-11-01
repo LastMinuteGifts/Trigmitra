@@ -305,7 +305,7 @@ app.post('/api/leaderboard', leaderboardLimiter, async (request, response) => {
   const body = (request.body ?? {}) as Record<string, unknown>
   const name = typeof body.name === 'string' ? body.name.trim().slice(0, 18) : ''
   const score = z.coerce.number().int().min(0).safeParse(body.score).data
-  const total = z.coerce.number().int().min(1).max(200).safeParse(body.total).data
+  const total = z.coerce.number().int().min(1).max(100).safeParse(body.total).data
   const mode = typeof body.mode === 'string' ? body.mode.trim().slice(0, 24) : 'topics'
   const rawClass = body.classNum
   const classNum = rawClass === null || rawClass === undefined || rawClass === 'null' || rawClass === 'all'
