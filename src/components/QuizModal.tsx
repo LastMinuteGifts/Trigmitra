@@ -6,10 +6,12 @@ import { extractPdfText } from '../utils/pdfText'
 import { generateQuizFromText } from '../utils/quizApi'
 import { checkSubjectiveAnswer, type SubjectiveCheck } from '../utils/answerCheck'
 import { gradePhotoAnswer } from '../utils/gradeApi'
+import { fetchSharedLeaderboard, submitSharedLeaderEntry } from '../utils/leaderboardApi'
 import { buildDailyChallenge } from '../utils/dailyChallenge'
 import { buildPyqQuiz, buildQuiz, buildSprintQuiz, dailyPool, QUIZ_COUNTS } from '../utils/quizBuild'
 import {
   QUIZ_BEST_KEY,
+  QUIZ_LEADER_KEY,
   QUIZ_PROGRESS_KEY,
   addAttempt,
   addLeaderEntry,
@@ -188,6 +190,20 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
   const [streak, setStreak] = useState<StreakState>(() => loadStreak())
   const [daily, setDaily] = useState<DailyState>(() => loadDaily())
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>(() => loadLeaderboard())
+
+  // Shared leaderboard (sab devices/users) load karo — localStorage sirf fallback/cache.
+  useEffect(() => {
+    let cancelled = false
+    fetchSharedLeaderboard(playerClass ?? null).then((list) => {
+      if (cancelled || !list) return
+      setLeaderboard(list)
+      writeJSON(QUIZ_LEADER_KEY, list)
+    })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playerClass])
   const [playerName, setPlayerName] = useState(() => initialName?.trim() || loadPlayerName())
   const [reviewOpen, setReviewOpen] = useState(false)
   // Pichhle quiz ke galat + chhoote sawaal — setup page par bhi dikhte hain.
@@ -426,7 +442,17 @@ export function QuizRunner({ onExit, playerName: initialName, playerClass }: { o
     const topics = [...new Set(questions.map((question) => question.topic ?? question.sub))]
     addAttempt({ at: new Date().toISOString(), score: finalScore, total: questions.length, topics, mode, seconds, difficulty })
     if (mode === 'daily') setDaily(saveDaily(finalScore, questions.length, day))
-    setLeaderboard(addLeaderEntry({ name: (playerName || 'Guest').slice(0, 18), score: finalScore, total: questions.length, day, mode, classNum: activeClass }))
+    // Local cache (offline fallback) + shared leaderboard (sab devices).
+    const entry = { name: (playerName || 'Guest').slice(0, 18), score: finalScore, total: questions.length, day, mode, classNum: activeClass }
+    setLeaderboard(addLeaderEntry(entry))
+    submitSharedLeaderEntry(entry)
+      .then((list) => {
+        if (list) {
+          setLeaderboard(list)
+          writeJSON(QUIZ_LEADER_KEY, list)
+        }
+      })
+      .catch(() => {})
     // Agla setup page bhi yahi galtiyan dikhaye.
     const missed = questions
       .map((question) => ({ question, answer: finalAnswers[question.id] ?? null }))

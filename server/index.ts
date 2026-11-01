@@ -17,6 +17,7 @@ import {
   ensureTrialAccess,
 } from './admin.js'
 import { listOverrides, upsertOverride, deleteOverride } from './notesStore.js'
+import { loadSharedLeaderboard, addSharedLeaderEntry } from './leaderboardStore.js'
 import {
   addTeacher,
   authenticateTeacher,
@@ -91,6 +92,15 @@ const gradeLimiter = rateLimit({
   standardHeaders: 'draft-8',
   legacyHeaders: false,
   message: { code: 'RATE_LIMITED', message: 'Bahut zyada photo checks. Thodi der rukkar phir try karo.' },
+})
+
+// Leaderboard read/write — storage based, halka rate limit.
+const leaderboardLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 40,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { code: 'RATE_LIMITED', message: 'Bahut zyada requests. Thodi der rukkar phir try karo.' },
 })
 
 // Roz ka AI budget cap (bill protection): exceed ho to demo fallback.
@@ -266,6 +276,71 @@ app.post('/api/grade', gradeLimiter, upload.single('answerImage'), async (reques
       return
     }
     response.status(502).json({ code: 'AI_GRADE_FAILED', message: 'AI check nahi ho paya. Photo dobara bhejo ya jawab likh kar check karo.' })
+  }
+})
+
+// Shared leaderboard — Supabase Storage me JSON file. Class-wise filter supported.
+app.get('/api/leaderboard', leaderboardLimiter, async (request, response) => {
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.json({ entries: [], source: 'none' })
+    return
+  }
+  const rawClass = typeof request.query.classNum === 'string' ? request.query.classNum.trim() : ''
+  const classNum = rawClass && rawClass.toLowerCase() !== 'all' && rawClass.toLowerCase() !== 'null'
+    ? z.coerce.number().int().min(1).max(10).safeParse(rawClass).data ?? null
+    : null
+  const limit = Math.min(50, Math.max(1, z.coerce.number().int().min(1).max(50).safeParse(request.query.limit ?? 20).data ?? 20))
+  try {
+    const all = await loadSharedLeaderboard(client)
+    const filtered = classNum === null ? all : all.filter((entry) => entry.classNum === classNum)
+    response.json({ entries: filtered.slice(0, limit) })
+  } catch (error) {
+    console.error('Leaderboard load failed:', error)
+    response.status(502).json({ code: 'LEADERBOARD_LOAD_FAILED', message: 'Leaderboard load nahi ho paya.' })
+  }
+})
+
+app.post('/api/leaderboard', leaderboardLimiter, async (request, response) => {
+  const body = (request.body ?? {}) as Record<string, unknown>
+  const name = typeof body.name === 'string' ? body.name.trim().slice(0, 18) : ''
+  const score = z.coerce.number().int().min(0).safeParse(body.score).data
+  const total = z.coerce.number().int().min(1).max(200).safeParse(body.total).data
+  const mode = typeof body.mode === 'string' ? body.mode.trim().slice(0, 24) : 'topics'
+  const rawClass = body.classNum
+  const classNum = rawClass === null || rawClass === undefined || rawClass === 'null' || rawClass === 'all'
+    ? null
+    : z.coerce.number().int().min(1).max(10).safeParse(rawClass).data ?? null
+
+  if (!name || score === undefined || total === undefined) {
+    response.status(400).json({ code: 'INVALID_ENTRY', message: 'Name, score aur total chahiye.' })
+    return
+  }
+  if (score > total) {
+    response.status(400).json({ code: 'INVALID_SCORE', message: 'Score total se zyada nahi ho sakta.' })
+    return
+  }
+
+  const client = getAdminClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_KEY)
+  if (!client) {
+    response.status(503).json({ code: 'DB_MISSING', message: 'Leaderboard storage available nahi hai.' })
+    return
+  }
+
+  try {
+    const entries = await addSharedLeaderEntry(client, {
+      name: name || 'Guest',
+      score,
+      total,
+      day: new Date().toISOString().slice(0, 10),
+      mode,
+      classNum,
+    })
+    const filtered = classNum === null ? entries : entries.filter((entry) => entry.classNum === classNum)
+    response.json({ entries: filtered.slice(0, 20) })
+  } catch (error) {
+    console.error('Leaderboard save failed:', error)
+    response.status(502).json({ code: 'LEADERBOARD_SAVE_FAILED', message: 'Leaderboard save nahi ho paya.' })
   }
 })
 

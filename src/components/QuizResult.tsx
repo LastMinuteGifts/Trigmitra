@@ -3,6 +3,7 @@ import { Award, RotateCcw, Trophy } from 'lucide-react'
 import type { QuizReviewItem } from '../types/quiz'
 import type { DailyState, LeaderEntry, StreakState, WeakTopic } from '../utils/quizStore'
 import { filterLeaderboard, formatSeconds, leaderboardScope } from '../utils/quizStore'
+import { fetchSharedLeaderboard } from '../utils/leaderboardApi'
 import { CLASS_LEVELS } from '../utils/studentClass'
 import { MistakesSection, ReviewItemCard } from './MistakesSection'
 
@@ -71,11 +72,29 @@ export function QuizResult({
   const overall = total > 0 ? score / total : 0
   // Leaderboard class-wise: default user ki apni class, chaho to "All classes".
   const [boardClass, setBoardClass] = useState<number | null>(playerClass)
+  // Shared (global) leaderboard — selected class ke liye backend se fetch.
+  const [boardEntries, setBoardEntries] = useState<LeaderEntry[]>(leaderboard)
   // Account me class badli to leaderboard bhi usi class ka dikhe.
   useEffect(() => {
     if (playerClass) setBoardClass(playerClass)
   }, [playerClass])
-  const board = filterLeaderboard(leaderboard, boardClass)
+  useEffect(() => {
+    let cancelled = false
+    fetchSharedLeaderboard(boardClass).then((list) => {
+      if (cancelled || !list) return
+      setBoardEntries(list)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [boardClass])
+  // Fallback: agar backend na chale to passed-in (local cache) list use karo.
+  useEffect(() => {
+    if (boardEntries.length === 0 && leaderboard.length > 0) {
+      setBoardEntries(filterLeaderboard(leaderboard, boardClass))
+    }
+  }, [leaderboard, boardClass, boardEntries.length])
+  const board = filterLeaderboard(boardEntries, boardClass)
   // Sirf sabse recent matching entry highlight karo (same score wale purane na ho).
   const meIndex = board.findLastIndex((entry) => entry.name === playerName && entry.score === score)
 
@@ -119,7 +138,7 @@ export function QuizResult({
       <div className="quiz-leaderboard">
         <div className="quiz-leaderboard-head">
           <span className="section-kicker">
-            <Trophy size={13} /> TOP SCORES · {leaderboardScope(boardClass).toUpperCase()} (IS DEVICE PAR)
+            <Trophy size={13} /> TOP SCORES · {leaderboardScope(boardClass).toUpperCase()} (GLOBAL)
           </span>
           <div className="quiz-leaderboard-controls">
             <label className="quiz-name-field">
